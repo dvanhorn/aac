@@ -55,11 +55,7 @@
 
 (define-metafunction L
   gc : ς -> ς
-  [(gc (name ς (ev e ρ σ κ)))
-   (ev e ρ_0 σ_0 κ)
-   (where ρ_0 (↓ ρ (fv e)))
-   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))]
-  [(gc (name ς (co κ (Clos x e ρ) σ)))
+  [(gc (co κ (Clos x e ρ) σ))
    (co κ (Clos x e ρ_0) σ_0)
    (where ρ_0 (↓ ρ (fv e)))
    (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))])
@@ -175,14 +171,14 @@
    Lι
    #:domain ς
    ;; Eval transitions
-   [--> (ev x ρ σ ι κ) (co ι κ v σ)
+   [--> (ev x ρ σ ι κ) (gcι (co ι κ v σ))
         Var
-        (where v (lookup σ (lookup ρ x)))]
+        (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]
    [--> (ev (App e_0 e_1) ρ σ (φ ...) κ)
-        (ev e_0 ρ σ ((AppL e_1 ρ) φ ...) κ)
+        (ev e_0 (↓ ρ (fv e_0)) σ ((AppL e_1 (↓ ρ (fv e_1))) φ ...) κ)
         AppL]
    [--> (ev (Lam x e) ρ σ ι κ)
-        (co ι κ (Clos x e ρ) σ)
+        (co ι κ (Clos x e (↓ ρ (fv e))) σ)
         Lam]
    ;; Continue transitions
    [--> (co () () v σ) (ans v σ) Halt]
@@ -192,10 +188,16 @@
         (ev e ρ σ ((AppR v) φ ...) κ)
         AppR]
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) (ι ...) v σ))
-        (ev e (ext ρ x a) (ext σ a v) () ((φ ...) ι ...))
+        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () ((φ ...) ι ...))
         β
         (where a (allocι ς))]))
 
+(define-metafunction Lι
+  gcι : ς -> ς
+  [(gcι (co ι (ι_1 ...) (Clos x e ρ) σ))
+   (co ι (ι_1 ...) (Clos x e ρ_0) σ_0)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ ι) (ll-κ ι_1) ...) σ)))])
 
 (define-metafunction Lι
   allocι : ς -> a
@@ -375,10 +377,13 @@
 (define-values (myK myG)
   (analyze (term EG)))
 
-(viz (term EG))
- 
-
+;(viz (term EG)) 
+(vizι (term EG))
 #;
 (visualize-graph myG (term (injι EG)))
 
+(test-->>∃ -->_m (term (inj EG))
+           (redex-match L (ans (Clos one one ()) ())))
 
+(test-->>∃ -->_mι (term (injι EG))
+           (redex-match Lι (ans (Clos one one ()) σ)))
