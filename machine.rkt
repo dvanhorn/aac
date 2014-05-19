@@ -55,6 +55,10 @@
 
 (define-metafunction L
   gc : ς -> ς
+  [(gc (ev e ρ σ κ))
+   (ev e ρ_0 σ_0 κ)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))]
   [(gc (co κ (Clos x e ρ) σ))
    (co κ (Clos x e ρ_0) σ_0)
    (where ρ_0 (↓ ρ (fv e)))
@@ -118,7 +122,7 @@
         (ev e ρ σ ((AppR v) φ ...))
         AppR]
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) v σ))
-        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) (φ ...))
+        (gc (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) (φ ...)))
         β
         (where a (alloc ς))]))
 
@@ -188,12 +192,16 @@
         (ev e ρ σ ((AppR v) φ ...) κ)
         AppR]
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) (ι ...) v σ))
-        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () ((φ ...) ι ...))
+        (gcι (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () ((φ ...) ι ...)))
         β
         (where a (allocι ς))]))
 
 (define-metafunction Lι
   gcι : ς -> ς
+  [(gcι (ev e ρ σ ι (ι_1 ...)))
+   (ev e ρ_0 σ_0 ι (ι_1 ...))
+   (where ρ_0 (↓ ρ (fv e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ ι) (ll-κ ι_1) ...) σ)))]
   [(gcι (co ι (ι_1 ...) (Clos x e ρ) σ))
    (co ι (ι_1 ...) (Clos x e ρ_0) σ_0)
    (where ρ_0 (↓ ρ (fv e)))
@@ -378,7 +386,12 @@
   (analyze (term EG)))
 
 ;(viz (term EG)) 
-(vizι (term EG))
+;(vizι (term EG))
+(test-->> -->_m (term (inj (App (Lam x ZERO) ONE)))
+          (term (ans (Clos zero zero ()) ())))
+(test-->> -->_mι (term (injι (App (Lam x ZERO) ONE)))
+          (term (ans (Clos zero zero ()) ())))
+
 #;
 (visualize-graph myG (term (injι EG)))
 
