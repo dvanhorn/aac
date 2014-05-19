@@ -159,13 +159,11 @@
 
 (define-extended-language Lι L
   ;; Machine states
-  [ς (ev e ρ σ ι κ)
-     (co ι κ v σ)
-     (ans v σ)]
+  [ς (ev e ρ σ κ ι)
+     (co κ ι v σ)
+     (ans v σ)]  
   ;; Meta continuations
-  [κ (ι ...)]
-  ;; Local continuations
-  [ι (φ ...)])
+  [ι (κ ...)])
  
 
 ;; Abstract machine in eval/apply form
@@ -175,41 +173,41 @@
    Lι
    #:domain ς
    ;; Eval transitions
-   [--> (ev x ρ σ ι κ) (gcι (co ι κ v σ))
+   [--> (ev x ρ σ κ ι) (gcι (co κ ι v σ))
         Var
         (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]
-   [--> (ev (App e_0 e_1) ρ σ (φ ...) κ)
-        (ev e_0 (↓ ρ (fv e_0)) σ ((AppL e_1 (↓ ρ (fv e_1))) φ ...) κ)
+   [--> (ev (App e_0 e_1) ρ σ (φ ...) ι)
+        (ev e_0 (↓ ρ (fv e_0)) σ ((AppL e_1 (↓ ρ (fv e_1))) φ ...) ι)
         AppL]
-   [--> (ev (Lam x e) ρ σ ι κ)
-        (co ι κ (Clos x e (↓ ρ (fv e))) σ)
+   [--> (ev (Lam x e) ρ σ κ ι)
+        (co κ ι (Clos x e (↓ ρ (fv e))) σ)
         Lam]
    ;; Continue transitions
    [--> (co () () v σ) (ans v σ) Halt]
-   [--> (co () (ι_0 ι_1 ...) v σ) (co ι_0 (ι_1 ...) v σ) Return] ;;*****
+   [--> (co () (κ_0 κ_1 ...) v σ) (co κ_0 (κ_1 ...) v σ) Return] ;;*****
    
-   [--> (co ((AppL e ρ) φ ...) κ v σ)
-        (ev e ρ σ ((AppR v) φ ...) κ)
+   [--> (co ((AppL e ρ) φ ...) ι v σ)
+        (ev e ρ σ ((AppR v) φ ...) ι)
         AppR]
-   [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) (ι ...) v σ))
-        (gcι (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () ((φ ...) ι ...)))
+   [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) (κ ...) v σ))
+        (gcι (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () ((φ ...) κ ...)))
         β
         (where a (allocι ς))]))
 
 (define-metafunction Lι
   gcι : ς -> ς
-  [(gcι (ev e ρ σ ι (ι_1 ...)))
-   (ev e ρ_0 σ_0 ι (ι_1 ...))
+  [(gcι (ev e ρ σ κ (κ_1 ...)))
+   (ev e ρ_0 σ_0 κ (κ_1 ...))
    (where ρ_0 (↓ ρ (fv e)))
-   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ ι) (ll-κ ι_1) ...) σ)))]
-  [(gcι (co ι (ι_1 ...) (Clos x e ρ) σ))
-   (co ι (ι_1 ...) (Clos x e ρ_0) σ_0)
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ) (ll-κ κ_1) ...) σ)))]
+  [(gcι (co κ (κ_1 ...) (Clos x e ρ) σ))
+   (co κ (κ_1 ...) (Clos x e ρ_0) σ_0)
    (where ρ_0 (↓ ρ (fv e)))
-   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ ι) (ll-κ ι_1) ...) σ)))])
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ) (ll-κ κ_1) ...) σ)))])
 
 (define-metafunction Lι
   allocι : ς -> a
-  [(allocι (co ι κ v ([a ↦ _] ...)))
+  [(allocι (co κ ι v ([a ↦ _] ...)))
    ,(+ 1 (apply max -1
                 (filter integer?
                         (term (a ...)))))])
@@ -235,8 +233,8 @@
 
 (define-extended-language LιK Lι
   ;; Machine states
-  [ς (ev e ρ σ ι τ)
-     (co ι τ v σ)
+  [ς (ev e ρ σ κ τ)
+     (co κ τ v σ)
      (ans v σ)]   
   [τ (v v σ) ()]
     
@@ -258,21 +256,21 @@
    LιK
    #:domain ς
    ;; Eval transitions
-   [--> (ev x ρ σ ι τ) (co ι τ v σ)
+   [--> (ev x ρ σ κ τ) (co κ τ v σ)
         Var
         (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]   
    [--> (ev (App e_0 e_1) ρ σ (φ ...) τ)
         (ev e_0 ρ σ ((AppL e_1 ρ) φ ...) τ)
         AppL]
-   [--> (ev (Lam x e) ρ σ ι τ)
-        (co ι τ (Clos x e ρ) σ)
+   [--> (ev (Lam x e) ρ σ κ τ)
+        (co κ τ (Clos x e ρ) σ)
         Lam]
    ;; Continue transitions
    [--> (co () () v σ) (ans v σ) Halt]
    [--> (co () τ_0 v σ)
-        (co ι τ v σ)
+        (co κ τ v σ)
         (side-condition (not (empty? (term τ_0))))
-        (where (_ ... (ι τ) _ ...)
+        (where (_ ... (κ τ) _ ...)
                ,(set->list (hash-ref K (term τ_0))))]             
    [--> (co ((AppL e ρ) φ ...) τ v σ)
         (ev e ρ σ ((AppR v) φ ...) τ)
@@ -303,22 +301,15 @@
 (define (combine-K K0 Ks)
   (for*/fold ([K0 K0])
     ([K (in-set Ks)]
-     [(τ ιs) (in-hash K)])
+     [(τ κs) (in-hash K)])
     (hash-set K0 τ 
-              (set-union ιs (hash-ref K0 τ (set))))))
+              (set-union κs (hash-ref K0 τ (set))))))
   
 
 (define-metafunction LιK
-  allocιK : ς -> a
-  
+  allocιK : ς -> a  
   [(allocιK (co ((AppR (Clos x e ρ)) φ ...) τ_0 v σ))
-   x]
-  
-  #;
-  [(allocιK (co ι τ v ([a ↦ _] ...)))
-   ,(+ 1 (apply max -1
-                (filter integer?
-                        (term (a ...)))))])
+   x])
 
 ;; [Set ς] K -> [Set ς] K
 (define (step ςs K) 
