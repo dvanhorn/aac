@@ -24,7 +24,82 @@
   [φ (AppL e ρ) (AppR v)]
   ;; Addresses
   [(a b c) any])
-             
+
+
+(define-metafunction L
+  fv : e -> any
+  [(fv x) ,(set (term x))]
+  [(fv (App e_1 e_2))
+   ,(set-union (term (fv e_1))
+               (term (fv e_2)))]
+  [(fv (Lam x e))
+   ,(set-remove (term (fv e)) (term x))])
+
+(define-metafunction L
+  ↓ : fin any -> fin
+  [(↓ () any) ()]
+  [(↓ ((any_d ↦ any_r) any_0 ...) any)
+   ((any_d ↦ any_r) any_1 ...)
+   (where (any_1 ...) (↓ (any_0 ...) any))
+   (side-condition (set-member? (term any) (term any_d)))]
+  [(↓ (any_first any_rest ...) any)
+   (↓ (any_rest ...) any)])
+
+
+(define-term ∅ ,(set))
+
+(define-metafunction L
+  ∪ : any ... -> any
+  [(∪ any ...)
+   ,(apply set-union (term (∅ any ...)))])
+
+(define-metafunction L
+  gc : ς -> ς
+  [(gc (name ς (ev e ρ σ κ)))
+   (ev e ρ_0 σ_0 κ)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))]
+  [(gc (name ς (co κ (Clos x e ρ) σ)))
+   (co κ (Clos x e ρ_0) σ_0)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))])
+
+
+(define-metafunction L
+  live : any any σ -> any
+  [(live any_g any_b σ) 
+   any_b
+   (side-condition (set-empty? (term any_g)))]
+  [(live any_g any_b σ)
+   (live any_g0 any_b0 σ)
+   (where a ,(set-first (term any_g)))
+   (where any_g0 ,(set-subtract
+                   (term (∪ any_g (ll-a σ a)))
+                   (term (∪ any_b ,(set (term a))))))
+   (where any_b0 (∪ any_b ,(set (term a))))])
+
+
+(define-metafunction L
+  ll-a : σ a -> any
+  [(ll-a σ a)
+   (∪ (rng ρ) ...)
+   (where ((Clos x e ρ) ...) (lookup σ a))])
+
+
+(define-metafunction L
+  rng : fin -> any
+  [(rng ([any_0 ↦ any_1] ...))
+   ,(list->set (term (any_1 ...)))])
+
+(define-metafunction L
+  ll-κ : κ -> any
+  [(ll-κ ()) ∅]
+  [(ll-κ ((AppL e ρ) φ ...))
+   ,(set-union (term (rng ρ))
+               (term (ll-κ (φ ...))))]
+  [(ll-κ ((AppR (Clos x e ρ)) φ ...))
+   ,(set-union (term (rng ρ))
+               (term (ll-κ (φ ...))))])             
 
 ;; Abstract machine in eval/apply form
 (define -->_m
@@ -32,14 +107,14 @@
    L
    #:domain ς
    ;; Eval transitions
-   [--> (ev x ρ σ κ) (co κ v σ)
+   [--> (ev x ρ σ κ) (gc (co κ v σ))
         Var
-        (where v (lookup σ (lookup ρ x)))]
+        (where (_ ... v _ ...) (lookup σ (lookup ρ x)))] 
    [--> (ev (App e_0 e_1) ρ σ (φ ...))
-        (ev e_0 ρ σ ((AppL e_1 ρ) φ ...))
+        (ev e_0 (↓ ρ (fv e_0)) σ ((AppL e_1 (↓ ρ (fv e_1))) φ ...))
         AppL]
    [--> (ev (Lam x e) ρ σ κ)
-        (co κ (Clos x e ρ) σ)
+        (co κ (Clos x e (↓ ρ (fv e))) σ)
         Lam]
    ;; Continue transitions
    [--> (co () v σ) (ans v σ) Halt]
@@ -47,10 +122,10 @@
         (ev e ρ σ ((AppR v) φ ...))
         AppR]
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) v σ))
-        (ev e (ext ρ x a) (ext σ a v) (φ ...))
+        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) (φ ...))
         β
         (where a (alloc ς))]))
- 
+
 (define-metafunction L
   inj : e -> ς
   [(inj e) (ev e () () ())])
@@ -61,7 +136,7 @@
 ;; Visualize concete machine
 (define (viz e)
   (traces -->_m (term (inj ,e))))
- 
+
 (define-metafunction L
   lookup : fin any -> any
   [(lookup (_ ... [any_k ↦ any_v] _ ...) any_k) any_v])
@@ -300,6 +375,10 @@
 (define-values (myK myG)
   (analyze (term EG)))
 
+(viz (term EG))
+ 
+
+#;
 (visualize-graph myG (term (injι EG)))
 
 
