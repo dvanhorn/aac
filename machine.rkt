@@ -241,7 +241,16 @@
   [ςK ς K]
   
   ;; τ -> [Set (κ τ)]
-  [K (side-condition any_K (hash? (term any_K)))])
+  [K (side-condition any_K (hash? (term any_K)))]
+  
+  [τs (side-condition any_τs 
+                      (and (set? (term any_τs))
+                           (for/and ([x (in-set (term any_τs))])
+                             (redex-match? Lτ τ x))))]
+  [κs (side-condition any_κs 
+                      (and (set? (term any_κs))
+                           (for/and ([x (in-set (term any_κs))])
+                             (redex-match? Lτ κ x))))])
   
 
 (define-metafunction Lτ
@@ -259,25 +268,24 @@
 
 
 (define-metafunction Lτ
-  reach-τ : K any_τs-frontier any_τs-seen any_κs -> any_κs
-  [(reach-τ K any_τs-frontier any_τs-seen any_κs)
-   any_κs
-   (side-condition (set-empty? (term any_τs-frontier)))]
-  
-  [(reach-τ K any_τs-frontier any_τs-seen any_κs)
-   (reach-τ K ,(set-rest (term any_τs-frontier)) any_τs-seen any_κs)    
-   (where () ,(set-first (term any_τs-frontier)))]
-  
-  [(reach-τ K any_τs-frontier any_τs-seen any_κs)
-   (reach-τ K any_τs-frontier* any_τs-seen* any_κs*)
-   
-   (where τ ,(set-first (term any_τs-frontier)))
-   
+  reach-τ : K τs τs κs -> κs
+  [(reach-τ K τs_frontier τs_seen κs)
+   κs
+   (side-condition (set-empty? (term τs_frontier)))]
+
+  [(reach-τ K τs_frontier τs_seen κs)
+   (reach-τ K ,(set-rest (term τs_frontier)) τs_seen κs)
+   (where () ,(set-first (term τs_frontier)))]
+
+  [(reach-τ K τs_frontier τs_seen κs)
+   (reach-τ K τs_frontier* τs_seen* κs_*)
+   (where τ ,(set-first (term τs_frontier)))
    (where ((κ_1 τ_1) ...) ,(set->list (hash-ref (term K) (term τ))))
-   (where any_κs* (∪ any_κs ,(list->set (term (κ_1 ...)))))
-   (where any_τs-seen* (∪ any_τs-seen ,(set (term τ))))
-   (where any_τs-frontier* ,(set-subtract (term (∪ any_τs-frontier ,(list->set (term (τ_1 ...)))))
-                                          (term (∪ any_τs-seen ,(set (term τ))))))])
+   (where κs_* (∪ κs ,(list->set (term (κ_1 ...)))))
+   (where τs_seen* (∪ τs_seen ,(set (term τ))))
+   (where τs_frontier*
+          ,(set-subtract (term (∪ τs_frontier ,(list->set (term (τ_1 ...)))))
+                         (term (∪ τs_seen ,(set (term τ))))))])
 
 (define-metafunction Lτ
   r : K τ -> (κ ...)
