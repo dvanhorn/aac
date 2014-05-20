@@ -297,7 +297,7 @@
    Lτ
    #:domain ς
    ;; Eval transitions
-   [--> (ev x ρ σ κ τ) (co κ τ v σ)
+   [--> (ev x ρ σ κ τ) (gcτ (co κ τ v σ) ,K)
         Var
         (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]   
    [--> (ev (App e_0 e_1) ρ σ (φ ...) τ)
@@ -317,10 +317,15 @@
         (ev e ρ σ ((AppR v) φ ...) τ)
         AppR]
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) τ_0 v σ))
-        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () τ)
+        (gcτ (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () τ) K_1)
         β
         (where τ ((Clos x e ρ) v σ))
-        (where a (allocτ ς))]))
+        (where a (allocτ ς))
+        
+        (where K_1 ,(hash-join K (term τ) (term ((φ ...) τ_0))))]))
+
+(define (hash-join h k v)
+  (hash-set h k (set-add (hash-ref h k (set)) v)))
 
 (define-metafunction Lτ
   ⊔ : σ a s -> σ
@@ -377,17 +382,11 @@
     (cond [(set-empty? ςs) (values K G)]
           [else
            (define-values (ςs1 K1) (step ςs K))
-           ;(printf "ςs: ~a~nK: ~a~n~n" ςs1 K1)
            (loop (set-union seen ςs)
                  (set-subtract ςs1 seen)
                  K1                 
                  (update-graph G (-->_mτ K) ςs))])))
                  
-
-#;
-(define-values (myK myG)
-  (analyze (term (App (Lam y (App y y)) 
-                      (Lam x (App x x))))))
 
 (define (visualize-graph G root)
   (define-language FOO)
@@ -424,12 +423,12 @@
 (test-->> -->_mι (term (injι (App (Lam x ZERO) ONE)))
           (term (ans (Clos zero zero ()) ())))
 
-
-
-(visualize-graph myG (term (injι EG)))
-
 (test-->>∃ -->_m (term (inj EG))
            (redex-match L (ans (Clos one one ()) ())))
 
 (test-->>∃ -->_mι (term (injι EG))
            (redex-match Lι (ans (Clos one one ()) σ)))
+
+
+;; Note: you get exact computation with GC on this one!
+(visualize-graph myG (term (injι EG)))
