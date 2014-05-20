@@ -231,7 +231,7 @@
             (Lam y y)))
 
 
-(define-extended-language LιK Lι
+(define-extended-language Lτ Lι
   ;; Machine states
   [ς (ev e ρ σ κ τ)
      (co κ τ v σ)
@@ -240,30 +240,71 @@
     
   [ςK ς K]
   
-  ;; τ -> [Set (ι τ)]
+  ;; τ -> [Set (κ τ)]
   [K (side-condition any_K (hash? (term any_K)))])
   
+
+(define-metafunction Lτ
+  gcτ : ς K -> ς
+  [(gcτ (ev e ρ σ κ τ) K)
+   (ev e ρ_0 σ_0 κ τ)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where (κ_0 ...) (r K τ))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ) (ll-κ κ_0) ...) σ)))]
+  [(gcτ (co κ τ (Clos x e ρ) σ) K)
+   (co κ τ (Clos x e ρ_0) σ_0)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where (κ_0 ...) (r K τ))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ) (ll-κ κ_0) ...) σ)))])
+
+
+(define-metafunction Lτ
+  reach-τ : K any_τs-frontier any_τs-seen any_κs -> any_κs
+  [(reach-τ K any_τs-frontier any_τs-seen any_κs)
+   any_κs
+   (side-condition (set-empty? (term any_τs-frontier)))]
+  
+  [(reach-τ K any_τs-frontier any_τs-seen any_κs)
+   (reach-τ K ,(set-rest (term any_τs-frontier)) any_τs-seen any_κs)    
+   (where () ,(set-first (term any_τs-frontier)))]
+  
+  [(reach-τ K any_τs-frontier any_τs-seen any_κs)
+   (reach-τ K any_τs-frontier* any_τs-seen* any_κs*)
+   
+   (where τ ,(set-first (term any_τs-frontier)))
+   
+   (where ((κ_1 τ_1) ...) ,(set->list (hash-ref (term K) (term τ))))
+   (where any_κs* (∪ any_κs ,(list->set (term (κ_1 ...)))))
+   (where any_τs-seen* (∪ any_τs-seen ,(set (term τ))))
+   (where any_τs-frontier* ,(set-subtract (term (∪ any_τs-frontier ,(list->set (term (τ_1 ...)))))
+                                          (term (∪ any_τs-seen ,(set (term τ))))))])
+
+(define-metafunction Lτ
+  r : K τ -> (κ ...)
+  [(r K τ)
+   ,(set->list (term (reach-τ K ,(set (term τ)) ∅ ∅)))])
+
 (define update-K
   (reduction-relation
-   LιK
+   Lτ
    #:domain ςK
    [--> (co ((AppR v_f) φ ...) τ_0 v σ)
         ,(hash (term τ) (set (term ((φ ...) τ_0))))
         (where τ (v_f v σ))]))
    
-(define (-->_mιK K)
+(define (-->_mτ K)
   (reduction-relation
-   LιK
+   Lτ
    #:domain ς
    ;; Eval transitions
    [--> (ev x ρ σ κ τ) (co κ τ v σ)
         Var
         (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]   
    [--> (ev (App e_0 e_1) ρ σ (φ ...) τ)
-        (ev e_0 ρ σ ((AppL e_1 ρ) φ ...) τ)
+        (ev e_0 (↓ ρ (fv e_0)) σ ((AppL e_1 (↓ ρ (fv e_1))) φ ...) τ)
         AppL]
    [--> (ev (Lam x e) ρ σ κ τ)
-        (co κ τ (Clos x e ρ) σ)
+        (co κ τ (Clos x e (↓ ρ (fv e))) σ)
         Lam]
    ;; Continue transitions
    [--> (co () () v σ) (ans v σ) Halt]
@@ -276,12 +317,12 @@
         (ev e ρ σ ((AppR v) φ ...) τ)
         AppR]
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) τ_0 v σ))
-        (ev e (ext ρ x a) (⊔ σ a v) () τ)
+        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () τ)
         β
         (where τ ((Clos x e ρ) v σ))
-        (where a (allocιK ς))]))
+        (where a (allocτ ς))]))
 
-(define-metafunction LιK
+(define-metafunction Lτ
   ⊔ : σ a s -> σ
   [(⊔ (name σ (any_1 ... [a ↦ (_ ... s_i _ ...)] any_2 ...)) a s_i)
    σ]
@@ -306,14 +347,14 @@
               (set-union κs (hash-ref K0 τ (set))))))
   
 
-(define-metafunction LιK
-  allocιK : ς -> a  
-  [(allocιK (co ((AppR (Clos x e ρ)) φ ...) τ_0 v σ))
+(define-metafunction Lτ
+  allocτ : ς -> a  
+  [(allocτ (co ((AppR (Clos x e ρ)) φ ...) τ_0 v σ))
    x])
 
 ;; [Set ς] K -> [Set ς] K
 (define (step ςs K) 
-  (values (set-apply-reduction-relation (-->_mιK K) ςs)
+  (values (set-apply-reduction-relation (-->_mτ K) ςs)
           (combine-K K (set-apply-reduction-relation update-K ςs))))
 
 
@@ -340,7 +381,7 @@
            (loop (set-union seen ςs)
                  (set-subtract ςs1 seen)
                  K1                 
-                 (update-graph G (-->_mιK K) ςs))])))
+                 (update-graph G (-->_mτ K) ςs))])))
                  
 
 #;
@@ -383,7 +424,8 @@
 (test-->> -->_mι (term (injι (App (Lam x ZERO) ONE)))
           (term (ans (Clos zero zero ()) ())))
 
-#;
+
+
 (visualize-graph myG (term (injι EG)))
 
 (test-->>∃ -->_m (term (inj EG))
