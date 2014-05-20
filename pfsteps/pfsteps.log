@@ -1,0 +1,425 @@
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2010.5.7)  4 JAN 2012 17:45
+entering extended mode
+ %&-line parsing enabled.
+**pfsteps.dtx
+(./pfsteps.dtx
+LaTeX2e <2005/12/01>
+Babel <v3.8h> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, loaded.
+(/usr/share/texmf-texlive/tex/latex/base/ltxdoc.cls
+Document Class: ltxdoc 1999/08/08 v2.0u Standard LaTeX documentation class
+(/usr/share/texmf-texlive/tex/latex/base/article.cls
+Document Class: article 2005/09/16 v1.4f Standard LaTeX document class
+(/usr/share/texmf-texlive/tex/latex/base/size10.clo
+File: size10.clo 2005/09/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf-texlive/tex/latex/base/doc.sty
+Package: doc 2006/02/02 v2.1d Standard LaTeX documentation package (FMi)
+\c@StandardModuleDepth=\count87
+\guard@level=\count88
+\MacrocodeTopsep=\skip43
+\MacroIndent=\dimen103
+\macro@cnt=\count89
+\MacroTopsep=\skip44
+\index@excludelist=\toks14
+
+(/usr/share/texmf-texlive/tex/latex/tools/multicol.sty
+Package: multicol 2006/05/18 v1.6g multicolumn formatting (FMi)
+\c@tracingmulticols=\count90
+\mult@box=\box26
+\multicol@leftmargin=\dimen104
+\c@unbalance=\count91
+\c@collectmore=\count92
+\doublecol@number=\count93
+\multicoltolerance=\count94
+\multicolpretolerance=\count95
+\full@width=\dimen105
+\page@free=\dimen106
+\premulticols=\dimen107
+\postmulticols=\dimen108
+\multicolsep=\skip45
+\multicolbaselineskip=\skip46
+\partial@page=\box27
+\last@line=\box28
+\mult@rightbox=\box29
+\mult@grightbox=\box30
+\mult@gfirstbox=\box31
+\mult@firstbox=\box32
+\@tempa=\box33
+\@tempa=\box34
+\@tempa=\box35
+\@tempa=\box36
+\@tempa=\box37
+\@tempa=\box38
+\@tempa=\box39
+\@tempa=\box40
+\@tempa=\box41
+\@tempa=\box42
+\@tempa=\box43
+\@tempa=\box44
+\@tempa=\box45
+\@tempa=\box46
+\@tempa=\box47
+\@tempa=\box48
+\@tempa=\box49
+\c@columnbadness=\count96
+\c@finalcolumnbadness=\count97
+\last@try=\dimen109
+\multicolovershoot=\dimen110
+\multicolundershoot=\dimen111
+\mult@nat@firstbox=\box50
+\colbreak@box=\box51
+)
+\IndexMin=\dimen112
+\c@IndexColumns=\count98
+\GlossaryMin=\dimen113
+\c@GlossaryColumns=\count99
+\check@sum=\count100
+\bslash@cnt=\count101
+\wrong@table=\toks15
+\c@CodelineNo=\count102
+)) (./pfsteps.sty
+Package: pfsteps 2011/04/04 v0.4 proof tools
+
+(./listproc.sty
+Package: listproc 2011/03/26 v0.1 (list processing)
+\lstp@ta=\toks16
+\lstp@tb=\toks17
+\c@lstp@ifsucc=\count103
+\c@lstp@FormatList@length=\count104
+\c@lstp@FormatList@posn=\count105
+)
+\c@pfsteps@pfc@global=\count106
+\c@pfsteps@pfc@local=\count107
+\proofleftskip=\skip47
+\proofrightwidth=\skip48
+) (/usr/share/texmf-texlive/tex/latex/oberdiek/hypdoc.sty
+Package: hypdoc 2006/06/02 v1.4 Hyper extensions for doc.sty (HO)
+
+(/usr/share/texmf-texlive/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2007/02/07 v6.75r Hypertext links for LaTeX
+
+(/usr/share/texmf-texlive/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks18
+)
+\@linkdim=\dimen114
+\Hy@linkcounter=\count108
+\Hy@pagecounter=\count109
+
+(/usr/share/texmf-texlive/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2007/02/07 v6.75r Hyperref: PDFDocEncoding definition (HO)
+)
+(/etc/texmf/tex/latex/config/hyperref.cfg
+File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive
+)
+(/usr/share/texmf-texlive/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2006/08/22 v2.4 Connects package keyval with LaTeX options (
+HO)
+)
+Package hyperref Info: Option `hyperindex' set `false' on input line 2238.
+Package hyperref Info: Option `pdfusetitle' set `true' on input line 2238.
+Package hyperref Info: Option `colorlinks' set `true' on input line 2238.
+Package hyperref Info: Option `pdfpagelabels' set `true' on input line 2238.
+Package hyperref Info: Hyper figures OFF on input line 2288.
+Package hyperref Info: Link nesting OFF on input line 2293.
+Package hyperref Info: Hyper index OFF on input line 2298.
+Package hyperref Info: Plain pages OFF on input line 2303.
+Package hyperref Info: Backreferencing OFF on input line 2308.
+
+Implicit mode ON; LaTeX internals redefined
+Package hyperref Info: Bookmarks ON on input line 2444.
+(/usr/share/texmf-texlive/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 2599.
+\Fld@menulength=\count110
+\Field@Width=\dimen115
+\Fld@charsize=\dimen116
+\Choice@toks=\toks19
+\Field@toks=\toks20
+Package hyperref Info: Hyper figures OFF on input line 3102.
+Package hyperref Info: Link nesting OFF on input line 3107.
+Package hyperref Info: Hyper index OFF on input line 3112.
+Package hyperref Info: backreferencing OFF on input line 3117.
+Package hyperref Info: Link coloring ON on input line 3120.
+\Hy@abspage=\count111
+\c@Item=\count112
+\c@Hfootnote=\count113
+)
+*hyperref using default driver hpdftex*
+(/usr/share/texmf-texlive/tex/latex/hyperref/hpdftex.def
+File: hpdftex.def 2007/02/07 v6.75r Hyperref driver for pdfTeX
+\Fld@listcount=\count114
+)
+Package hyperref Info: Option `plainpages' set `false' on input line 55.
+Package hyperref Info: Option `bookmarksopen' set `true' on input line 55.
+Package hyperref Info: Option `bookmarksnumbered' set `true' on input line 55.
+
+(/usr/share/texmf-texlive/tex/generic/thumbpdf/thumbpdf.sty
+Package: thumbpdf 2005/07/06 v3.8 Inclusion of thumbnails (HO)
+
+
+Package thumbpdf Warning: Thumbnail data file `pfsteps.tpt' not found.
+
+)
+\c@HD@unique=\count115
+\c@HD@hypercount=\count116
+\HD@helplength=\skip49
+)
+\@indexfile=\write3
+\openout3 = `pfsteps.idx'.
+
+
+Writing index file pfsteps.idx
+\@glossaryfile=\write4
+\openout4 = `pfsteps.glo'.
+
+Writing glossary file pfsteps.glo 
+(./pfsteps.aux)
+\openout1 = `pfsteps.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 63.
+LaTeX Font Info:    ... okay on input line 63.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 63.
+LaTeX Font Info:    ... okay on input line 63.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 63.
+LaTeX Font Info:    ... okay on input line 63.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 63.
+LaTeX Font Info:    ... okay on input line 63.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 63.
+LaTeX Font Info:    ... okay on input line 63.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 63.
+LaTeX Font Info:    ... okay on input line 63.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 63.
+LaTeX Font Info:    ... okay on input line 63.
+Package doc Info: Made | a short reference for \verb on input line 63.
+ (/usr/share/texmf-texlive/tex/latex/graphics/color.sty
+Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
+
+(/etc/texmf/tex/latex/config/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package color Info: Driver file: pdftex.def on input line 130.
+
+(/usr/share/texmf-texlive/tex/latex/pdftex-def/pdftex.def
+File: pdftex.def 2007/01/08 v0.04d Graphics/color for pdfTeX
+\Gread@gobject=\count117
+
+(/usr/share/texmf/tex/context/base/supp-pdf.tex
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count118
+\scratchdimen=\dimen117
+\scratchbox=\box52
+\nofMPsegments=\count119
+\nofMParguments=\count120
+\everyMPshowfont=\toks21
+\MPscratchCnt=\count121
+\MPscratchDim=\dimen118
+\MPnumerator=\count122
+\everyMPtoPDFconversion=\toks22
+)))
+Package hyperref Info: Link coloring ON on input line 63.
+ (/usr/share/texmf-texlive/tex/latex/hyperref/nameref.sty
+Package: nameref 2006/12/27 v2.28 Cross-referencing by name of section
+
+(/usr/share/texmf-texlive/tex/latex/oberdiek/refcount.sty
+Package: refcount 2006/02/20 v3.0 Data extraction from references (HO)
+)
+\c@section@level=\count123
+)
+LaTeX Info: Redefining \ref on input line 63.
+LaTeX Info: Redefining \pageref on input line 63.
+ (./pfsteps.out)
+(./pfsteps.out)
+\@outlinefile=\write5
+\openout5 = `pfsteps.out'.
+
+ (./pfsteps.hd)
+\HD@savedest@out=\write6
+\openout6 = `pfsteps.hd'.
+
+ (./pfsteps.dtx
+File: pfsteps 2011/04/04 v0.4 proof tools
+
+***************************
+* Character table correct *
+***************************
+\c@macrosenv=\count124
+\lguilbox=\box53
+\rguilbox=\box54
+\bulbox=\box55
+\lguillen=\skip50
+\rguillen=\skip51
+\bullen=\skip52
+\ttcharlen=\skip53
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 204.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 204.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 204.
+(./pfsteps.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 5.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 5.
+)
+\tf@toc=\write7
+\openout7 = `pfsteps.toc'.
+
+ [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2]
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <10> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 318.
+
+[3] [4]
+Overfull \hbox (5.46257pt too wide) in paragraph at lines 491--499
+\OT1/cmr/m/n/10 Make a list of num-bered proof steps. Each []\OT1/cmtt/m/n/10 \
+item \OT1/cmr/m/n/10 is num-bered us-ing [][]\OT1/cmtt/m/n/10 \usepfcounter[][]
+[]\OT1/cmr/m/n/10 ,
+ []
+
+[5] [6pdfTeX warning (ext4): destination with the same identifier (name{macro:i
+tem}) has been already used, duplicate ignored
+<to be read again> 
+                   \endgroup \set@typeset@protect 
+l.550 %   \defmacro
+                   {pfstepsmathmode} \\pdfTeX warning (ext4): destination with 
+the same identifier (name{macro:BY}) has been already used, duplicate ignored
+<to be read again> 
+                   \endgroup \set@typeset@protect 
+l.550 %   \defmacro
+                   {pfstepsmathmode} \\]
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <12> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 580.
+pdfTeX warning (ext4): destination with the same identifier (name{macro:item}) 
+has been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.596 %     \defmacro{item}
+                            \oarg{math} \meta{text} [7pdfTeX warning (ext4): de
+stination with the same identifier (name{macro:BY}) has been already used, dupl
+icate ignored
+<to be read again> 
+                   \endgroup \set@typeset@protect 
+l.611 %
+       pdfTeX warning (ext4): destination with the same identifier (name{macro:
+BY}) has been already used, duplicate ignored
+<to be read again> 
+                   \endgroup \set@typeset@protect 
+l.611 %
+       ]
+Overfull \hbox (6.49042pt too wide) in paragraph at lines 612--616
+\OT1/cmr/m/n/10 head but be-fore the line break. The de-fault value is [][]\OT1
+/cmtt/m/n/10 \byCasesEveryCase[][][]\OT1/cmr/m/n/10 . 
+ []
+
+
+Overfull \hbox (32.74019pt too wide) in paragraph at lines 623--627
+\OT1/cmr/m/n/10 head but be-fore the line break. The de-fault value is [][]\OT1
+/cmtt/m/n/10 \byCasesEveryOtherwise[][][]\OT1/cmr/m/n/10 . 
+ []
+
+
+Overfull \hbox (45.70119pt too wide) in paragraph at lines 647--652
+\OT1/cmr/m/n/10 tion, which will be printed af-ter the in-fer-ence rule like ``
+ \OT1/cmr/bx/n/10 where []\OT1/cmtt/m/n/10 $$\OMS/cmsy/m/n/10 h$[]\OT1/cmr/m/it
+/10 where-clause$\OMS/cmsy/m/n/10 i$[][]\OT1/cmtt/m/n/10 $\OT1/cmr/bx/n/10 .\OT
+1/cmr/m/n/10 ''
+ []
+
+[8]
+Overfull \hbox (36.0861pt too wide) in paragraph at lines 702--707
+[]\OT1/cmr/m/n/10 These macros make it easy to add pack-age op-tions. Each use 
+of []\OT1/cmtt/m/n/10 \pfsteps@option{$\OMS/cmsy/m/n/10 h$[]\OT1/cmr/m/it/10 na
+me$\OMS/cmsy/m/n/10 i$[]\OT1/cmtt/m/n/10 }
+ []
+
+[9]
+Missing character: There is no â in font cmr10!
+Missing character: There is no € in font cmr10!
+Missing character: There is no ™ in font cmr10!
+ [10] [11] [12] [13]
+Overfull \hbox (23.47362pt too wide) in paragraph at lines 1050--1050
+ [][]\OT1/cmtt/m/n/9 \newcommand\pfsteps@unmath[1]{\ifmmode$\relax#1\relax$\els
+e\relax#1\relax\fi} 
+ []
+
+[14]
+Missing character: There is no Â in font cmtt9!
+Missing character: There is no » in font cmtt9!
+Missing character: There is no Â in font cmtt9!
+Missing character: There is no « in font cmtt9!
+Missing character: There is no Â in font cmtt9!
+Missing character: There is no » in font cmtt9!
+Missing character: There is no â in font cmtt9!
+Missing character: There is no € in font cmtt9!
+Missing character: There is no ¢ in font cmtt9!
+ [15] [16] (./pfsteps.gls) [17] (./pfsteps.ind
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <9> on input line 25.
+ [18
+
+]
+Overfull \hbox (5.20367pt too wide) in paragraph at lines 341--344
+[][]\OT1/cmtt/m/n/9 \pfsteps@unicode@startpfsteps@kont   
+ []
+
+[19])
+*******************
+* Checksum passed *
+*******************
+) [20] (./pfsteps.aux) )
+(\end occurred when \ifx on line 725 was incomplete) 
+Here is how much of TeX's memory you used:
+ 4121 strings out of 95086
+ 52126 string characters out of 1183256
+ 115896 words of memory out of 1500000
+ 6918 multiletter control sequences out of 10000+50000
+ 11864 words of font info for 43 fonts, out of 1200000 for 2000
+ 28 hyphenation exceptions out of 8191
+ 31i,9n,37p,287b,564s stack positions out of 5000i,500n,6000p,200000b,5000s
+pdfTeX warning (dest): name
+{option:byCasesWhereTemplate} has been referenced but does not exist, replaced 
+by a fixed one
+
+</usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmbx10.pfb></usr/share/texmf-t
+exlive/fonts/type1/bluesky/cm/cmbx12.pfb></usr/share/texmf-texlive/fonts/type1/
+bluesky/cm/cmbx9.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmmi10.pf
+b></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmmi7.pfb></usr/share/texmf-
+texlive/fonts/type1/bluesky/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/
+bluesky/cm/cmr12.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmr17.pfb
+></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmr6.pfb></usr/share/texmf-te
+xlive/fonts/type1/bluesky/cm/cmr7.pfb></usr/share/texmf-texlive/fonts/type1/blu
+esky/cm/cmr8.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmr9.pfb></us
+r/share/texmf-texlive/fonts/type1/bluesky/cm/cmss10.pfb></usr/share/texmf-texli
+ve/fonts/type1/bluesky/cm/cmss12.pfb></usr/share/texmf-texlive/fonts/type1/blue
+sky/cm/cmss17.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmss8.pfb></
+usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmsy10.pfb></usr/share/texmf-tex
+live/fonts/type1/bluesky/cm/cmsy5.pfb></usr/share/texmf-texlive/fonts/type1/blu
+esky/cm/cmsy7.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmti10.pfb><
+/usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmti9.pfb></usr/share/texmf-tex
+live/fonts/type1/bluesky/cm/cmtt10.pfb></usr/share/texmf-texlive/fonts/type1/bl
+uesky/cm/cmtt12.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmtt8.pfb>
+</usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmtt9.pfb>
+Output written on pfsteps.pdf (20 pages, 328384 bytes).
+PDF statistics:
+ 1135 PDF objects out of 1200 (max. 8388607)
+ 347 named destinations out of 1000 (max. 131072)
+ 321 words of extra memory for PDF output out of 10000 (max. 10000000)
+

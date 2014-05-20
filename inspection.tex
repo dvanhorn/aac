@@ -1,9 +1,44 @@
 Some semantic features allow a language to inspect some arbitrarily deep part of the stack, or compute a property of the whole stack before continuing.
+%
 Java's access control security features are an example of the first form of inspection, and garbage collection is an example of the second.
-These features are easily modeled wit
-$\mktab$ forms a regular language of stacks for every context.
+%
+Recursive meta-functions that inspect the stack can be thought of as out-of-band reduction relations that match rules in order until one fires, repeatedly until a return value is produced.
+%
+Interpreted via AAM, non-deterministic meta-function evaluation leads to a set of possible results.
+%
+The finite restriction on the state space carries over to meta-function inputs, so we can always detect infinite loops and bail out of that execution path.
 
+Garbage collection, for example, needs to crawl the stack for live addresses.
+The following function will produce the set of live addresses in the stack:
 
- If we have a regular language of acceptable stacks to continue down some path, we can perform a non-emptiness check of the intersection of that language and the language that $\mktab$ defines for the current context.
+\begin{align*}
+  \kontlive(\makont) &= \kontliveaux(\makont,\emptyset) \\[2pt]
+  \kontliveaux(\epsilon,L) &= L \\
+  \kontliveaux(\kcons{\mkframe}{\makont}, L) &= \kontliveaux(\makont, L\cup\touches(\mkframe))
+\end{align*}
 
-\todo{DVH}
+When interpreted via AAM, the continuation is indirected through $K$ and leads to multiple results, and possibly loops through $K$.
+%
+Thus this is more properly understood as
+\begin{align*}
+  \kontlive(K,\makont) &= \terminal(\overline{\stepto},\kontliveaux(K,\makont,\emptyset)) \\[2pt]
+  \kontliveaux(K,\epsilon,L) &\stepto_0 L \\
+  \kontliveaux(K,\kcons{\mkframe}{\makont}, L) &\stepto_1 \kontliveaux(K,\makont, L\cup\touches(\mkframe)) \\
+  \kontliveaux(K,\mctx, L) &\stepto_2 \kontliveaux(K,\makont,L) \text{ if } \makont \in K(\mctx)
+\end{align*}
+
+where $\terminal$ is a metafunction that produces the set of irreducible terms of an input list of relations given a starting point:\footnote{We use Dijkstra's ``if $g$ then $t$ else $e$'' syntax, $g \to t, e$.}
+\begin{align*}
+  \terminal(\overline{R},s) &= \terminalaux(\set{s},\set{s},\emptyset) \\[2pt]
+  \text{where } \terminalaux(S, \emptyset, T) &= T \\
+   \terminalaux(S, F \uplus \set{s}, T) &= \terminalaux(S\cup I, F \cup (I \setminus S), T') \\
+   & \text{where } (I',T') = \trystep(\overline{R}) \\
+   \trystep(\epsilon) &= (\emptyset,T\cup\set{s}) \\
+   \trystep(\stepto:\overline{R}) &= I\deceq\emptyset \to \trystep(\overline{R}), (I, T) \\
+    & \text{where } I = \setbuild{s'}{s \stepto s'}
+\end{align*}
+%
+A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.
+%
+On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hopes that the state space will be smaller.
+%
