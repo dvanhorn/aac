@@ -1,0 +1,9 @@
+Pushdown analysis improves upon finite-state analysis in precision and performance by not exploring spurious paths caused by improperly matched calls and returns.
+%
+Prior literature on pushdown higher-order flow analysis depends on complicated machinery that is difficult to understand, extend, and prove correct.
+%
+The machinery has no concrete counterpart---there is little to no operational intuition as to why it works.
+%
+We show that these pushdown analyses have a similar core that can be explained with well-known techniques such as memoization and Abstracting Abstract Machines (AAM).
+%
+We use this interpretation to derive novel pushdown analyses for delimited, composable first-class control operators \texttt{shift} and \texttt{reset}.

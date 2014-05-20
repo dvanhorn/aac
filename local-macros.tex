@@ -1,0 +1,211 @@
+\newcommand{\todo}[1]{\textbf{TODO:} #1}
+\newcommand{\iftr}[1]{#1}
+
+\newcommand{\eg}{\textit{e.g.}}
+\newcommand{\ie}{\textit{i.e.}}
+
+\newcommand{\nat}{{\mathbb N}}
+% Metavariables from defined spaces
+\newcommand{\mexpr}{e}
+\newcommand{\mexpri}[1]{e_{#1}}
+\newcommand{\mvar}{x}
+\newcommand{\mval}{v}
+\newcommand{\mvalpre}{v_\mathit{pre}}
+\newcommand{\mvalpost}{v_\mathit{post}}
+\newcommand{\mtag}{v_{\mathit{t}}}
+\newcommand{\mhandler}{v_\mathit{h}}
+\newcommand{\maddr}{a}
+\newcommand{\maddralt}{b}
+\newcommand{\menv}{\rho}
+\newcommand{\mstore}{\sigma}
+\newcommand{\mkont}{\kappa}
+\newcommand{\mskont}{\hat{\kappa}}
+\newcommand{\mmkontacc}{C_\mathit{acc}}
+\newcommand{\mmkont}{C}
+\newcommand{\mstate}{\varsigma}
+\newcommand{\mastate}{\hat\varsigma}
+
+\newcommand{\mtime}{t}
+\newcommand{\mtimealt}{u}
+
+\newcommand{\mmarks}{m}
+\newcommand{\mmarkset}{\chi}
+\newcommand{\mprim}{\mathit{prim}}
+
+\newcommand{\mktab}{\Xi}
+\newcommand{\mmktab}{\chi}
+\newcommand{\mmemo}{M}
+\newcommand{\mpoint}{p}
+\newcommand{\mctx}{\mathit{ctx}}
+\newcommand{\msctx}{\mathit{vctx}}
+\newcommand{\mframe}{\xi}
+\newcommand{\mkframe}{\phi}
+\newcommand{\mlab}{\ell}
+\newcommand{\mtrace}{\pi}
+
+\newcommand{\callcc}{\rackett{call/cc}}
+\newcommand{\callcomp}{\rackett{call/comp}}
+\newcommand{\abort}{\rackett{abort}}
+\newcommand{\dynamicwind}{\rackett{dynamic-wind}}
+
+% Metavariables for Spaces
+\newcommand{\CEK}{\mathit{CEK}}
+\newcommand{\CESKstart}{\mathit{CESK^*_t}}
+
+\newcommand{\Var}{\mathit{Var}}
+
+\newcommand{\Addr}{\mathit{Addr}}
+\newcommand{\Time}{\mathit{Time}}
+
+\newcommand{\Expr}{\mathit{Expr}}
+\newcommand{\Store}{\mathit{Store}}
+\newcommand{\Kont}{\mathit{Kont}}
+\newcommand{\SKont}{\widehat{\mathit{Kont}}}
+\newcommand{\MKont}{\mathit{MKont}}
+\newcommand{\Env}{\mathit{Env}}
+\newcommand{\State}{\mathit{State}}
+\newcommand{\System}{\mathit{System}}
+\newcommand{\Value}{\mathit{Value}}
+\newcommand{\Prims}{\mathit{Prims}}
+
+\newcommand{\maenv}{\hat{\menv}}
+\newcommand{\makont}{\hat{\mkont}}
+
+\newcommand{\Context}{\mathit{Context}}
+\newcommand{\SContext}{\mathit{VContext}}
+
+\newcommand{\Point}{\mathit{Point}}
+\newcommand{\Frame}{\mathit{Frame}}
+\newcommand{\Marks}{\mathit{Marks}}
+\newcommand{\Markset}{\mathit{Markset}}
+
+\newcommand{\KTab}{\mathit{Stack}}
+\newcommand{\MKTab}{\mathit{MStack}}
+\newcommand{\Memo}{\mathit{Memo}}
+
+% Other metavariables (metafunction names, etc)
+\newcommand{\inject}{\mathit{inject}}
+
+\newcommand{\alloc}{\mathit{alloc}}
+\newcommand{\tick}{\mathit{tick}}
+
+\newcommand{\bind}{{\mathcal B}}
+\newcommand{\lookup}{{\mathcal L}}
+\newcommand{\wn}{\mathit{wn}}
+\newcommand{\dom}{\text{dom}}
+\newcommand{\onep}{\mathit{One?}}
+\newcommand{\reverse}{\mathit{reverse}}
+\newcommand{\revapp}{\mathit{rev\text{-}append}}
+\newcommand{\finalize}{\mathit{finalize}}
+\newcommand{\captureupto}{\mathit{capture\text{-}upto}}
+\newcommand{\aborttargets}{\mathit{abort\text{-}targets}}
+
+\newcommand{\startstate}{\mathit{base}}
+\newcommand{\tails}[2]{\mathit{tails}_{#1}(#2)}
+\newcommand{\tailscont}[3]{\mathit{tails}_{#1}^{#2}(#3)}
+\newcommand{\reify}{\mathit{reify}}
+\newcommand{\reflect}{\mathit{reflect}}
+\newcommand{\reachrestrict}{\mathit{unfold}}
+\newcommand{\stepextend}{\mathit{unfold}_1}
+
+\newcommand{\domark}{\mathit{mark}}
+\newcommand{\domarkset}{\mathit{markset}}
+\newcommand{\returns}{{\mathbb R}}
+\newcommand{\memoize}{{\mathbb M}}
+\newcommand{\approximate}{{\mathbb A}}
+\newcommand{\touches}{{\mathcal T}}
+\newcommand{\touchesf}{{\mathcal T}_{\mkframe}}
+\newcommand{\touchesk}[1]{{\mathcal T}_{#1}}
+\newcommand{\reaches}{{\mathcal R}}
+\newcommand{\konts}{\mathit{konts}}
+
+\newcommand{\inv}{\mathit{inv}}
+\newcommand{\reachable}{\mathit{reach}}
+\newcommand{\memo}{\mathit{memo}}
+\newcommand{\unroll}[2]{\mathit{unroll}_{#1}(#2)}
+\newcommand{\unrollK}[3]{\mathit{unrollK}^{#1}_{#2}(#3)}
+\newcommand{\unrollC}[2]{\mathit{unrollC}_{#1}(#2)}
+\newcommand{\hastail}{\mathit{ht}}
+\newcommand{\replacetail}{\mathit{rt}}
+
+% Constructors
+\newcommand{\svar}[2][{}]{#2^{#1}}
+\newcommand{\sapp}[3][{}]{(#2\ #3)#1}
+\newcommand{\slam}[3][{}]{\lambda#1 #2. #3}
+\newcommand{\sprim}[1]{#1}
+\newcommand{\sreset}[1]{(\texttt{reset}\ #1)}
+\newcommand{\sshift}[2]{(\texttt{shift}\ #1. #2)}
+
+\newcommand{\swcm}[3]{(\texttt{wcm}\ #1\ #2\ #3)}
+\newcommand{\sccms}{(\texttt{ccm})}
+\newcommand{\scmsf}{\texttt{cms-first}}
+\newcommand{\scmsl}[2]{(\texttt{cms->list}\ #1\ #2)}
+
+\newcommand{\cons}[2]{(\texttt{cons}\ #1\ #2)}
+\newcommand{\smarkset}[1]{(\texttt{mark-set}\ #1)}
+
+\newcommand{\vcont}[1]{\mathbf{cont}(#1)}
+\newcommand{\vcomp}[1]{\mathbf{comp}(#1)}
+\newcommand{\vclo}[2]{(#1, #2)}
+\newcommand{\kar}[2][{}]{\mathbf{ar}#1(#2)}
+\newcommand{\kpush}[1]{\mathbf{push}(#1)}
+\newcommand{\klet}[1]{\mathbf{lt}(#1)}
+\newcommand{\kfn}[2][{}]{\mathbf{fn}#1(#2)}
+\newcommand{\kwcm}[1]{\mathbf{km}(#1)}
+\newcommand{\kwcmk}[1]{\mathbf{kw1}(#1)}
+\newcommand{\kwcmv}[1]{\mathbf{kw2}(#1)}
+\newcommand{\kcmsls}[1]{\mathbf{kset}(#1)}
+\newcommand{\kcmslk}[1]{\mathbf{kkey}(#1)}
+
+\newcommand{\appl}[1]{\mathbf{appL}(#1)}
+\newcommand{\appr}[1]{\mathbf{appR}(#1)}
+
+
+\newcommand{\rt}{\mathbf{rt}}
+\newcommand{\krt}[1]{\rt(#1)}
+\newcommand{\kmt}{\mathbf{mt}}
+
+\newcommand{\kprompt}[1]{\#(#1)}
+\newcommand{\dw}{\mathbf{dw}}
+\newcommand{\kdw}[1]{\dw(#1)}
+\newcommand{\abrt}{\mathbf{abrt}}
+\newcommand{\kabrt}[1]{\abrt(#1)}
+\newcommand{\kev}[1]{\mathbf{ev}(#1)}
+
+\newcommand{\mextag}[4]{(\#^{#2}_{#3} #1\ #4)}
+\newcommand{\kmatch}[4]{(?^{#2}_{#3} #1\ #4)}
+\newcommand{\mkapp}[2]{#1\circ #2}
+
+% Notations
+\newcommand{\sa}[1]{\widehat{\mathit{#1}}}
+
+\newcommand{\lfp}{\mathbf{lfp}}
+\newcommand{\tpl}[1]{\langle #1 \rangle}
+\newcommand{\vect}[1]{\langle #1 \rangle}
+\newcommand{\runpost}[1]{\langle #1 \rangle_{\mathit{post}}}
+\newcommand{\runhandler}[1]{\langle #1 \rangle_{\mathit{handler}}}
+\newcommand{\cstate}[1]{\langle #1 \rangle_{\mathit{call}}}
+\newcommand{\set}[1]{\{ #1 \}}
+\newcommand{\setbuild}[2]{\{ #1\ :\ #2\}}
+\newcommand{\setbuildb}[2]{\left\{ #1\ :\ #2\right\}}
+\newcommand{\nequiv}{\centernot\equiv}
+
+\newcommand{\many}[1]{\overline{#1}}
+\newcommand{\kcons}[2]{#1{\tt :} #2}
+\newcommand{\alt}{\mathrel{\mid}}
+
+\newcommand{\snglm}[2]{[#1 \mapsto \set{#2}]}
+\newcommand{\extm}[3]{#1[#2 \mapsto #3]}
+\newcommand{\joinm}[3]{#1\sqcup[#2 \mapsto #3]}
+\newcommand{\joinone}[3]{#1\sqcup[#2 \mapsto \set{#3}]}
+\DeclareMathOperator*{\finto}{\rightharpoonup}
+
+\newcommand{\append}[2]{#1 {\tt ++} #2}
+
+%% Relations
+\newcommand{\stepto}{\longmapsto}
+\newcommand{\pdstepto}{\longmapsto_{\mathit{\Xi{}M}}}
+\newcommand{\astepto}{\mathrel{\widehat{\longmapsto}}}
+\newcommand{\tred}[1]{\mathrel{\underset{\Pi}{#1}}}
+
+\newcommand{\klectx}[3]{#2 \mathrel{\sqsubseteq_{#1}} #3}

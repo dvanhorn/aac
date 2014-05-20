@@ -1,0 +1,69 @@
+\documentclass[preprint]{sigplanconf}
+
+\pagestyle{plain}
+\usepackage{balance,pfsteps}
+\usepackage{amsmath,stmaryrd,natbib,listings,graphicx,amsthm,amssymb,mathpartir}
+\usepackage[usenames,dvipsnames]{color}
+
+\newcommand{\Scribtexttt}[1]{{\texttt{#1}}}
+\newcommand{\SColorize}[2]{\color{#1}{#2}}
+\newcommand{\inColor}[2]{{\Scribtexttt{\SColorize{#1}{#2}}}}
+\definecolor{PaleBlue}{rgb}{0.90,0.90,1.0}
+\newcommand{\rackett}[1]{\inColor{black}{#1}}
+\input{local-macros}
+\input{preamble}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\title{Abstracting Abstract Control}
+\authorinfo{J. Ian Johnson}{Northeastern University}{ianj@ccs.neu.edu}
+\authorinfo{David Van Horn}{University of Maryland}{dvanhorn@cs.umd.edu}
+
+\usepackage{hyperref}
+\begin{document}
+\maketitle
+
+% Outline:
+% Introduction.
+% High level
+% PDCFA
+% - Concrete
+% - Abstract
+% CFA2
+% - Concrete
+% - Abstract
+% WCM machine
+% - Concrete
+% - Abstract
+% Related Work
+% Future Work
+% Conclusion
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+\section{Introduction}
+\input{introduction}
+\section{The AAM methodology}
+\input{aam}
+\section{A refinement for exact stacks}
+\input{pushdown}
+\section{Stack inspection is easy}
+\input{inspection}
+\section{Relaxing contexts for delimited continuations}
+\input{shiftreset}
+\section{Short-circuiting via ``summarization''}
+\input{memo}
+\section{Implementation strategies}
+\input{implementation}
+\section{Related Work}
+\input{related}
+\section{Conclusion}
+
+\balance
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+
+\end{document}

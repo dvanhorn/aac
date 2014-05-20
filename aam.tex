@@ -1,0 +1,138 @@
+Abstracting abstract machines is founded on three ideas:
+\begin{enumerate}
+\item{Recursive data structures are easily representable via indirection at recursive points. For example, the tail of a list goes from being a list to an address of a list in a heap.}
+\item{A finite pool of addresses then means a finite state space}
+\item{Reused addresses mean the heap must use weak updates: $[a \mapsto v]\sqcup[a \mapsto v'] = [a \mapsto \set{v,v'}]$ and non-deterministic lookups.}
+\end{enumerate}
+
+Concretely, let us consider an abstract machine for the call-by-value untyped lambda calculus: the CEK machine.
+%
+The semantic spaces in \autoref{fig:cek-spaces} have three points of recursion: subexpressions, closures and pushed continuation frames.
+%
+The semantics for the CEK machine in \autoref{fig:cek-semantics} shows the delayed substitution semantics that environments enable.
+%
+Function application delays the substitution of an argument by extending the enviroment.
+%
+Variables dereference the environment to fulfill the delayed substitution semantics that the CEK machine implements.
+%
+Function application performs an administrative step to search for the next redex.
+\begin{figure}\centering  
+  \begin{align*}
+    \mstate \in \CEK &::= \tpl{\mexpr, \menv, \mkont} \\
+    \mexpr \in \Expr &::= \svar{\mvar} \alt \sapp{\mexpr}{\mexpr} \alt \mval \\
+    \mval \in \Value &::= \slam{\mvar}{\mexpr} \\
+    \menv \in \Env &= \Var \finto \Value \times \Env \\
+    \mkframe \in \Frame &::= \appl{\mexpr,\menv} \alt \appr{\mval,\menv} \\
+    \mkont \in \Kont &= \Frame^* \\
+    \mvar \in \Var & \text{ an infinite space of variables}
+  \end{align*}
+  \caption{CEK semantic spaces}
+\label{fig:cek-spaces}
+\end{figure}
+
+\begin{figure}
+  \centering
+  $\mstate \stepto \mstate'$ \\
+  \begin{tabular}{r|l}
+    \hline\vspace{-3mm}\\
+    $\tpl{\svar\mvar, \menv, \mkont}$
+    &
+    $\tpl{\mval, \menv', \mkont}$ if $(\mval,\menv') = \menv(\mvar)$
+    \\
+% Application
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mkont}$
+    &
+    $\tpl{\mexpri0,\menv,\kcons{\appl{\mexpri1,\menv}}{\mkont}}$
+    \\
+% Arg eval
+    $\tpl{\mval,\menv, \kcons{\appl{\mexpr,\menv'}}{\mkont}}$
+    &
+    $\tpl{\mexpr,\menv',\kcons{\appr{\mval,\menv}}{\mkont}}$
+    \\
+% Function call
+    $\tpl{\mval,\menv,\kcons{\appr{\slam{\mvar}{\mexpr},\menv'}}{\mkont}}$
+    &
+    $\tpl{\mexpr,\menv'[\mvar\mapsto(\mval,\menv)],\mkont}$
+  \end{tabular}
+  \caption{CEK semantics}
+  \label{fig:cek-semantics}
+\end{figure}
+
+The recursion in expressions is beneign because they are only destructed. The $\Expr$ space is finite for each program, the size of which is the number of subexpressions.
+%
+The run-away recursion is in $\Env$ and $\Kont$.
+%
+AAM suggests that the codomain of $\Env$\footnote{The strict criteria suggests $\Var \finto \Value \times \Addr$, but $\Var \finto \Addr$ is a sound approximation and relates more strongly to other analyses' approximations.} and the tail of the $\Frame$ list in $\Kont$ should instead be some $\Addr$ space.
+%
+Extensions to maps in $\Env$, and conses of frames in $\Kont$ then instead allocate an address, update the heap with the recursive value, and use the address in place of the recursive value.
+%
+To help an $\alloc : \State \to \Addr$ function choose its addresses, the state space can be extended with an arbitrary finite space that can be updated each step.
+%
+The original AAM paper calls this space and update function $\Time$ and $\tick$ respectively.
+%
+Later work on widening~\citep{ianjohnson:DBLP:conf/vmcai/HardekopfWCK14} suggests less arbitrary constructions, and to think of $\Time$ as a space of abstract traces, though the ``abstraction'' need not be sound~\citep{dvanhorn:Might2009Posteriori}.
+
+The new semantic spaces in \autoref{fig:ceskstart-spaces} form the $\CESKstart$ machine.
+%
+We represent the machine differently than the original AAM paper to separate induced components (\eg{} the store and $\Time$) from transformed components (\eg{} the environment) for a uniform presentation.
+%
+The semantics of this machine follow the weak update and non-deterministic lookup principles of AAM in \autoref{fig:ceskstart-semantics}.
+
+\begin{figure}
+  \centering
+  \begin{align*}
+    \mstate \in \sa{CEK} &::= \tpl{\mexpr, \maenv, \makont} \\
+    \sa{State} &::= \sa{CEK} \times \Store \times \Time \\
+    \mstore \in \Store &= \Addr \to \sa{Storeable} \\
+    \menv \in \sa{Env} &= \Var \finto \Addr \\
+    \mkont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\maddr} \\
+    \sa{Storeable} &= \wp(\sa{Kont} + (\Value \times \sa{Env})) \\
+    \maddr,\maddralt \in \Addr & \quad \mtime,\mtimealt \in \Time
+  \end{align*}
+  \caption{$\CESKstart$ semantic spaces}
+  \label{fig:ceskstart-spaces}
+\end{figure}
+
+\begin{figure}
+  \centering
+  $\mstate,\mstore,\mtime \stepto \mstate',\mstore',\tick(\mstate,\mstore,\mtime)$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
+  \begin{tabular}{r|l}
+    \hline\vspace{-3mm}\\
+    $\tpl{\svar\mvar, \maenv, \makont}$
+    &
+    $\tpl{\mval, \maenv',\makont}$ if $(\mval,\menv') \in \mstore(\maenv(\mvar))$
+    \\
+% Application
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\makont}$
+    &
+    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\maddr}}$ \\
+    where & $\mstore' = \joinm{\mstore}{\maddr}{\makont}$
+    \\
+% Arg eval
+    $\tpl{\mval,\maenv, \kcons{\appl{\mexpr,\maenv'}}{\maddralt}}$
+    &
+    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$
+    \\
+% Function call
+    $\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\maddralt}}$
+    &
+    $\tpl{\mexpr,\maenv'',\makont}$ if $\makont \in \mstore(\maddralt)$ \\
+    where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
+          & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$
+  \end{tabular} \\
+  Where $\mstore' = \mstore$ unless otherwise stated.
+  \caption{$\CESKstart$ semantics}
+  \label{fig:ceskstart-semantics}
+\end{figure}
+
+If we run the $\CESKstart$ semantics to explore all possible states, we get a sound approximation of all paths that the $\CEK$ machine will explore.
+%
+The paper will give a more focused view of the $\Kont$ component.
+%
+Suppose a semantics that interacts with $\Kont$ via a stack discipline (only push and pop single frames at a time, \eg{} the above machine).
+%
+If we were not to heap-allocate the tail of a continuation, the resulting machine has all finite components except an unbounded stack of finitely many stack frames.
+%
+This is exactly a pushdown system.
+%
+We can exactly represent the stack and still have a sound and terminating analysis.

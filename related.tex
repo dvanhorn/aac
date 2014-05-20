@@ -1,0 +1,67 @@
+\paragraph{Pushdown models and memoization}
+The idea of relating pushdown automata with memoization is not new.
+%
+In 1971, Stephen Cook~\citep{DBLP:conf/ifip/Cook71} devised a transformation to simulate 2-way (on a fixed input) \emph{deterministic} pushdown automata in time linear in the size of the input, that uses the same ``context irrelevance'' idea to skip from state $q$ seen before to a corresponding first state that produced a smaller stack than $q$ was seen with.
+%
+Such a state is an instance of what are called \emph{terminator} states.
+%
+A \emph{terminator} state is simply a state that performs a pop operation.
+%
+Six years later, Neil D. Jones~\citep{Jones:1977:NLT} simplified the transformation instead to \emph{interpret} a stack machine program to work \emph{on-the-fly} still on a deterministic machine, but with the same idea of using memo tables to remember corresponding terminator states.
+%
+Thirty-six years after that, at David Schmidt's Festschrift, Robert Gl\"uck extended the technique to two-way \emph{non-deterministic} pushdown automata, and showed that the technique can be used to recognize context-free languages in the standard ${\mathcal O}(n^3)$ time~\citep{DBLP:journals/corr/Gluck13}.
+%
+Gl\"uck's technique (as yet, correctness unproven) uses the meta-language's stack with a deeply recursive interpretation function to preclude the use of a frontier and something akin to $\mktab$\footnote{See \texttt{gluck.rkt} in supplementary materials for \autoref{fig:real-impl} in Gl\"uck's style}.
+%
+By exploring the state space \emph{depth-first}, the interpreter can find all the different terminators a state can reach one-by-one by destructively updating the memo table with the ``latest'' terminator found.
+%
+The trade-offs with this technique are that it does not obviously scale to first-class control, and the search can overflow the stack when interpreting moderate-sized programs.
+%
+We have not performed an extensive evaluation to test the latter point, however.
+%
+A minor disadvantage is that it is also not a fair evaluation strategy when allocation is unbounded.
+%
+The technique can nevertheless be a viable alternative for languages with simple control-flow mechanisms.
+%
+It has close similarities to ``Big-CFA2'' in Vardoulakis' dissertation~\citep{vardoulakis-diss12}.
+%%
+
+%%
+\paragraph{CFA2 and PDCFA}
+The immediately related work is that of PDCFA \citep{dvanhorn:Earl2010Pushdown, dvanhorn:Earl2012Introspective}, CFA2~\citep{ianjohnson:vardoulakis-lmcs11, ianjohnson:Vardoulakis2011Pushdown}, and AAM~\citep{dvanhorn:VanHorn2010Abstracting}.
+%
+The version of CFA2 that handles \rackett{call/cc} does not handle composable control, is dependent on a restricted CPS representation, and has untunable precision for first-class continuations.
+%
+Our semantics adapts to \rackett{call/cc} by removing the meta-continuation operations, and thus this work supersedes theirs.
+%
+The extended version of PDCFA that inspects the stack to do garbage collection~\citep{dvanhorn:Earl2012Introspective} also fits into our model;
+the addresses that the stack keeps alive can be accumulated by ``reading through'' the continuation table, building up the set of addresses in each portion of the stack that we come across.
+%%
+
+%%
+\paragraph{Stack inspection}
+Stack inspecting flow analyses also exist, but operate on pre-constructed regular control-flow graphs~\citep{ianjohnson:bartoletti2004stack}, so the CFGs cannot be trimmed due to the extra information at construction time, leading to less precision.
+%
+Backward analyses for stack inspection also exist, with the same prerequisite~\citep{ianjohnson:DBLP:journals/sigplan/Chang06}.
+%%
+
+%%
+\paragraph{Analysis of pushdown automata}
+Pushdown models have existed in the first-order static analysis literature~\citep[Chapter 7]{local:muchnick:jones:flow-analysis:1981}\citep{ianjohnson:reps:pushdown:1995}, and the first-order model checking literature \citep{ianjohnson:bouajiani:esparza:pushdown:1997}, for some time.
+%
+The important difference when we move higher-order is that the model construction to feed these methods is an additional problem---the one we solve here.
+%
+Additionally, the algorithms employed in these works expect a complete description of the model up front, rather than work with a modified \texttt{step} function (also called \texttt{post}), such as in ``on-the-fly'' model-checking algorithms for finite state systems~\citep{DBLP:conf/tacas/SchwoonE05}.
+%%
+
+%%
+\paragraph{Derivation from abstract machines}
+The trend of deriving static analyses from abstract machines does not stop at flow analyses.
+%
+The model-checking community showed how to check temporal logic queries for collapsible pushdown automata (CPDA), or equivalently, higher-order recursion schemes, by deriving the checking algorithm from the Krivine machine~\citep{ianjohnson:Salvati:2011:KMH:2027223.2027239}.
+%
+The expressiveness of CPDAs outweighs that of PDAs, but it is unclear how to adapt higher-order recursion schemes (HORS) to model arbitrary programming language features.
+%
+The method is strongly tied to the simply-typed call-by-name lambda calculus and depends on finite sized base-types.
+%
+%HORSs are a powerful abstraction target for which monadic second order logic (MSO) is decidable, but systematic constructions of models in HORS from arbitrary programming languages are still out of reach.
