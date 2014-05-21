@@ -25,7 +25,7 @@
   ;; Addresses
   [(a b c) any])
 
-
+;; Set of free variables of an expression
 (define-metafunction L
   fv : e -> any
   [(fv x) ,(set (term x))]
@@ -35,6 +35,11 @@
   [(fv (Lam x e))
    ,(set-remove (term (fv e)) (term x))])
 
+
+;;============================================================================
+;; Finite maps
+
+;; Restrict a finite map to a given domain
 (define-metafunction L
   ↓ : fin any -> fin
   [(↓ () any) ()]
@@ -45,61 +50,38 @@
   [(↓ (any_first any_rest ...) any)
    (↓ (any_rest ...) any)])
 
-
-(define-term ∅ ,(set))
-
-(define-metafunction L
-  ∪ : any ... -> any
-  [(∪ any ...)
-   ,(apply set-union (term (∅ any ...)))])
-
-(define-metafunction L
-  gc : ς -> ς
-  [(gc (ev e ρ σ κ))
-   (ev e ρ_0 σ_0 κ)
-   (where ρ_0 (↓ ρ (fv e)))
-   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))]
-  [(gc (co κ (Clos x e ρ) σ))
-   (co κ (Clos x e ρ_0) σ_0)
-   (where ρ_0 (↓ ρ (fv e)))
-   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))])
-
-
-(define-metafunction L
-  live : any any σ -> any
-  [(live any_g any_b σ) 
-   any_b
-   (side-condition (set-empty? (term any_g)))]
-  [(live any_g any_b σ)
-   (live any_g0 any_b0 σ)
-   (where a ,(set-first (term any_g)))
-   (where any_g0 ,(set-subtract
-                   (term (∪ any_g (ll-a σ a)))
-                   (term (∪ any_b ,(set (term a))))))
-   (where any_b0 (∪ any_b ,(set (term a))))])
-
-
-(define-metafunction L
-  ll-a : σ a -> any
-  [(ll-a σ a)
-   (∪ (rng ρ) ...)
-   (where ((Clos x e ρ) ...) (lookup σ a))])
-
-
+;; Range of a finite map
 (define-metafunction L
   rng : fin -> any
   [(rng ([any_0 ↦ any_1] ...))
    ,(list->set (term (any_1 ...)))])
 
+;; Lookup finite map
 (define-metafunction L
-  ll-κ : κ -> any
-  [(ll-κ ()) ∅]
-  [(ll-κ ((AppL e ρ) φ ...))
-   ,(set-union (term (rng ρ))
-               (term (ll-κ (φ ...))))]
-  [(ll-κ ((AppR (Clos x e ρ)) φ ...))
-   ,(set-union (term (rng ρ))
-               (term (ll-κ (φ ...))))])             
+  lookup : fin any -> any
+  [(lookup (_ ... [any_k ↦ any_v] _ ...) any_k) any_v])
+
+;; Extend finite map
+(define-metafunction L
+  ext : fin any any -> fin
+  [(ext (any ...) any_k any_v) (any ... [any_k ↦ any_v])])
+
+;;============================================================================
+;; Sets
+
+(define-term ∅ ,(set))
+
+;; Union of sets
+(define-metafunction L
+  ∪ : any ... -> any
+  [(∪ any ...)
+   ,(apply set-union (term (∅ any ...)))])
+
+
+;;============================================================================
+;; The CESK(^) machine
+;; - with alloc: this is just the CESK machine
+;; - with alloc^: this is a PDA whose naive interpretation may diverge
 
 ;; Abstract machine in eval/apply form
 (define -->_m
@@ -126,10 +108,56 @@
         β
         (where a (alloc ς))]))
 
+;; Garbage collect state
+;; Implements the ceskgc instruction from SeWPR, p172
+(define-metafunction L
+  gc : ς -> ς
+  [(gc (ev e ρ σ κ))
+   (ev e ρ_0 σ_0 κ)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))]
+  [(gc (co κ (Clos x e ρ) σ))
+   (co κ (Clos x e ρ_0) σ_0)
+   (where ρ_0 (↓ ρ (fv e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ)) σ)))])
+
+;; Set of live locations
+;; Implements the "gc" reduction system from SeWPR, p172
+(define-metafunction L
+  live : any any σ -> any
+  [(live any_g any_b σ) 
+   any_b
+   (side-condition (set-empty? (term any_g)))]
+  [(live any_g any_b σ)
+   (live any_g0 any_b0 σ)
+   (where a ,(set-first (term any_g)))
+   (where any_g0 ,(set-subtract
+                   (term (∪ any_g (ll-a σ a)))
+                   (term (∪ any_b ,(set (term a))))))
+   (where any_b0 (∪ any_b ,(set (term a))))])
+
+;; Live locations from an address
+(define-metafunction L
+  ll-a : σ a -> any
+  [(ll-a σ a)
+   (∪ (rng ρ) ...)
+   (where ((Clos x e ρ) ...) (lookup σ a))])
+
+;; Live locations from a continuation
+(define-metafunction L
+  ll-κ : κ -> any
+  [(ll-κ ()) ∅]
+  [(ll-κ ((AppL e ρ) φ ...))
+   (∪ (rng ρ) (ll-κ (φ ...)))]
+  [(ll-κ ((AppR (Clos x e ρ)) φ ...))
+   (∪ (rng ρ) (ll-κ (φ ...)))])
+
+;; Inject expression into initial machine state
 (define-metafunction L
   inj : e -> ς
   [(inj e) (ev e () () ())])
- 
+
+;; Evaluate expression
 (define (ev e)
   (apply-reduction-relation* -->_m (term (inj ,e))))
  
@@ -138,25 +166,20 @@
   (traces -->_m (term (inj ,e))))
 
 (define-metafunction L
-  lookup : fin any -> any
-  [(lookup (_ ... [any_k ↦ any_v] _ ...) any_k) any_v])
- 
-(define-metafunction L
-  ext : fin any any -> fin
-  [(ext (any ...) any_k any_v) (any ... [any_k ↦ any_v])])
- 
-(define-metafunction L
   alloc : ς -> a
   [(alloc (co κ v ([a ↦ _] ...)))
    ,(+ 1 (apply max -1
                 (filter integer?
                         (term (a ...)))))])
- 
-#;
-(viz '(App (Lam x (App x x)) 
-           (Lam y (App y y))))
 
 
+;;============================================================================
+;; The CESKι(^) machine; CESK with metacontinuations
+;; - with alloc: this is just the CESK machine with continuations delimited
+;;   at function applications
+;; - with alloc^: this is a PDA whose naive interpretation may diverge
+
+;; Added component ι = stack of continuations
 (define-extended-language Lι L
   ;; Machine states
   [ς (ev e ρ σ κ ι)
@@ -164,7 +187,6 @@
      (ans v σ)]  
   ;; Meta continuations
   [ι (κ ...)])
- 
 
 ;; Abstract machine in eval/apply form
 ;; with heap-allocated stack frames
@@ -182,18 +204,26 @@
    [--> (ev (Lam x e) ρ σ κ ι)
         (co κ ι (Clos x e (↓ ρ (fv e))) σ)
         Lam]
+   
    ;; Continue transitions
+   ;; When local and meta contination are empty, evaluation is done
    [--> (co () () v σ) (ans v σ) Halt]
-   [--> (co () (κ_0 κ_1 ...) v σ) (co κ_0 (κ_1 ...) v σ) Return] ;;*****
+   ;; When local continuation is empty, install top continuation
+   ;; in metacontinuation
+   [--> (co () (κ_0 κ_1 ...) v σ) (co κ_0 (κ_1 ...) v σ) Return]
    
    [--> (co ((AppL e ρ) φ ...) ι v σ)
         (ev e ρ σ ((AppR v) φ ...) ι)
         AppR]
+   
+   ;; Install an empty local continuation, push current local contination
+   ;; to metacontinuation
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) (κ ...) v σ))
         (gcι (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () ((φ ...) κ ...)))
         β
         (where a (allocι ς))]))
 
+;; Just like gc, but fetch live addresses from metacontinuation
 (define-metafunction Lι
   gcι : ς -> ς
   [(gcι (ev e ρ σ κ (κ_1 ...)))
@@ -223,50 +253,53 @@
 (define (vizι e)
   (traces -->_mι (term (injι ,e))))
 
-#;
-(vizι '(App (Lam x (App x x)) 
-            (Lam y (App y y))))
-#;
-(vizι '(App (Lam f (App (App f f) f)) 
-            (Lam y y)))
 
+;;============================================================================
+;; The CESKτ(^) machine; CESK with table of metacontinuations
+;; - with alloc: this is just the CESK machine with continuations delimited
+;;   at function applications and stored in global table
+;; - with alloc^: this is a PDA whose naive interpretation is finite
 
+;; Replace ι with τ, which is a pointer into a table metacontinuation segments
 (define-extended-language Lτ Lι
   ;; Machine states
   [ς (ev e ρ σ κ τ)
      (co κ τ v σ)
-     (ans v σ)]   
-  [τ (v v σ) ()]
+     (ans v σ)]
+  [τ (v v σ)  ;; calling context
+     ()]      ;; top-level context
     
   [ςK ς K]
   
   ;; τ -> [Set (κ τ)]
   [K (side-condition any_K (hash? (term any_K)))]
   
+  ;; [Set τ]
   [τs (side-condition any_τs 
                       (and (set? (term any_τs))
                            (for/and ([x (in-set (term any_τs))])
                              (redex-match? Lτ τ x))))]
+  ;; [Set κ]
   [κs (side-condition any_κs 
                       (and (set? (term any_κs))
                            (for/and ([x (in-set (term any_κs))])
                              (redex-match? Lτ κ x))))])
-  
 
+;; Just like gcι but use reachable continuations for root set
 (define-metafunction Lτ
   gcτ : ς K -> ς
   [(gcτ (ev e ρ σ κ τ) K)
    (ev e ρ_0 σ_0 κ τ)
    (where ρ_0 (↓ ρ (fv e)))
-   (where (κ_0 ...) (r K τ))
+   (where (κ_0 ...) (reachable-κ K τ))
    (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ) (ll-κ κ_0) ...) σ)))]
   [(gcτ (co κ τ (Clos x e ρ) σ) K)
    (co κ τ (Clos x e ρ_0) σ_0)
    (where ρ_0 (↓ ρ (fv e)))
-   (where (κ_0 ...) (r K τ))
+   (where (κ_0 ...) (reachable-κ K τ))
    (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-κ κ) (ll-κ κ_0) ...) σ)))])
 
-
+;; Worklist algorithm for set of reachable continuations
 (define-metafunction Lτ
   reach-τ : K τs τs κs -> κs
   [(reach-τ K τs_frontier τs_seen κs)
@@ -287,11 +320,23 @@
           ,(set-subtract (term (∪ τs_frontier ,(list->set (term (τ_1 ...)))))
                          (term (∪ τs_seen ,(set (term τ))))))])
 
+;; Reachable continuations
 (define-metafunction Lτ
-  r : K τ -> (κ ...)
-  [(r K τ)
+  reachable-κ : K τ -> (κ ...)
+  [(reachable-κ K τ)
    ,(set->list (term (reach-τ K ,(set (term τ)) ∅ ∅)))])
 
+;; [Set ς] K -> [Set ς] K
+;; The step function for the system
+(define (step ςs K) 
+  (values (set-apply-reduction-relation (-->_mτ K) ςs)
+          (combine-K K (set-apply-reduction-relation update-K ςs))))
+
+;; Reduction split between two relations:
+;; -->_mτ computes next state given current table
+;; update-K computes update to table given current state
+
+;; Compute diff for table from state (only apply states are relevant)
 (define update-K
   (reduction-relation
    Lτ
@@ -299,7 +344,9 @@
    [--> (co ((AppR v_f) φ ...) τ_0 v σ)
         ,(hash (term τ) (set (term ((φ ...) τ_0))))
         (where τ (v_f v σ))]))
-   
+
+;; Just like -->_mι but use table to fetch outer continuation
+;; from metacontination.
 (define (-->_mτ K)
   (reduction-relation
    Lτ
@@ -343,9 +390,8 @@
    (any_1 ... [a ↦ (s ... s_i)] any_2 ...)]
   [(⊔ (any ...) a s) (any ... [a ↦ {s}])])
 
-
-
 ;; Relation [Set Term] -> [Set Term]
+;; Lift a reduction relation to a set of terms.
 (define (set-apply-reduction-relation r s)
   (for/fold ([y (set)])
     ((x (in-set s)))
@@ -359,28 +405,22 @@
     (hash-set K0 τ 
               (set-union κs (hash-ref K0 τ (set))))))
   
-
+;; Monovariant abstraction
 (define-metafunction Lτ
   allocτ : ς -> a  
   [(allocτ (co ((AppR (Clos x e ρ)) φ ...) τ_0 v σ))
    x])
 
-;; [Set ς] K -> [Set ς] K
-(define (step ςs K) 
-  (values (set-apply-reduction-relation (-->_mτ K) ςs)
-          (combine-K K (set-apply-reduction-relation update-K ςs))))
-
-
-
 ;; Graph = [Hash ς [Set ς]]
 
-
-(define (update-graph G -> ςs)
+;; Graph Relation [Set ς] -> Graph
+(define (update-graph G r ςs)
   (for/fold ([G G])
     ([ς (in-set ςs)])    
-    (hash-set G ς (set-union (list->set (apply-reduction-relation -> ς))
+    (hash-set G ς (set-union (list->set (apply-reduction-relation r ς))
                              (hash-ref G ς (set))))))
 
+;; Analyze expression producing graph and table
 (define (analyze e)  
   (let loop ([seen (set)]
              [ςs (set (term (injι ,e)))]
@@ -395,7 +435,7 @@
                  K1                 
                  (update-graph G (-->_mτ K) ςs))])))
                  
-
+;; Visualize a graph as a reduction relation starting from root.
 (define (visualize-graph G root)
   (define-language FOO)
   (traces
