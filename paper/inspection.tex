@@ -37,6 +37,14 @@ where $\terminal$ is a metafunction that produces the set of irreducible terms o
    \trystep(\stepto:\overline{R}) &= I\deceq\emptyset \to \trystep(\overline{R}), (I, T) \\
     & \text{where } I = \setbuild{s'}{s \stepto s'}
 \end{align*}
+
+This definition is a typical worklist implementation of a fixed-point computation.
+%
+It builds the set of terminal terms, $T$, by exploring the frontier (or worklist), $F$, and only adding terms to the frontier that have not been seen, as represented by $S$.
+%
+If a rule does not match a given term, the intermediate set, $I$ will be empty, and $\terminalaux$ will continue trying the following rules until it finds a match.
+%
+
 %
 A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.
 %

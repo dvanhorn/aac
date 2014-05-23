@@ -18,6 +18,7 @@
 \newcommand{\maddralt}{b}
 \newcommand{\menv}{\rho}
 \newcommand{\mstore}{\sigma}
+\newcommand{\mlkont}{\iota}
 \newcommand{\mkont}{\kappa}
 \newcommand{\mskont}{\hat{\kappa}}
 \newcommand{\mmkontacc}{C_\mathit{acc}}
@@ -47,10 +48,13 @@
 \newcommand{\callcomp}{\rackett{call/comp}}
 \newcommand{\abort}{\rackett{abort}}
 \newcommand{\dynamicwind}{\rackett{dynamic-wind}}
+\newcommand{\Halt}{\mathbf{Halt}}
 
 % Metavariables for Spaces
 \newcommand{\CEK}{\mathit{CEK}}
 \newcommand{\CESKstart}{\mathit{CESK^*_t}}
+\newcommand{\CESKKstart}{\mathit{CESK^*_t\mktab}}
+\newcommand{\CESIKKstart}{\mathit{CESIK^*_t\mktab}}
 
 \newcommand{\Var}{\mathit{Var}}
 
@@ -59,6 +63,8 @@
 
 \newcommand{\Expr}{\mathit{Expr}}
 \newcommand{\Store}{\mathit{Store}}
+\newcommand{\KStore}{\mathit{KStore}}
+\newcommand{\LKont}{\mathit{LKont}}
 \newcommand{\Kont}{\mathit{Kont}}
 \newcommand{\SKont}{\widehat{\mathit{Kont}}}
 \newcommand{\MKont}{\mathit{MKont}}
@@ -85,6 +91,7 @@
 
 % Other metavariables (metafunction names, etc)
 \newcommand{\inject}{\mathit{inject}}
+\newcommand{\pop}{\mathit{pop}}
 
 \newcommand{\alloc}{\mathit{alloc}}
 \newcommand{\tick}{\mathit{tick}}

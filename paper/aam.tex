@@ -54,7 +54,7 @@ Function application performs an administrative step to search for the next rede
     &
     $\tpl{\mexpr,\menv'[\mvar\mapsto(\mval,\menv)],\mkont}$
   \end{tabular}
-  \caption{CEK semantics}
+  \caption{CEK machine}
   \label{fig:cek-semantics}
 \end{figure}
 
@@ -82,7 +82,7 @@ The semantics of this machine follow the weak update and non-deterministic looku
   \centering
   \begin{align*}
     \mstate \in \sa{CEK} &::= \tpl{\mexpr, \maenv, \makont} \\
-    \sa{State} &::= \sa{CEK} \times \Store \times \Time \\
+    \sa{State} &= \sa{CEK} \times \Store \times \Time \\
     \mstore \in \Store &= \Addr \to \sa{Storeable} \\
     \menv \in \sa{Env} &= \Var \finto \Addr \\
     \mkont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\maddr} \\

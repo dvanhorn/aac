@@ -1,1 +1,168 @@
-\todo{Ian}
+We can exactly represent the stack in the $\CESKstart$ machine with a modified allocation scheme for stacks.
+%
+The key idea is that if the address is ``precise enough,'' then every path that leads to the allocation will proceed exactly the same way until the address is dereferenced.
+%
+What constitutes ``precise enough?'' 
+%
+For the $\CESKstart$ machine, every function evaluates the same way, regardless of the stack.
+%
+We should then represent the stack addresses as the entire state that allocates it, but store the stack addresses in a different table.
+%
+We will call this table $\mktab$, because it looks like a stack.
+%
+By not storing the continuations in the value store, we separate ``relevant'' state from ``irrelevant'' state.
+%
+We split the stack store from the value store and use only the value store in stack addresses.
+%
+The resulting state space is then updated in \autoref{fig:pushdown-spaces}.
+
+\begin{figure}
+  \centering
+  \begin{align*}
+    \sa{Prestate} &= \sa{CEK} \times \Store \times \Time \\
+    \sa{State} &= \sa{Prestate} \times \KStore \\
+    \sa{Storeable} &= \wp(\Value \times \sa{Env}) \\
+    \mktab \in \KStore &= \sa{Prestate} \finto \wp(\Kont)
+  \end{align*}
+  \caption{$\CESKKstart$ semantic spaces}
+  \label{fig:pushdown-spaces}
+\end{figure}
+
+The semantics is modified slightly in \autoref{fig:ceskkstart-semantics} to use $\mktab$ instead of $\mstore$ for continuation allocation and lookup.
+%
+Since continuation addresses are drawn from a finite space, but still are precise enough to capture the unbounded behavior of the pushdown system, the machine will always terminate.
+%
+The computed $\stepto$ relation thus represents the full description of a pushdown system of reachable states.
+%%
+\begin{theorem}[Correctness]
+  \todo{Ian}
+\end{theorem}
+
+%%
+There are three optimizations that may be employed to accelerate the fixed-point computation.
+%
+The first is in the observation that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.
+%
+The second is that continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.
+%
+The third is that since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.
+%
+This last optimization will be covered in more detail in \autoref{sec:memo}
+
+\begin{figure}
+  \centering
+  $\mstate,\mstore,\mtime,\mktab \stepto \mstate',\mstore',\tick(\mstate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
+  \begin{tabular}{r|l}
+    \hline\vspace{-3mm}\\
+    $\tpl{\svar\mvar, \maenv, \makont}$
+    &
+    $\tpl{\mval, \maenv',\makont}$ if $(\mval,\menv') \in \mstore(\maenv(\mvar))$
+    \\
+% Application
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\makont}$
+    &
+    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\maddr}}$ \\
+    where & $\mktab' = \joinm{\mktab}{(\mstate,\mstore,\mtime)}{\makont}$
+    \\
+% Arg eval
+    $\tpl{\mval,\maenv, \kcons{\appl{\mexpr,\maenv'}}{\maddralt}}$
+    &
+    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$
+    \\
+% Function call
+    $\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\maddralt}}$
+    &
+    $\tpl{\mexpr,\maenv'',\makont}$ if $\makont \in \mktab(\maddralt)$ \\
+    where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
+          & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$
+  \end{tabular} \\
+  Where $\mstore' = \mstore$ and $\mktab' = \mktab$ unless otherwise stated.
+  \caption{$\CESKKstart$ semantics}
+  \label{fig:ceskkstart-semantics}
+\end{figure}
+
+\subsection{A more economical representation}
+
+Flow analyses commonly split control-flow graphs at function call boundaries to enable the combination of intra- and inter-procedural analyses.
+%
+In an abstract machines, this split looks like installing a continuation prompt at function calls.
+%
+We borrow a representation from literature on delimited continuations to split the continuation into two components: the continuation and meta-continuation.
+%
+Our delimiters are special since each continuation ``chunk'' until the next prompt will be of bounded length.
+%
+The bound is roughly the deepest nesting depth of an expression in functions' bodies.
+%
+Instead of ``continuation'' and ``meta-continuation'' then, we will use terminology from CFA2 and call the top chunk a ``local continuation,'' and since what is left of the continuation is just an address, it is called an ``entry.''
+%
+%
+
+\begin{figure}
+  \centering
+  \begin{align*}
+    \mstate \in \sa{CEIK} &= \tpl{\mexpr,\menv,\mlkont,\mkont} \\
+    \mlkont \in \LKont &= \Frame^* \\
+    \makont \in \Kont &= \sa{Prestate} + \set{\Halt} \\
+    s \in \sa{Prestate} &= \sa{CEIK} \times \Store \times \Time \\
+  \end{align*}
+  \caption{$\CESIKKstart$ semantic spaces}
+  \label{fig:pushdown-spaces}
+\end{figure}
+
+The resulting shuffling of the semantics to accommodate this new representation is in \autoref{fig:cesikkstart-semantics}.
+%
+We have a choice of whether to introduce an administrative step to dereference $\mktab$ once $\mlkont$ is empty, or to use a helper metafunction to describe a ``pop'' of both $\mlkont$ and $\mkont$.
+%
+We choose the second because the resulting semantics has a 1-to-1 correspondence with the previous semantics.
+\begin{figure}
+  \centering
+  $\mstate,\mstore,\mtime,\mktab \stepto \mstate',\mstore',\tick(\mstate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
+  \begin{tabular}{r|l}
+    \hline\vspace{-3mm}\\
+    $\tpl{\svar\mvar, \maenv, \mlkont, \makont}$
+    &
+    $\tpl{\mval, \maenv',\mlkont,\makont}$ if $(\mval,\menv') \in \mstore(\maenv(\mvar))$
+    \\
+% Application
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\mlkont,\makont}$
+    &
+    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mlkont},\makont}$
+    \\
+% Arg eval
+    $\tpl{\mval,\maenv, \mlkont,\makont}$
+    &
+    where $\appl{\mexpr,\maenv'}, \mlkont',\makont' \in \pop(\mlkont,\makont,\mktab)$ \\
+    &
+    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$
+    \\
+% Function call
+    & where $\appr{\slam{\mvar}{\mexpr},\maenv'}, \mlkont', \makont' \in \pop(\mlkont,\makont,\mktab)$ \\
+    &
+    $\tpl{\mexpr,\maenv'',\epsilon,\maddralt}$ \\
+    where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
+    & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$ \\
+    & $\maddralt = (\mstate,\mstore,\mlkont,\makont)$ \\
+    & $\mktab' = \joinm{\mktab}{\maddralt}{(\mlkont,\makont)}$
+  \end{tabular} \\
+  Where $\mstore' = \mstore$ and $\mktab' = \mktab$ unless otherwise stated.
+  \begin{align*}
+    \pop(\mlkont,\makont,\mktab) &= \mathbf{TODO}
+  \end{align*}
+  \caption{$CESIKKstart$ semantics}
+  \label{fig:cesikkstart-semantics}
+\end{figure}
+
+\begin{align*}
+  {\mathcal F}(S,R,F,\mktab) &= (S \cup F, R \cup R', F'\setminus S, \mktab') \\
+  I &= \bigcup\limits_{s=(\mstate,\mstore,\mtime) \in F}{\setbuild{(\tpl{s,s'}, \mktab')}{s,\mktab \stepto s',\mktab'}} \\
+  R' &= \pi_0 I \\
+  F' &= \pi_1 R' \\
+  \mktab' &= \bigsqcup\pi_1 I
+\end{align*}
+For a program $\mexpr$, we will say $(\emptyset,\emptyset,\set{\tpl{\mexpr,\bot,\epsilon,\Halt}},\bot)$ is the bottom element of ${\mathcal F}$'s domain.
+%
+The ``analysis'' then is then the pair of the $R$ and $\mktab$ components of $\lfp({\mathcal F})$.
+
+\begin{theorem}[Correctness]
+  \todo{Ian}
+\end{theorem}
