@@ -7,14 +7,15 @@
   [R (r ...)]
   [r variable]
   
-  [κ (φ ... m)]  
+  [κ (φ φ ...)]
   ;; Frames
-  [φ (AppL e ρ m) (AppR v m)]
+  [φ (AppL e ρ m) (AppR v m) m]
   
   [m [(r ↦ gn) ...]]
   [gn grant no])
 
 
+;; Assume some finite set of principals
 (define P
   (set 'a 'b 'c 'd 'e 'f))
 
@@ -33,8 +34,8 @@
    [--> (ev x ρ σ κ) (co κ v σ)
         Var
         (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]
-   [--> (ev (App e_0 e_1) ρ σ (φ ... m))
-        (ev e_0 (↓ ρ (fv-cm e_0)) σ ((AppL e_1 (↓ ρ (fv-cm e_1)) ()) φ ... m))
+   [--> (ev (App e_0 e_1) ρ σ (φ ...))
+        (ev e_0 (↓ ρ (fv-cm e_0)) σ ((AppL e_1 (↓ ρ (fv-cm e_1)) ()) φ ...))
         AppL]
    [--> (ev (Lam x e) ρ σ κ)
         (co κ (Clos x e (↓ ρ (fv e))) σ)
@@ -58,11 +59,11 @@
    
    ;; Continue transitions
    [--> (co (m) v σ) (ans v σ) Halt]
-   [--> (co ((AppL e ρ m) φ ... m_1) v σ)
-        (ev e ρ σ ((AppR v ()) φ ... m_1))
+   [--> (co ((AppL e ρ m) φ ...) v σ)
+        (ev e ρ σ ((AppR v ()) φ ...))
         AppR]
-   [--> (name ς (co ((AppR (Clos x e ρ) m) φ ... m_1) v σ))
-        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) (φ ... m_1))
+   [--> (name ς (co ((AppR (Clos x e ρ) m) φ ...) v σ))
+        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) (φ ...))
         β
         (where a (alloc-cm ς))]))
 
@@ -148,12 +149,13 @@
   OK : R κ -> #t or #f
   [(OK () κ) #t]
   [(OK R (m)) (∅? (∩ (inv-lookup m no) R))]
-  [(OK R ((AppL e ρ m) φ ... m_1))
+  [(OK R ((AppL e ρ m) φ ...))
    (∧ (∅? (∩ (inv-lookup m no) R))
-      (OK R (φ ... m_1)))]
-  [(OK R ((AppR v m) φ ... m_1))
+      (OK R (φ ...)))]
+  [(OK R ((AppR v m) φ ...))
    (∧ (∅? (∩ (inv-lookup m no) R))
-      (OK R (φ ... m_1)))])
+      (OK R (φ ...)))])
+
 
 #;
 (term (cont-update (([a ↦ grant])) (a b c) no))
