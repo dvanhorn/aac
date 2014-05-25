@@ -192,7 +192,7 @@
    CMι
    #:domain ς
    ;; Eval transitions
-   [--> (ev x ρ σ κ ι) (co κ ι v σ)
+   [--> (ev x ρ σ κ ι) (gc-cmι (co κ ι v σ))
         Var
         (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]
    [--> (ev (App e_0 e_1) ρ σ (φ ...) ι)
@@ -210,11 +210,11 @@
         (ev e ρ σ (cont-update κ R grant) ι)
         Grant]   
    [--> (ev (Test R e_0 e_1) ρ σ κ ι)
-        (ev e_0 ρ σ κ ι)
+        (gc-cmι (ev e_0 ρ σ κ ι))
         (where #t (OKι R κ ι))
         OK]
    [--> (ev (Test R e_0 e_1) ρ σ κ ι)
-        (ev e_1 ρ σ κ ι)
+        (gc-cmι (ev e_1 ρ σ κ ι))
         (where #f (OKι R κ ι))
         Not-OK]
    
@@ -223,7 +223,7 @@
    [--> (co (m) () v σ) (ans v σ) Halt]
    ;; When local continuation is empty, install top continuation
    ;; in metacontinuation
-   [--> (co () (κ_0 κ_1 ...) v σ) (co κ_0 (κ_1 ...) v σ) Return]
+   [--> (co (m) (κ_0 κ_1 ...) v σ) (co κ_0 (κ_1 ...) v σ) Return]
    
    [--> (co ((AppL e ρ m) φ ...) ι v σ)
         (ev e ρ σ ((AppR v ()) φ ...) ι)
@@ -232,9 +232,20 @@
    ;; Install an empty local continuation, push current local contination
    ;; to metacontinuation
    [--> (name ς (co ((AppR (Clos x e ρ) m) φ ...) (κ ...) v σ))
-        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) () ((φ ...) κ ...))
+        (gc-cmι (ev e (↓ (ext ρ x a) (fv-cm e)) (⊔ σ a v) (()) ((φ ...) κ ...)))
         β
         (where a (alloc-cmι ς))]))
+
+(define-metafunction CMι
+  gc-cmι : ς -> ς
+  [(gc-cmι (ev e ρ σ κ (κ_1 ...)))
+   (ev e ρ_0 σ_0 κ (κ_1 ...))
+   (where ρ_0 (↓ ρ (fv-cm e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-cm-κ κ) (ll-cm-κ κ_1) ...) σ)))]
+  [(gc-cmι (co κ (κ_1 ...) (Clos x e ρ) σ))
+   (co κ (κ_1 ...) (Clos x e ρ_0) σ_0)
+   (where ρ_0 (↓ ρ (fv-cm e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-cm-κ κ) (ll-cm-κ κ_1) ...) σ)))])
 
 ;; Note: you could also write κι->κ and re-use original OK.
 
@@ -254,7 +265,7 @@
 
 (define-metafunction CMι
   alloc-cmι : ς -> a
-  [(alloc-cmι (co κ v ([a ↦ _] ...)))
+  [(alloc-cmι (co κ ι v ([a ↦ _] ...)))
    ,(+ 1 (apply max -1
                 (filter integer?
                         (term (a ...)))))])
@@ -266,18 +277,18 @@
 #;
 (term (cont-update (([a ↦ grant])) (a b c) no))
 
-(traces -->_cm
-        (term (inj-cm (App (Lam f (App (App f f) (Lam y y)))
+(traces -->_cmι
+        (term (inj-cmι (App (Lam f (App (App f f) (Lam y y)))
                            (Lam x x)))))
 #;
 (traces -->_cm
         (term (inj-cm (Grant (a b) (Lam x x)))))
 
-(traces -->_cm
-        (term (inj-cm (Grant (a) (Test (a) (Lam one one) (Lam two two))))))
+(traces -->_cmι
+        (term (inj-cmι (Grant (a) (Test (a) (Lam one one) (Lam two two))))))
 
-(traces -->_cm
-        (term (inj-cm (Frame () (Test (a) (Lam one one) (Lam two two))))))
+(traces -->_cmι
+        (term (inj-cmι (Frame () (Test (a) (Lam one one) (Lam two two))))))
 
-(traces -->_cm
-        (term (inj-cm (Test (a) (Lam one one) (Lam two two)))))
+(traces -->_cmι
+        (term (inj-cmι (Test (a) (Lam one one) (Lam two two)))))
