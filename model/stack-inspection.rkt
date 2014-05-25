@@ -31,7 +31,7 @@
    CM
    #:domain ς
    ;; Eval transitions
-   [--> (ev x ρ σ κ) (co κ v σ)
+   [--> (ev x ρ σ κ) (gc-cm (co κ v σ))
         Var
         (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]
    [--> (ev (App e_0 e_1) ρ σ (φ ...))
@@ -63,10 +63,29 @@
         (ev e ρ σ ((AppR v ()) φ ...))
         AppR]
    [--> (name ς (co ((AppR (Clos x e ρ) m) φ ...) v σ))
-        (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) (φ ...))
+        (gc-cm (ev e (↓ (ext ρ x a) (fv e)) (⊔ σ a v) (φ ...)))
         β
         (where a (alloc-cm ς))]))
 
+(define-metafunction CM
+  gc-cm : ς -> ς
+  [(gc-cm (ev e ρ σ κ))
+   (ev e ρ_0 σ_0 κ)
+   (where ρ_0 (↓ ρ (fv-cm e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-cm-κ κ)) σ)))]
+  [(gc-cm (co κ (Clos x e ρ) σ))
+   (co κ (Clos x e ρ_0) σ_0)
+   (where ρ_0 (↓ ρ (fv-cm e)))
+   (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-cm-κ κ)) σ)))])
+
+(define-metafunction CM
+  ll-cm-κ : κ -> any
+  [(ll-cm-κ (m)) ∅]
+  [(ll-cm-κ ((AppL e ρ m) φ ...))
+   (∪ (rng ρ) (ll-cm-κ (φ ...)))]
+  [(ll-cm-κ ((AppR (Clos x e ρ) m) φ ...))
+   (∪ (rng ρ) (ll-cm-κ (φ ...)))])
+  
 (define-metafunction CM
   alloc-cm : ς -> a
   [(alloc-cm (co κ v ([a ↦ _] ...)))
@@ -217,6 +236,7 @@
         β
         (where a (alloc-cmι ς))]))
 
+;; Note: you could also write κι->κ and re-use original OK.
 
 (define-metafunction CMι
   OKι : R κ ι -> #t or #f
@@ -245,7 +265,7 @@
 
 #;
 (term (cont-update (([a ↦ grant])) (a b c) no))
-#;
+
 (traces -->_cm
         (term (inj-cm (App (Lam f (App (App f f) (Lam y y)))
                            (Lam x x)))))
@@ -253,11 +273,11 @@
 (traces -->_cm
         (term (inj-cm (Grant (a b) (Lam x x)))))
 
-(traces -->_cmι
-        (term (inj-cmι (Grant (a) (Test (a) (Lam one one) (Lam two two))))))
+(traces -->_cm
+        (term (inj-cm (Grant (a) (Test (a) (Lam one one) (Lam two two))))))
 
-(traces -->_cmι
-        (term (inj-cmι (Frame () (Test (a) (Lam one one) (Lam two two))))))
+(traces -->_cm
+        (term (inj-cm (Frame () (Test (a) (Lam one one) (Lam two two))))))
 
-(traces -->_cmι
-        (term (inj-cmι (Test (a) (Lam one one) (Lam two two)))))
+(traces -->_cm
+        (term (inj-cm (Test (a) (Lam one one) (Lam two two)))))
