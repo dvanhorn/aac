@@ -102,12 +102,12 @@
   fv-cm : e -> any
   [(fv-cm x) ,(set (term x))]
   [(fv-cm (App e_1 e_2))
-   (∪ (fv e_1) (fv e_2))]
+   (∪ (fv-cm e_1) (fv-cm e_2))]
   [(fv-cm (Lam x e))
-   ,(set-remove (term (fv e)) (term x))]
-  [(fv-cm (Frame R e)) (fv e)]
-  [(fv-cm (Grant R e)) (fv e)]
-  [(fv-cm (Test R e_0 e_1)) (∪ (fv e_0) (fv e_1))]
+   ,(set-remove (term (fv-cm e)) (term x))]
+  [(fv-cm (Frame R e)) (fv-cm e)]
+  [(fv-cm (Grant R e)) (fv-cm e)]
+  [(fv-cm (Test R e_0 e_1)) (∪ (fv-cm e_0) (fv-cm e_1))]
   [(fv-cm Fail) ∅])
 
 (define-metafunction CM
