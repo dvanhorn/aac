@@ -1,6 +1,7 @@
 #lang racket
 (require redex)
- 
+(provide (all-defined-out))
+
 (define-language L
   ;; Expressions
   [e x (App e e) (Lam x e)]
@@ -30,8 +31,7 @@
   fv : e -> any
   [(fv x) ,(set (term x))]
   [(fv (App e_1 e_2))
-   ,(set-union (term (fv e_1))
-               (term (fv e_2)))]
+   (∪ (fv e_1) (fv e_2))]
   [(fv (Lam x e))
    ,(set-remove (term (fv e)) (term x))])
 
@@ -479,4 +479,5 @@
 
 
 ;; Note: you get exact computation with GC on this one!
+#;
 (visualize-graph myG (term (injι EG)))
