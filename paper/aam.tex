@@ -1,9 +1,49 @@
 Abstracting abstract machines is founded on three ideas:
 \begin{enumerate}
-\item{Recursive data structures are easily representable via indirection at recursive points. For example, the tail of a list goes from being a list to an address of a list in a heap.}
-\item{A finite pool of addresses then means a finite state space}
-\item{Reused addresses mean the heap must use weak updates: $[a \mapsto v]\sqcup[a \mapsto v'] = [a \mapsto \set{v,v'}]$ and non-deterministic lookups.}
+\item{recursive data structures are easily representable via indirection through a map at recursive points. For example, the tail of a list goes from being a list to an address of a list in a heap;}
+\item{a finite pool of addresses then means a finite state space;}
+\item{reused addresses mean the heap must use weak updates: $[a \mapsto v]\sqcup[a \mapsto v'] = [a \mapsto \set{v,v'}]$ and lookups make non-deterministic choices.}
 \end{enumerate}
+
+\subsection{Notations and conventions}
+\begin{itemize}
+\item{$D \finto R$ \textbf{:} a finite function from domain $D$ to codomain $R$.}
+\item{$\setbuild{\mathit{term}}{\mathit{formula}}$ \textbf{:} a set comprehension where the free variables are implicitly existentially bound. Consider it a set denotation of a $\Sigma$ type.}
+\item{We use $\widehat{\mathit{space}}$ to say a space is an abstracted form of the concrete semantics' analogous $\mathit{space}$. We will not add hats to spaces that are added to the abstraction.}
+\item{Similarly, elements of abstract spaces have hats: \eg{} $\makont \in \sa{Kont}$.}
+\item{We will write $n$-tuples as $\tpl{t_1,\ldots,t_n}$, $(t_1,\ldots,t_n)$ or just $t_1,\ldots,t_n$, and their $i^\text{th}$ projections as $\pi_i$.}
+\item{$\sqcup$ \textbf{:} a join operator that lifts pointwise over tuples and functions. Sets are unioned. Ground terms are implicitly lifted to singleton sets.}
+\item{$S^*$ \textbf{:} the space of lists of $S$.}
+\item{$\epsilon$ \textbf{:} the empty list.}
+\item{$\kcons{a}{l}$ \textbf{:} a list $l$ with $a$ added to the front.}
+\item{$\append{l}{l'}$ \textbf{:} list $l'$ appended to list $l$.}
+\item{$g \to t, e$ \textbf{:} Dijkstra notation for ``if $g$ then $t$ else $e$''}
+\item{$t \deceq t'$ \textbf{:} a Boolean decision for equality of terms $t$ and $t'$.}
+\item{$\extm{\menv}{\mvar}{\maddr}$ \textbf{:} $\lambda \mvaralt. \mvar \deceq \mvaralt \to \maddr, \menv(\mvaralt)$.}
+\item{$\mathit{elem} \in \mathit{Space} ::= \mathit{term} \alt \ldots$ \textbf{:} a set of Backus-Nauer-form alternates that inductively define a space $\mathit{Space}$. The $\mathit{term}$s in each alternate are constructors where element variables like $\mathit{elem}$ denote their containing space. Unwrapped elements of other spaces are implicitly injected. Refined constructors of other spaces are overloaded for the refining space.
+
+For example:
+\begin{align*}
+  \mvar \in \mathit{Variable} &\text{ a set} \\
+  \mexpr \in \Expr &::= \svar{\mvar} \alt \sapp{\mexpr}{\mexpr} \alt \slam{\mvar}{\mexpr} \\
+  \mval \in \Value &::= \slam{\mvar}{\mexpr}
+\end{align*}
+can be written as inductive datatypes with no overloading
+\begin{verbatim}
+Parameter Variable : Set.
+Inductive Expr : Set :=
+| var : Variable -> Expr
+| app : Expr -> Expr -> Expr
+| lam : Variable -> Expr -> Expr.
+Inductive Value : Set :=
+| vlam : Variable -> Expr -> Value.
+\end{verbatim}}
+\item{$s \stepto s'$ \textbf{:} a state $s$ steps to another state $s'$ via a reduction relation $\stepto \subseteq \State \times \State$. The relation should be clear from the context and the space of $s, s'$.}
+\item{We implicitly reassociate tuples or splice them into a larger context to have a cleaner presentation.
+For example, we may write $\tpl{\menv(\mexpr), \mkont}$ for an element of $\Expr \times \Env \times \Kont$ instead of ``$\tpl{\mval,\menv',\mkont}$ where $(\mval,\menv') = \menv(\mvar)$.''}
+\end{itemize}
+
+\subsection{The $\CESKstart$ machine}
 
 Concretely, let us consider an abstract machine for the call-by-value untyped lambda calculus: the CEK machine.
 %
@@ -62,7 +102,7 @@ The recursion in expressions is beneign because they are only destructed. The $\
 %
 The run-away recursion is in $\Env$ and $\Kont$.
 %
-AAM suggests that the codomain of $\Env$\footnote{The strict criteria suggests $\Var \finto \Value \times \Addr$, but $\Var \finto \Addr$ is a sound approximation and relates more strongly to other analyses' approximations.} and the tail of the $\Frame$ list in $\Kont$ should instead be some $\Addr$ space.
+AAM suggests that the codomain of $\Env$ and the tail of the $\Frame$ list in $\Kont$ should instead be some $\Addr$ space.\footnote{The strict criteria suggests $\Env : \Var \finto \Value \times \Addr$, but $\Var \finto \Addr$ is a sound approximation and has a similar shape to other analyses' approximations.}
 %
 Extensions to maps in $\Env$, and conses of frames in $\Kont$ then instead allocate an address, update the heap with the recursive value, and use the address in place of the recursive value.
 %
@@ -81,7 +121,7 @@ The semantics of this machine follow the weak update and non-deterministic looku
 \begin{figure}
   \centering
   \begin{align*}
-    \mstate \in \sa{CEK} &::= \tpl{\mexpr, \maenv, \makont} \\
+    \mastate \in \sa{CEK} &::= \tpl{\mexpr, \maenv, \makont} \\
     \sa{State} &= \sa{CEK} \times \Store \times \Time \\
     \mstore \in \Store &= \Addr \to \sa{Storeable} \\
     \menv \in \sa{Env} &= \Var \finto \Addr \\
@@ -95,7 +135,7 @@ The semantics of this machine follow the weak update and non-deterministic looku
 
 \begin{figure}
   \centering
-  $\mstate,\mstore,\mtime \stepto \mstate',\mstore',\tick(\mstate,\mstore,\mtime)$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
+  $\mastate,\mstore,\mtime \stepto \mastate',\mstore',\tick(\mastate,\mstore,\mtime)$ \quad $\maddr = \alloc(\mastate,\mstore,\mtime)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
     $\tpl{\svar\mvar, \maenv, \makont}$

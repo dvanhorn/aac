@@ -1,1 +1,11 @@
+What happens when we apply the techniques of the previous sections to a semantics that treats continuations as first-class?
+%
+The glaring issue is that continuations become ``storeable'' and relevant to the execution of functions, but it was precisely the \emph{irrelevance} that allowed the separation of $\mstore$ and $\mktab$.
+%
+Specifically, the store components of continuations become elements of the store's codomain --- a recursion that can lead to an unbounded state space and therefore a non-terminating analysis.
+%
+We apply the AAM methodology to cut out the recursion; whenever a continuation is captured to go into the store, we allocate an address to approximate the store component of the continuation.
+%
+The issue becomes, where do we map this address to a set of stores?
+%
 \todo{Ian}

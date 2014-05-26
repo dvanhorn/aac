@@ -27,7 +27,7 @@ Thus this is more properly understood as
   \kontliveaux(K,\mctx, L) &\stepto_2 \kontliveaux(K,\makont,L) \text{ if } \makont \in K(\mctx)
 \end{align*}
 
-where $\terminal$ is a metafunction that produces the set of irreducible terms of an input list of relations given a starting point:\footnote{We use Dijkstra's ``if $g$ then $t$ else $e$'' syntax, $g \to t, e$.}
+where $\terminal$ is a metafunction that produces the set of irreducible terms of an input list of relations given a starting point:
 \begin{align*}
   \terminal(\overline{R},s) &= \terminalaux(\set{s},\set{s},\emptyset) \\[2pt]
   \text{where } \terminalaux(S, \emptyset, T) &= T \\
@@ -46,7 +46,7 @@ If a rule does not match a given term, the intermediate set, $I$ will be empty, 
 %
 
 %
-A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.
+A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.\footnote{The garbage collecting version of PDCFA~\citep{dvanhorn:Earl2012Introspective} chooses the second of these two strategies.}
 %
 On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hopes that the state space will be smaller.
 %

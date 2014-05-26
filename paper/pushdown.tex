@@ -10,16 +10,18 @@ We should then represent the stack addresses as the entire state that allocates 
 %
 We will call this table $\mktab$, because it looks like a stack.
 %
-By not storing the continuations in the value store, we separate ``relevant'' state from ``irrelevant'' state.
+By not storing the continuations in the value store, we separate ``relevant'' components from ``irrelevant'' components.
 %
 We split the stack store from the value store and use only the value store in stack addresses.
 %
 The resulting state space is then updated in \autoref{fig:pushdown-spaces}.
+%
+Since the $\sa{Prestate}$ space represents the more general idea of relevant context, we will sometimes refer to elements of $\sa{Prestate}$ as contexts.
 
 \begin{figure}
   \centering
   \begin{align*}
-    \sa{Prestate} &= \sa{CEK} \times \Store \times \Time \\
+    \mctx \in \sa{Prestate} &= \sa{CEK} \times \Store \times \Time \\
     \sa{State} &= \sa{Prestate} \times \KStore \\
     \sa{Storeable} &= \wp(\Value \times \sa{Env}) \\
     \mktab \in \KStore &= \sa{Prestate} \finto \wp(\Kont)
@@ -40,18 +42,17 @@ The computed $\stepto$ relation thus represents the full description of a pushdo
 
 %%
 There are three optimizations that may be employed to accelerate the fixed-point computation.
-%
-The first is in the observation that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.
-%
-The second is that continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.
-%
-The third is that since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.
+\begin{enumerate}
+\item{Observe that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.}
+\item{Continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.}
+\item{Since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.}
+\end{enumerate}
 %
 This last optimization will be covered in more detail in \autoref{sec:memo}
 
 \begin{figure}
   \centering
-  $\mstate,\mstore,\mtime,\mktab \stepto \mstate',\mstore',\tick(\mstate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
+  $\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\tick(\mastate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mastate,\mstore,\mtime)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
     $\tpl{\svar\mvar, \maenv, \makont}$
@@ -62,7 +63,7 @@ This last optimization will be covered in more detail in \autoref{sec:memo}
     $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\makont}$
     &
     $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\maddr}}$ \\
-    where & $\mktab' = \joinm{\mktab}{(\mstate,\mstore,\mtime)}{\makont}$
+    where & $\mktab' = \joinm{\mktab}{(\mastate,\mstore,\mtime)}{\makont}$
     \\
 % Arg eval
     $\tpl{\mval,\maenv, \kcons{\appl{\mexpr,\maenv'}}{\maddralt}}$
@@ -93,7 +94,7 @@ Our delimiters are special since each continuation ``chunk'' until the next prom
 %
 The bound is roughly the deepest nesting depth of an expression in functions' bodies.
 %
-Instead of ``continuation'' and ``meta-continuation'' then, we will use terminology from CFA2 and call the top chunk a ``local continuation,'' and since what is left of the continuation is just an address, it is called an ``entry.''
+Instead of ``continuation'' and ``meta-continuation'' then, we will use terminology from CFA2 and call the top chunk a ``local continuation,'' and the rest the ``continuation.''
 %
 %
 
@@ -113,7 +114,33 @@ The resulting shuffling of the semantics to accommodate this new representation 
 %
 We have a choice of whether to introduce an administrative step to dereference $\mktab$ once $\mlkont$ is empty, or to use a helper metafunction to describe a ``pop'' of both $\mlkont$ and $\mkont$.
 %
-We choose the second because the resulting semantics has a 1-to-1 correspondence with the previous semantics.
+Suppose we choose the second because the resulting semantics has a 1-to-1 correspondence with the previous semantics.
+%
+A first try might land us here:
+\begin{align*}
+  \pop(\kcons{\mkframe}{\mlkont},\makont,\mktab) &= \set{(\mkframe,\mlkont,\makont)} \\
+  \pop(\epsilon,\mctx,\mktab) &= \setbuild{(\mkframe,\mlkont,\makont)}{(\kcons{\mkframe}{\mlkont}, \makont) \in \mktab(\mctx)}
+\end{align*}
+However, tail calls make the dereferenced $\mctx$ lead to $(\epsilon,\mctx')$.
+%
+Because abstraction makes the store grow monotonically in a finite space, it's possible that $\mctx' = \mctx$ and a naive recursive definition of $\pop$ will diverge chasing these contexts.
+%
+Now $\pop$ must save all the contexts it dereferences in order to guard against divergence.
+%
+So $\pop(\mlkont,\makont,\mktab) = \popaux(\mlkont,\makont,\mktab,\emptyset)$ where
+\begin{align*}
+  \popaux(\kcons{\mkframe}{\mlkont},\makont,\mktab,G) &= \set{(\mkframe,\mlkont,\makont)} \\
+  \popaux(\epsilon,\mctx,\mktab,G) &= \setbuild{(\mkframe,\mlkont,\makont)}{(\kcons{\mkframe}{\mlkont}, \makont) \in \mktab(\mctx)} \\
+  &\cup \bigcup\limits_{\mctx' \in G'}\popaux(\epsilon,\mctx',\mktab,G\cup G') \\
+  \text{where } G' &= \setbuild{\mctx'}{(\epsilon,\mctx') \in \mktab(\mctx)} \setminus G
+\end{align*}
+
+In practice, one would not expect $G$ to grow very large.
+%
+Had we chosen the first strategy, the issue of divergence is delegated to the machinery from the fixed-point computation.\footnote{CFA2 employs the first strategy and calls it ``transitive summaries.''}
+%
+However, when adding the administrative state, the ``seen'' check requires searching a far larger set than we would expect $G$ to be.
+
 \begin{figure}
   \centering
   $\mstate,\mstore,\mtime,\mktab \stepto \mstate',\mstore',\tick(\mstate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
@@ -131,24 +158,20 @@ We choose the second because the resulting semantics has a 1-to-1 correspondence
 % Arg eval
     $\tpl{\mval,\maenv, \mlkont,\makont}$
     &
-    where $\appl{\mexpr,\maenv'}, \mlkont',\makont' \in \pop(\mlkont,\makont,\mktab)$ \\
+    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$ \\
     &
-    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$
-    \\
+    if $\appl{\mexpr,\maenv'}, \mlkont',\makont' \in \pop(\mlkont,\makont,\mktab)$, or \\
 % Function call
-    & where $\appr{\slam{\mvar}{\mexpr},\maenv'}, \mlkont', \makont' \in \pop(\mlkont,\makont,\mktab)$ \\
     &
     $\tpl{\mexpr,\maenv'',\epsilon,\maddralt}$ \\
+    & if $\appr{\slam{\mvar}{\mexpr},\maenv'}, \mlkont', \makont' \in \pop(\mlkont,\makont,\mktab)$ \\
     where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
     & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$ \\
     & $\maddralt = (\mstate,\mstore,\mlkont,\makont)$ \\
     & $\mktab' = \joinm{\mktab}{\maddralt}{(\mlkont,\makont)}$
   \end{tabular} \\
   Where $\mstore' = \mstore$ and $\mktab' = \mktab$ unless otherwise stated.
-  \begin{align*}
-    \pop(\mlkont,\makont,\mktab) &= \mathbf{TODO}
-  \end{align*}
-  \caption{$CESIKKstart$ semantics}
+  \caption{$\CESIKKstart$ semantics}
   \label{fig:cesikkstart-semantics}
 \end{figure}
 
