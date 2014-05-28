@@ -18,9 +18,9 @@
   ;; Stores
   [σ ([a ↦ (s ...)] ...)]
   ;; Storables
-  [s v]    
+  [s v]
   ;; Continuations
-  [κ (φ ...)]  
+  [κ (φ ...)]
   ;; Frames
   [φ (AppL e ρ) (AppR v)]
   ;; Addresses
@@ -91,7 +91,7 @@
    ;; Eval transitions
    [--> (ev x ρ σ κ) (gc (co κ v σ))
         Var
-        (where (_ ... v _ ...) (lookup σ (lookup ρ x)))] 
+        (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]
    [--> (ev (App e_0 e_1) ρ σ (φ ...))
         (ev e_0 (↓ ρ (fv e_0)) σ ((AppL e_1 (↓ ρ (fv e_1))) φ ...))
         AppL]
@@ -125,7 +125,7 @@
 ;; Implements the "gc" reduction system from SeWPR, p172
 (define-metafunction L
   live : any any σ -> any
-  [(live any_g any_b σ) 
+  [(live any_g any_b σ)
    any_b
    (side-condition (set-empty? (term any_g)))]
   [(live any_g any_b σ)
@@ -160,7 +160,7 @@
 ;; Evaluate expression
 (define (ev e)
   (apply-reduction-relation* -->_m (term (inj ,e))))
- 
+
 ;; Visualize concete machine
 (define (viz e)
   (traces -->_m (term (inj ,e))))
@@ -184,7 +184,7 @@
   ;; Machine states
   [ς (ev e ρ σ κ ι)
      (co κ ι v σ)
-     (ans v σ)]  
+     (ans v σ)]
   ;; Meta continuations
   [ι (κ ...)])
 
@@ -204,18 +204,18 @@
    [--> (ev (Lam x e) ρ σ κ ι)
         (co κ ι (Clos x e (↓ ρ (fv e))) σ)
         Lam]
-   
+
    ;; Continue transitions
    ;; When local and meta contination are empty, evaluation is done
    [--> (co () () v σ) (ans v σ) Halt]
    ;; When local continuation is empty, install top continuation
    ;; in metacontinuation
    [--> (co () (κ_0 κ_1 ...) v σ) (co κ_0 (κ_1 ...) v σ) Return]
-   
+
    [--> (co ((AppL e ρ) φ ...) ι v σ)
         (ev e ρ σ ((AppR v) φ ...) ι)
         AppR]
-   
+
    ;; Install an empty local continuation, push current local contination
    ;; to metacontinuation
    [--> (name ς (co ((AppR (Clos x e ρ)) φ ...) (κ ...) v σ))
@@ -245,10 +245,10 @@
 (define-metafunction Lι
   injι : e -> ς
   [(injι e) (ev e () () () ())])
- 
+
 (define (evι e)
   (apply-reduction-relation* -->_mι (term (injι ,e))))
- 
+
 ;; Visualize concete machine
 (define (vizι e)
   (traces -->_mι (term (injι ,e))))
@@ -268,19 +268,19 @@
      (ans v σ)]
   [τ (v v σ)  ;; calling context
      ()]      ;; top-level context
-    
+
   [ςK ς K]
-  
+
   ;; τ -> [Set (κ τ)]
   [K (side-condition any_K (hash? (term any_K)))]
-  
+
   ;; [Set τ]
-  [τs (side-condition any_τs 
+  [τs (side-condition any_τs
                       (and (set? (term any_τs))
                            (for/and ([x (in-set (term any_τs))])
                              (redex-match? Lτ τ x))))]
   ;; [Set κ]
-  [κs (side-condition any_κs 
+  [κs (side-condition any_κs
                       (and (set? (term any_κs))
                            (for/and ([x (in-set (term any_κs))])
                              (redex-match? Lτ κ x))))])
@@ -328,7 +328,7 @@
 
 ;; [Set ς] K -> [Set ς] K
 ;; The step function for the system
-(define (step ςs K) 
+(define (step ςs K)
   (values (set-apply-reduction-relation (-->_mτ K) ςs)
           (combine-K K (set-apply-reduction-relation update-K ςs))))
 
@@ -354,7 +354,7 @@
    ;; Eval transitions
    [--> (ev x ρ σ κ τ) (gcτ (co κ τ v σ) ,K)
         Var
-        (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]   
+        (where (_ ... v _ ...) (lookup σ (lookup ρ x)))]
    [--> (ev (App e_0 e_1) ρ σ (φ ...) τ)
         (ev e_0 (↓ ρ (fv e_0)) σ ((AppL e_1 (↓ ρ (fv e_1))) φ ...) τ)
         AppL]
@@ -367,7 +367,7 @@
         (co κ τ v σ)
         (side-condition (not (empty? (term τ_0))))
         (where (_ ... (κ τ) _ ...)
-               ,(set->list (hash-ref K (term τ_0))))]             
+               ,(set->list (hash-ref K (term τ_0))))]
    [--> (co ((AppL e ρ) φ ...) τ v σ)
         (ev e ρ σ ((AppR v) φ ...) τ)
         AppR]
@@ -376,7 +376,7 @@
         β
         (where τ ((Clos x e ρ) v σ))
         (where a (allocτ ς))
-        
+
         (where K_1 ,(hash-join K (term τ) (term ((φ ...) τ_0))))]))
 
 (define (hash-join h k v)
@@ -402,12 +402,12 @@
   (for*/fold ([K0 K0])
     ([K (in-set Ks)]
      [(τ κs) (in-hash K)])
-    (hash-set K0 τ 
+    (hash-set K0 τ
               (set-union κs (hash-ref K0 τ (set))))))
-  
+
 ;; Monovariant abstraction
 (define-metafunction Lτ
-  allocτ : ς -> a  
+  allocτ : ς -> a
   [(allocτ (co ((AppR (Clos x e ρ)) φ ...) τ_0 v σ))
    x])
 
@@ -416,55 +416,55 @@
 ;; Graph Relation [Set ς] -> Graph
 (define (update-graph G r ςs)
   (for/fold ([G G])
-    ([ς (in-set ςs)])    
+    ([ς (in-set ςs)])
     (hash-set G ς (set-union (list->set (apply-reduction-relation r ς))
                              (hash-ref G ς (set))))))
 
 ;; Analyze expression producing graph and table
-(define (analyze e)  
+(define (analyze e)
   (let loop ([seen (set)]
              [ςs (set (term (injι ,e)))]
              [K (hash)]
              [G (hash)])
-    
+
     (cond [(set-empty? ςs) (values K G)]
           [else
            (define-values (ςs1 K1) (step ςs K))
            (loop (set-union seen ςs)
                  (set-subtract ςs1 seen)
-                 K1                 
+                 K1
                  (update-graph G (-->_mτ K) ςs))])))
-                 
+
 ;; Visualize a graph as a reduction relation starting from root.
 (define (visualize-graph G root)
   (define-language FOO)
   (traces
-   (reduction-relation 
+   (reduction-relation
     FOO
     (--> any_0 any_1
          (where (_ ... any_1 _ ...)
                 ,(set->list (hash-ref G (term any_0) '())))))
    root))
-  
+
 #;
 (let* ([id (λ (q) ((λ (x) x) q))]
        [y (id ZERO)]
-       [z (id ONE)])  
+       [z (id ONE)])
   z)
 (define-term ID (Lam q (App (Lam x x) q)))
 (define-term ZERO (Lam zero zero))
 (define-term ONE (Lam one one))
 
 (define-term EG
-  (App (Lam id 
+  (App (Lam id
             (App (Lam y (App (Lam z z) (App id ONE))) (App id ZERO))) ID))
- 
+
 ;; Sanity check: you either get ZERO or ONE, but
 ;; there is no loop!
 (define-values (myK myG)
   (analyze (term EG)))
 
-;(viz (term EG)) 
+;(viz (term EG))
 ;(vizι (term EG))
 (test-->> -->_m (term (inj (App (Lam x ZERO) ONE)))
           (term (ans (Clos zero zero ()) ())))

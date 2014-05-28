@@ -6,11 +6,11 @@
   [e .... (Frame R e) (Grant R e) (Test R e e) Fail]
   [R (r ...)]
   [r variable]
-  
+
   [κ (φ φ ...)]
   ;; Frames
   [φ (AppL e ρ m) (AppR v m) m]
-  
+
   [m [(r ↦ gn) ...]]
   [gn grant no])
 
@@ -40,14 +40,14 @@
    [--> (ev (Lam x e) ρ σ κ)
         (co κ (Clos x e (↓ ρ (fv e))) σ)
         Lam]
-   
+
    ;; Stack inspection transitions
    [--> (ev (Frame R e) ρ σ κ)
         (ev e ρ σ (cont-update κ (complement R) no))
-        Frame]   
+        Frame]
    [--> (ev (Grant R e) ρ σ κ)
         (ev e ρ σ (cont-update κ R grant))
-        Grant]   
+        Grant]
    [--> (ev (Test R e_0 e_1) ρ σ κ)
         (ev e_0 ρ σ κ)
         (where #t (OK R κ))
@@ -56,7 +56,7 @@
         (ev e_1 ρ σ κ)
         (where #f (OK R κ))
         Not-OK]
-   
+
    ;; Continue transitions
    [--> (co (m) v σ) (ans v σ) Halt]
    [--> (co ((AppL e ρ m) φ ...) v σ)
@@ -85,7 +85,7 @@
    (∪ (rng ρ) (ll-cm-κ (φ ...)))]
   [(ll-cm-κ ((AppR (Clos x e ρ) m) φ ...))
    (∪ (rng ρ) (ll-cm-κ (φ ...)))])
-  
+
 (define-metafunction CM
   alloc-cm : ς -> a
   [(alloc-cm (co κ v ([a ↦ _] ...)))
@@ -181,7 +181,7 @@
   ;; Machine states
   [ς (ev e ρ σ κ ι)
      (co κ ι v σ)
-     (ans v σ)]  
+     (ans v σ)]
   ;; Meta continuations
   [ι (κ ...)])
 
@@ -208,7 +208,7 @@
         Frame]
    [--> (ev (Grant R e) ρ σ κ ι)
         (ev e ρ σ (cont-update κ R grant) ι)
-        Grant]   
+        Grant]
    [--> (ev (Test R e_0 e_1) ρ σ κ ι)
         (gc-cmι (ev e_0 ρ σ κ ι))
         (where #t (OKι R κ ι))
@@ -217,18 +217,18 @@
         (gc-cmι (ev e_1 ρ σ κ ι))
         (where #f (OKι R κ ι))
         Not-OK]
-   
+
    ;; Continue transitions
    ;; When local and meta contination are empty, evaluation is done
    [--> (co (m) () v σ) (ans v σ) Halt]
    ;; When local continuation is empty, install top continuation
    ;; in metacontinuation
    [--> (co (m) (κ_0 κ_1 ...) v σ) (co κ_0 (κ_1 ...) v σ) Return]
-   
+
    [--> (co ((AppL e ρ m) φ ...) ι v σ)
         (ev e ρ σ ((AppR v ()) φ ...) ι)
         AppR]
-   
+
    ;; Install an empty local continuation, push current local contination
    ;; to metacontinuation
    [--> (name ς (co ((AppR (Clos x e ρ) m) φ ...) (κ ...) v σ))
