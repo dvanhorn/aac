@@ -16,15 +16,15 @@ We split the stack store from the value store and use only the value store in st
 %
 The resulting state space is then updated in \autoref{fig:pushdown-spaces}.
 %
-Since the $\sa{Prestate}$ space represents the more general idea of relevant context, we will sometimes refer to elements of $\sa{Prestate}$ as contexts.
+Since the $\mathit{Prestate}$ space represents the more general idea of relevant context, we will sometimes refer to elements of $\mathit{Prestate}$ as contexts.
 
 \begin{figure}
   \centering
   \begin{align*}
-    \mctx \in \sa{Prestate} &= \sa{CEK} \times \Store \times \Time \\
-    \sa{State} &= \sa{Prestate} \times \KStore \\
+    \mctx \in \mathit{Prestate} &= \sa{CEK} \times \Store \times \Time \\
+    \sa{State} &= \mathit{Prestate} \times \KStore \\
     \sa{Storeable} &= \wp(\Value \times \sa{Env}) \\
-    \mktab \in \KStore &= \sa{Prestate} \finto \wp(\Kont)
+    \mktab \in \KStore &= \mathit{Prestate} \finto \wp(\Kont)
   \end{align*}
   \caption{$\CESKKstart$ semantic spaces}
   \label{fig:pushdown-spaces}
@@ -103,8 +103,8 @@ Instead of ``continuation'' and ``meta-continuation'' then, we will use terminol
   \begin{align*}
     \mstate \in \sa{CEIK} &= \tpl{\mexpr,\menv,\mlkont,\mkont} \\
     \mlkont \in \LKont &= \Frame^* \\
-    \makont \in \Kont &= \sa{Prestate} + \set{\Halt} \\
-    s \in \sa{Prestate} &= \sa{CEIK} \times \Store \times \Time \\
+    \makont \in \Kont &= \mathit{Prestate} + \set{\Halt} \\
+    s \in \mathit{Prestate} &= \sa{CEIK} \times \Store \times \Time \\
   \end{align*}
   \caption{$\CESIKKstart$ semantic spaces}
   \label{fig:pushdown-spaces}

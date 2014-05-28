@@ -5,7 +5,102 @@ The glaring issue is that continuations become ``storeable'' and relevant to the
 Specifically, the store components of continuations become elements of the store's codomain --- a recursion that can lead to an unbounded state space and therefore a non-terminating analysis.
 %
 We apply the AAM methodology to cut out the recursion; whenever a continuation is captured to go into the store, we allocate an address to approximate the store component of the continuation.
+%%
+
+%%
+Our concrete test subject is the abstract machine for shift and reset, adapted from \citet{ianjohnson:Biernacki2006274} in \autoref{fig:shift-reset}.
 %
-The issue becomes, where do we map this address to a set of stores?
+The figure elides the rules for standard function calls.
 %
-\todo{Ian}
+The new additions to the state space are a new kind of value, $\vcomp{\mkont}$, and a \emph{meta-continuation}, $\mmkont \in \MKont = \Kont^*$ for separating continuations by their different prompts.
+%
+Composable continuations are indistinguishable from functions, so even though the meta-continuation is concretely a list of continuations, its conses are notated as function composition: $\mkapp{\mkont}{\mmkont}$.
+
+\begin{figure}
+  \centering
+  $\mstate \stepto \mstate' \text{ where } \maddr = \alloc(\mstate)$ \\
+  \begin{tabular}{r|l}%{r|ll}
+    \hline
+% Reset
+    $\tpl{\sreset{\mexpr}, \menv, \mstore, \mkont, \mmkont}$
+    &
+    $\tpl{\mexpr, \menv, \mstore, \kmt, \mkapp{\mkont}{\mmkont}}$
+%    & \textsc{[push prompt]}
+    \\
+% Pop prompt
+    $\tpl{\mval, \mstore, \kmt, \mkapp{\mkont}{\mmkont}}$
+    &
+    $\tpl{\mval, \mstore, {\mkont}, {\mmkont}}$
+%    & \textsc{[pop prompt]}
+    \\
+% Shift
+    $\tpl{\sshift{\mvar}{\mexpr}, \menv, \mstore, \mkont, \mmkont}$
+    &
+    $\tpl{\mexpr, \extm{\menv}{\mvar}{\maddr}, \mstore',\kmt,\mmkont}$
+%    & \textsc{[capture continuation]}
+    \\ where & $\mstore' = \joinm{\mstore}{\maddr}{\vcomp{\mkont}}$
+    \\
+% continuation call
+    $\tpl{\mval,\mstore,\kcons{\kfn{\vcomp{\mkont'}}}{\mkont}, \mmkont}$
+    &
+    $\tpl{\mval, \mstore, \mkont', \mkapp{\mkont}{\mmkont}}$
+%    & \textsc{[compose continuation]}
+  \end{tabular}  
+  \caption{Machine semantics for shift/reset}
+  \label{fig:shift-reset}
+\end{figure}
+%%
+
+%%
+Where should these addresses be mapped?
+%
+We introduce a new environment, $\mmktab$, that maps these addresses to the stores they represent.
+%
+The stores that contain addresses in $\mmktab$ are then \emph{open}, and must be paired with $\mmktab$ to be \emph{closed}.
+%
+This poses the same problem as before with contexts in storeable continuations.
+%
+Therefore, we give up some precision to regain termination by \emph{flattening} these environments when we capture continuations.
+%
+The new spaces are in \autoref{fig:shiftreset-spaces}.
+%
+\begin{figure}
+  \centering
+  \begin{align*}
+    \mmktab \in \MKTab &= \Addr \finto \wp(\Store) \\
+    \mctx \in \mathit{Prestate} &::= \tpl{\mastate,\mstore,\mmktab,\mtime} \\
+    \msctx \in \sa{Prestate} &::= \tpl{\mastate,\maddr,\mtime} \\
+    \mvkont \in \VKont &::= \epsilon \alt \kcons{\mkframe}{\msctx} \\
+    \sa{Storeable} &::= \wp(\VKont + (\Value \times \sa{Env})) \\
+  \end{align*}
+  \caption{Shift/reset semantic spaces}
+  \label{fig:shiftreset-spaces}
+\end{figure}
+%
+The approximation and flattening happens in $\approximate$:
+\begin{equation*}
+  \approximate : \MKTab \times \Addr \times \SKont \to \MKTab \times \VKont
+\end{equation*}
+\begin{align*}
+  \approximate(\mmktab,\maddr,\epsilon) &= \mmktab,\epsilon \\
+  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\mastate^*,\mstore^*,\mmktab^*,\mtime^*}}) &= \joinm{\mmktab\sqcup\mmktab^*}{\maddr}{\mstore^*},\kcons{\mkframe}{\tpl{\mastate^*,\maddr,\mtime^*}} \\
+  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\mastate^*,\maddr^*,\mtime^*}}) &= \joinm{\mmktab}{\maddr}{\mmktab(\maddr^*)},\kcons{\mkframe}{\tpl{\mastate^*,\maddr,\mtime^*}}
+\end{align*}
+The second case is where continuation closures get flattened together.
+%
+The third case is when an already approximate continuation is approximated: the approximation is inherited.
+
+We use this $\approximate$ function in the rule for continuation capture, as modified below.
+%
+Approximating the context and allocating the continuation in the store require two addresses, so we relax the specification of $\alloc$ to allow multiple address allocations in this case.
+\begin{equation*} \overbrace{\tpl{\sshift{\mvar}{\mexpr},\maenv,\makont,\mamkont},\mstore,\mmktab,\mtime}^{\mctx},\mktab \stepto
+  \tpl{\mexpr,\maenv',\epsilon,\mamkont},\mstore',\mmktab',\tick(\mctx),\mktab
+\end{equation*}
+where
+\begin{align*}
+  (\maddr,\maddr') &= \alloc(\mctx) & \maenv' &= \extm{\maenv}{\mvar}{\maddr} \\
+  (\mvkont,\mmktab') &= \approximate(\mmktab,\maddr',\makont) &
+  \mstore' &= \joinm{\mstore}{\maddr}{\mvkont}
+\end{align*}
+
+\todo{Explain $\MKont$ approximation and additional $\mktab$}
