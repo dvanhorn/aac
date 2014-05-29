@@ -260,7 +260,8 @@
         (co ι κ C v σ χ)
         Pop-prompt
         (where (_ ... (ι κ C) _ ...) ,(set->list (hash-ref ΞC (term υ) (set))))]
-   [--> (co () () () v σ χ) (ans v σ χ) Halt]
+   [--> (co ι κ () v σ χ) (ans v σ χ) Halt
+        (where #t (no-top? ,Ξκ χ ι κ))]
    [--> (co ι κ C v σ χ)
         (ev e ρ σ χ ((AppR v) φ ...) κ C)
         AppR
@@ -311,8 +312,8 @@
           (match-define (list ι κ) ικ)
           (set-union acc
                      (term (pop* Ξ_κ χ ,ι ,κ ,(set-add (term any_G) (term strict-τ)))))))]
-  [(pop* Ξ_κ χ () () _) ∅]
-  [(pop* Ξ_κ χ () (name τ̂ (v_f v_a a)) any_G)
+  [(pop* Ξ_κ χ () () _) ∅] ;; for the rules that test popping but should fail and move on.
+  [(pop* Ξ_κ χ () (v_f v_a a) any_G) ;; τ̂
    ,(for*/fold ([acc (set)])
         ([σ (in-list (term (lookup χ a)))]
          [(τ ικs) (in-hash (term Ξ_κ))]
@@ -324,6 +325,28 @@
       (match-define (list ι κ) ικ)
       ;; FIXME: should this be χ or χ*? χ is definitely sound.
       (set-union acc (term (pop* Ξ_κ χ ,ι ,κ ,G*))))])
+
+(define-metafunction SRι
+  [(no-top? Ξ_κ χ ι κ) (no-top?* Ξ_κ χ ι κ ∅)])
+(define-metafunction SRι
+  [(no-top?* Ξ_κ χ () () _) #t]
+  [(no-top?* Ξ_κ χ (φ_0 φ ...) κ _) #f]
+  [(no-top?* Ξ_κ χ () strict-τ any_G)
+   ,(and (not (set-member? (term any_G) (term strict-τ)))
+         (for/or ([ικ (in-set (hash-ref (term Ξ_κ) (term strict-τ) (set)))])
+           (match-define (list ι κ) ικ)
+           (term (no-top?* Ξ_κ χ ,ι ,κ ,(set-add (term any_G) (term strict-τ))))))]
+  [(no-top?* Ξ_κ χ () (v_f v_a a) any_G)
+   ,(for*/or ([σ (in-list (term (lookup χ a)))]
+              [(τ ικs) (in-hash (term Ξ_κ))]
+              [χ* (in-value (fourth τ))]
+              #:when (and (equal? (third τ) σ)
+                          (term (f⊑ ,χ* χ)))
+              [G* (in-value (set-add (term any_G) τ))]
+              [ικ (in-set ικs)])
+      (match-define (list ι κ) ικ)
+      ;; FIXME: should this be χ or χ*? χ is definitely sound.
+      (term (no-top?* Ξ_κ χ ,ι ,κ ,G*)))])
 
 (define (update-Ξ Ξκ ΞC)
   (reduction-relation
@@ -362,7 +385,7 @@
 (define (step-srι ςs Ξκ ΞC)
   (define-values (Ξκ1 ΞC1)
     (combine-Ξs Ξκ ΞC (set-apply-reduction-relation (update-Ξ Ξκ ΞC) ςs)))
-  ;; XXX: must be Ξκ1 ΞC1 and not the previous
+  ;; XXX: must be Ξκ1 ΞC1 and not the previous?
   (values (set-apply-reduction-relation (-->_srι Ξκ1 ΞC1) ςs)
           Ξκ1 ΞC1))
 (trace step-srι)
