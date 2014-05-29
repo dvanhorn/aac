@@ -404,6 +404,22 @@
   [(f⊔ (any_1 ...) (any_2 ...)) (any_1 ... any_2 ...)])
 
 (define-metafunction Lτ
+  ⊆ : (any ...) (any ...) -> boolean
+  [(⊆ (any_0 ... any_i any_1 ...) (any_2 ... any_i any_3 ...))
+   (⊆ (any_0 ... any_1 ...) (any_2 ... any_3 ...))]
+  [(⊆ () _) #t]
+  [(⊆ _ _) #f])
+
+(define-metafunction Lτ
+  f⊑ : fin℘ fin℘ -> boolean
+  [(f⊑ (any_0 ... [a ↦ any_s] any_1 ...) (any_2 ... [a ↦ any_t] any_3 ...))
+   res
+   (where res ,(and (term (⊆ any_s any_t))
+                    (term (f⊑ (any_0 ... any_1 ...) (any_2 ... any_3 ...)))))]
+  [(f⊑ () fin℘) #t]
+  [(f⊑ _ _) #f])
+
+(define-metafunction Lτ
   ⊔ : fin℘ a any -> fin℘
   [(⊔ σ a any) (⊔* σ a (any))])
 
