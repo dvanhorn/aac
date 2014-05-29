@@ -9,14 +9,14 @@
   [v (Clos x e ρ)]
   ;; Finite functions
   [fin ([any ↦ any] ...)]
+  ;; Finite function with a set codomain. Used as a store.
+  [(fin℘ σ) ([any ↦ (any ...)] ...)]
   ;; Machine states
   [ς (ev e ρ σ κ)
      (co κ v σ)
      (ans v σ)]
   ;; Environments
   [ρ ([x ↦ a] ...)]
-  ;; Stores
-  [σ ([a ↦ (s ...)] ...)]
   ;; Storables
   [s v]
   ;; Continuations
@@ -363,7 +363,7 @@
         Lam]
    ;; Continue transitions
    [--> (co () () v σ) (ans v σ) Halt]
-   [--> (co () τ_0 v σ)
+   [--> (co () τ_0 v σ) ;; Administrative step
         (co κ τ v σ)
         (side-condition (not (empty? (term τ_0))))
         (where (_ ... (κ τ) _ ...)
@@ -383,12 +383,29 @@
   (hash-set h k (set-add (hash-ref h k (set)) v)))
 
 (define-metafunction Lτ
-  ⊔ : σ a s -> σ
-  [(⊔ (name σ (any_1 ... [a ↦ (_ ... s_i _ ...)] any_2 ...)) a s_i)
-   σ]
-  [(⊔ (any_1 ... [a ↦ (s ...)] any_2 ...) a s_i)
-   (any_1 ... [a ↦ (s ... s_i)] any_2 ...)]
-  [(⊔ (any ...) a s) (any ... [a ↦ {s}])])
+  ⊔* : fin℘ a (any ...) -> fin℘
+  [(⊔* σ a ()) σ]
+  ;; remove all elements that already exist at a from the list we are adding.
+  [(⊔* (name σ (any_1 ... [a ↦ (_ ... any_i _ ...)] any_2 ...)) a (any_pre ... any_i any_post ...))
+   (⊔* σ a (any_pre ... any_post ...))]
+  ;; All the duplicates should be gone at this point.
+  [(⊔* (name σ (any_1 ... [a ↦ (any_s0 ...)] any_2 ...)) a (any_s1 ...))
+   (⊔* (any_1 ... [a ↦ (any_s0 ... any_s1 ...)] any_2 ...))]
+  ;; not mapped yet.
+  [(⊔* (any_1 ...) a any_2) (any_1 ... [a ↦ any_2])])
+
+(define-metafunction Lτ
+  f⊔ : fin℘ fin℘ -> fin℘
+  [(f⊔ f ()) f]
+  [(f⊔ (name f (any_1 ... [a ↦ _] any_2 ...))
+       (any_3 ... [a ↦ any_ss] any_4 ...))
+   (f⊔ (⊔* f a any_ss) (any_3 ... any_4 ...))]
+  ;; all shared addresses should be merged now. Append second map.
+  [(f⊔ (any_1 ...) (any_2 ...)) (any_1 ... any_2 ...)])
+
+(define-metafunction Lτ
+  ⊔ : fin℘ a any -> fin℘
+  [(⊔ σ a any) (⊔* σ a (any))])
 
 ;; Relation [Set Term] -> [Set Term]
 ;; Lift a reduction relation to a set of terms.
@@ -397,13 +414,17 @@
     ((x (in-set s)))
     (set-union y (list->set (apply-reduction-relation r x)))))
 
+(define (hash-union h a s)
+  (hash-set h a (set-union (hash-ref h a (set)) s)))
+(define (hash-add h a v)
+  (hash-set h a (set-add (hash-ref h a (set)) v)))
+
 ;; K [Set K] -> K
 (define (combine-K K0 Ks)
   (for*/fold ([K0 K0])
     ([K (in-set Ks)]
      [(τ κs) (in-hash K)])
-    (hash-set K0 τ
-              (set-union κs (hash-ref K0 τ (set))))))
+    (hash-union K0 τ κs)))
 
 ;; Monovariant abstraction
 (define-metafunction Lτ
@@ -417,8 +438,7 @@
 (define (update-graph G r ςs)
   (for/fold ([G G])
     ([ς (in-set ςs)])
-    (hash-set G ς (set-union (list->set (apply-reduction-relation r ς))
-                             (hash-ref G ς (set))))))
+    (hash-union G ς (list->set (apply-reduction-relation r ς)))))
 
 ;; Analyze expression producing graph and table
 (define (analyze e)

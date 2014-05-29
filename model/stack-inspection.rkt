@@ -75,7 +75,7 @@
    (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-cm-κ κ)) σ)))]
   [(gc-cm (co κ (Clos x e ρ) σ))
    (co κ (Clos x e ρ_0) σ_0)
-   (where ρ_0 (↓ ρ (fv-cm e)))
+   (where ρ_0 (↓ ρ ,(set-remove (term (fv-cm e)) (term x))))
    (where σ_0 (↓ σ (live ∅ (∪ (rng ρ) (ll-cm-κ κ)) σ)))])
 
 (define-metafunction CM
