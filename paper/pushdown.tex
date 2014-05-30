@@ -2,33 +2,34 @@ We can exactly represent the stack in the $\CESKstart$ machine with a modified a
 %
 The key idea is that if the address is ``precise enough,'' then every path that leads to the allocation will proceed exactly the same way until the address is dereferenced.
 %
+
+%
 What constitutes ``precise enough?'' 
 %
 For the $\CESKstart$ machine, every function evaluates the same way, regardless of the stack.
 %
-We should then represent the stack addresses as the entire state that allocates it, but store the stack addresses in a different table.
+We should then represent the stack addresses as the state that allocates it, without the rest of the stack.
+%
+We store stack addresses in a different table because execution is disregards the rest of the stack.
 %
 We will call this table $\mktab$, because it looks like a stack.
+%
+
 %
 By not storing the continuations in the value store, we separate ``relevant'' components from ``irrelevant'' components.
 %
 We split the stack store from the value store and use only the value store in stack addresses.
 %
-The resulting state space is then updated in \autoref{fig:pushdown-spaces}.
-%
-Since the $\mathit{Prestate}$ space represents the more general idea of relevant context, we will sometimes refer to elements of $\mathit{Prestate}$ as contexts.
-
-\begin{figure}
-  \centering
+The resulting state space is updated here:
   \begin{align*}
-    \mctx \in \mathit{Prestate} &= \sa{CEK} \times \Store \times \Time \\
-    \sa{State} &= \mathit{Prestate} \times \KStore \\
+    \sa{State} &= \sa{CEK} \times \Store \times \Time \times \KStore \\
     \sa{Storeable} &= \wp(\Value \times \sa{Env}) \\
-    \mktab \in \KStore &= \mathit{Prestate} \finto \wp(\Kont)
+    \mkont \in \Kont &::= \epsilon \alt \kcons{\mkframe}{\mctx} \\
+    \mctx \in \Context &::=  \tpl{\mexpr,\maenv,\mstore,\mtime} \\
+    \mktab \in \KStore &= \Context \finto \wp(\Kont) \\
   \end{align*}
-  \caption{$\CESKKstart$ semantic spaces}
-  \label{fig:pushdown-spaces}
-\end{figure}
+%
+Stack addresses generally describe the relevant context that lead to their allocation, so we will refer to them henceforth as \emph{contexts}.
 
 The semantics is modified slightly in \autoref{fig:ceskkstart-semantics} to use $\mktab$ instead of $\mstore$ for continuation allocation and lookup.
 %
@@ -62,18 +63,19 @@ This last optimization will be covered in more detail in \autoref{sec:memo}
 % Application
     $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\makont}$
     &
-    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\maddr}}$ \\
-    where & $\mktab' = \joinm{\mktab}{(\mastate,\mstore,\mtime)}{\makont}$
+    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mctx}}$ \\
+    where & $\mctx = \tpl{\sapp{\mexpri}{\mexpri1},\maenv,\mstore,\mtime}$ \\
+          & $\mktab' = \joinm{\mktab}{\mctx}{\makont}$
     \\
 % Arg eval
-    $\tpl{\mval,\maenv, \kcons{\appl{\mexpr,\maenv'}}{\maddralt}}$
+    $\tpl{\mval,\maenv, \kcons{\appl{\mexpr,\maenv'}}{\mctx}}$
     &
-    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$
+    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mctx}}$
     \\
 % Function call
-    $\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\maddralt}}$
+    $\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\mctx}}$
     &
-    $\tpl{\mexpr,\maenv'',\makont}$ if $\makont \in \mktab(\maddralt)$ \\
+    $\tpl{\mexpr,\maenv'',\makont}$ if $\makont \in \mktab(\mctx)$ \\
     where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
           & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$
   \end{tabular} \\
@@ -103,14 +105,15 @@ Instead of ``continuation'' and ``meta-continuation'' then, we will use terminol
   \begin{align*}
     \mstate \in \sa{CEIK} &= \tpl{\mexpr,\menv,\mlkont,\mkont} \\
     \mlkont \in \LKont &= \Frame^* \\
-    \makont \in \Kont &= \mathit{Prestate} + \set{\Halt} \\
-    s \in \mathit{Prestate} &= \sa{CEIK} \times \Store \times \Time \\
+    \makont \in \Kont &= \Context + \set{\Halt}
   \end{align*}
   \caption{$\CESIKKstart$ semantic spaces}
   \label{fig:pushdown-spaces}
 \end{figure}
 
 The resulting shuffling of the semantics to accommodate this new representation is in \autoref{fig:cesikkstart-semantics}.
+%
+The extension to $\mktab$ happens in a different rule -- function entry -- so the shape of the context changes to hold the function, argument, store and time.
 %
 We have a choice of whether to introduce an administrative step to dereference $\mktab$ once $\mlkont$ is empty, or to use a helper metafunction to describe a ``pop'' of both $\mlkont$ and $\mkont$.
 %
@@ -129,6 +132,7 @@ Now $\pop$ must save all the contexts it dereferences in order to guard against 
 %
 So $\pop(\mlkont,\makont,\mktab) = \popaux(\mlkont,\makont,\mktab,\emptyset)$ where
 \begin{align*}
+  \popaux(\epsilon,\epsilon,\mktab,G) &= \emptyset \\
   \popaux(\kcons{\mkframe}{\mlkont},\makont,\mktab,G) &= \set{(\mkframe,\mlkont,\makont)} \\
   \popaux(\epsilon,\mctx,\mktab,G) &= \setbuild{(\mkframe,\mlkont,\makont)}{(\kcons{\mkframe}{\mlkont}, \makont) \in \mktab(\mctx)} \\
   &\cup \bigcup\limits_{\mctx' \in G'}\popaux(\epsilon,\mctx',\mktab,G\cup G') \\
@@ -143,7 +147,7 @@ However, when adding the administrative state, the ``seen'' check requires searc
 
 \begin{figure}
   \centering
-  $\mstate,\mstore,\mtime,\mktab \stepto \mstate',\mstore',\tick(\mstate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
+  $\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\tick(\mastate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
     $\tpl{\svar\mvar, \maenv, \mlkont, \makont}$
@@ -158,17 +162,17 @@ However, when adding the administrative state, the ``seen'' check requires searc
 % Arg eval
     $\tpl{\mval,\maenv, \mlkont,\makont}$
     &
-    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$ \\
+    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mlkont'},\makont'}$ \\
     &
-    if $\appl{\mexpr,\maenv'}, \mlkont',\makont' \in \pop(\mlkont,\makont,\mktab)$, or \\
+    if $\appl{\mexpr,\maenv'}, \mlkont',\makont' \in \pop(\mlkont,\makont,\mktab)$ \\
 % Function call
+    $\tpl{\mval,\maenv, \mlkont,\makont}$
     &
-    $\tpl{\mexpr,\maenv'',\epsilon,\maddralt}$ \\
+    $\tpl{\mexpr,\maenv'[\mvar\mapsto\maddr],\epsilon,\mctx}$ \\
     & if $\appr{\slam{\mvar}{\mexpr},\maenv'}, \mlkont', \makont' \in \pop(\mlkont,\makont,\mktab)$ \\
-    where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
-    & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$ \\
-    & $\maddralt = (\mstate,\mstore,\mlkont,\makont)$ \\
-    & $\mktab' = \joinm{\mktab}{\maddralt}{(\mlkont,\makont)}$
+    where & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$ \\
+    & $\mctx = (\mval,\maenv,\slam{\mvar}{\mexpr},\maenv',\mstore,\mtime)$ \\
+    & $\mktab' = \joinm{\mktab}{\mctx}{(\mlkont,\makont)}$
   \end{tabular} \\
   Where $\mstore' = \mstore$ and $\mktab' = \mktab$ unless otherwise stated.
   \caption{$\CESIKKstart$ semantics}

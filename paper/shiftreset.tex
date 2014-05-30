@@ -1,54 +1,12 @@
 What happens when we apply the techniques of the previous sections to a semantics that treats continuations as first-class?
 %
-The glaring issue is that continuations become ``storeable'' and relevant to the execution of functions, but it was precisely the \emph{irrelevance} that allowed the separation of $\mstore$ and $\mktab$.
+The glaring issue is that continuations become ``storeable'' and relevant to the execution of functions.
+%
+But, it was precisely the \emph{irrelevance} that allowed the separation of $\mstore$ and $\mktab$.
 %
 Specifically, the store components of continuations become elements of the store's codomain --- a recursion that can lead to an unbounded state space and therefore a non-terminating analysis.
 %
 We apply the AAM methodology to cut out the recursion; whenever a continuation is captured to go into the store, we allocate an address to approximate the store component of the continuation.
-%%
-
-%%
-Our concrete test subject is the abstract machine for shift and reset, adapted from \citet{ianjohnson:Biernacki2006274} in \autoref{fig:shift-reset}.
-%
-The figure elides the rules for standard function calls.
-%
-The new additions to the state space are a new kind of value, $\vcomp{\mkont}$, and a \emph{meta-continuation}, $\mmkont \in \MKont = \Kont^*$ for separating continuations by their different prompts.
-%
-Composable continuations are indistinguishable from functions, so even though the meta-continuation is concretely a list of continuations, its conses are notated as function composition: $\mkapp{\mkont}{\mmkont}$.
-
-\begin{figure}
-  \centering
-  $\mstate \stepto \mstate' \text{ where } \maddr = \alloc(\mstate)$ \\
-  \begin{tabular}{r|l}%{r|ll}
-    \hline
-% Reset
-    $\tpl{\sreset{\mexpr}, \menv, \mstore, \mkont, \mmkont}$
-    &
-    $\tpl{\mexpr, \menv, \mstore, \kmt, \mkapp{\mkont}{\mmkont}}$
-%    & \textsc{[push prompt]}
-    \\
-% Pop prompt
-    $\tpl{\mval, \mstore, \kmt, \mkapp{\mkont}{\mmkont}}$
-    &
-    $\tpl{\mval, \mstore, {\mkont}, {\mmkont}}$
-%    & \textsc{[pop prompt]}
-    \\
-% Shift
-    $\tpl{\sshift{\mvar}{\mexpr}, \menv, \mstore, \mkont, \mmkont}$
-    &
-    $\tpl{\mexpr, \extm{\menv}{\mvar}{\maddr}, \mstore',\kmt,\mmkont}$
-%    & \textsc{[capture continuation]}
-    \\ where & $\mstore' = \joinm{\mstore}{\maddr}{\vcomp{\mkont}}$
-    \\
-% continuation call
-    $\tpl{\mval,\mstore,\kcons{\kfn{\vcomp{\mkont'}}}{\mkont}, \mmkont}$
-    &
-    $\tpl{\mval, \mstore, \mkont', \mkapp{\mkont}{\mmkont}}$
-%    & \textsc{[compose continuation]}
-  \end{tabular}  
-  \caption{Machine semantics for shift/reset}
-  \label{fig:shift-reset}
-\end{figure}
 %%
 
 %%
@@ -62,16 +20,95 @@ This poses the same problem as before with contexts in storeable continuations.
 %
 Therefore, we give up some precision to regain termination by \emph{flattening} these environments when we capture continuations.
 %
-The new spaces are in \autoref{fig:shiftreset-spaces}.
+Fresh allocation still maintains the concrete semantics, but we necessarily lose some ability to distinguish contexts in the abstract.
+%%
+
+\subsection{Case study: shift and reset}
+%%
+Our concrete test subject is the abstract machine for shift and reset, adapted from \citet{ianjohnson:Biernacki2006274} in the ``eval, continue'' style in \autoref{fig:shift-reset}.
 %
+The figure elides the rules for standard function calls.
+%
+The new additions to the state space are a new kind of value, $\vcomp{\mkont}$, and a \emph{meta-continuation}, $\mmkont \in \MKont = \Kont^*$ for separating continuations by their different prompts.
+%
+Composable continuations are indistinguishable from functions, so even though the meta-continuation is concretely a list of continuations, its conses are notated as function composition: $\mkapp{\mkont}{\mmkont}$.
+
+\begin{figure}
+  \centering
+  $\mstate \stepto \mstate'$ \\
+  \begin{tabular}{r|l}%{r|ll}
+    \hline
+% Reset
+    $\ev{\sreset{\mexpr}, \menv, \mkont, \mmkont}$
+    &
+    $\ev{\mexpr, \menv, \epsilon, \mkapp{\mkont}{\mmkont}}$
+%    & \textsc{[push prompt]}
+    \\
+% Pop prompt
+    $\co{\epsilon, \mkapp{\mkont}{\mmkont}, \mval}$
+    &
+    $\co{\mkont, \mmkont, \mval}$
+%    & \textsc{[pop prompt]}
+    \\
+% Shift
+    $\ev{\sshift{\mvar}{\mexpr}, \menv, \mkont, \mmkont}$
+    &
+    $\ev{\mexpr, \extm{\menv}{\mvar}{\vcomp{\mkont}},\epsilon,\mmkont}$
+%    & \textsc{[capture continuation]}
+    \\
+% continuation call
+    $\co{\kcons{\kfn{\vcomp{\mkont'}}}{\mkont}, \mmkont, \mval}$
+    &
+    $\co{\mkont', \mkapp{\mkont}{\mmkont}, \mval}$
+%    & \textsc{[compose continuation]}
+  \end{tabular}  
+  \caption{Machine semantics for shift/reset}
+  \label{fig:shift-reset}
+\end{figure}
+%%
+
+\subsection{Reformulated with tables}
+%
+The machine in \autoref{fig:shift-reset} is transformed now to have three new tables: one for continuations, one as discussed in the section beginning to close stored continuations, and one for meta-continuations.
+%
+The first is like previous sections, albeit continuations may now have the approximate form that is storable.
+%
+The meta-continuation table is much like the continuation table of previous sections because they are not storable.
+%
+Meta-continuations do not have simple syntactic strategies for bounding their size, so we choose to bound them to size 1.
+%
+They could be lists of $\sa{Kont}$ bounded at an arbitrary $n \in \nat$, but we simplify for presentation.
+
+Contexts for continuations are still at function application, but now contain the $\mmktab$.
+%
+Contexts for meta-continuations are in two places: manual prompt introduction via {\tt reset}, or via continuation invocation.
+%
+At continuation capture time, continuation contexts are approximated to remove $\mstore$ and $\mmktab$ components.
+%
+The different context spaces are thus:
+\begin{align*}
+  \msctx \in \ExactContext &::= \tpl{\maval,\maval,\mstore,\mmktab,\mtime} \\
+  \mactx \in \sa{Context} &::= \tpl{\maval,\maval,\maddr,\mtime} \\
+  \mctx \in \Context &::= \mactx \alt \msctx \\
+  \mmctx \in \MContext &::= \tpl{\mexpr,\maenv,\mstore,\mmktab,\mtime}
+                       \alt \tpl{\mvkont, \mval, \mstore, \mmktab, \mtime} \\
+\end{align*}
+%
+
+
 \begin{figure}
   \centering
   \begin{align*}
+    \mastate \in \sa{SR} &::= \ev{\mexpr,\maenv,\makont,\mamkont} \alt \co{\makont,\mamkont,\maval} \\
+    s \in \Prestate &::= \mastate,\mstore,\mmktab,\mtime \\
+    \State &::= s,\mktab_{\makont},\mktab_{\mamkont} \\
     \mmktab \in \MKTab &= \Addr \finto \wp(\Store) \\
-    \mctx \in \mathit{Prestate} &::= \tpl{\mastate,\mstore,\mmktab,\mtime} \\
-    \msctx \in \sa{Prestate} &::= \tpl{\mastate,\maddr,\mtime} \\
-    \mvkont \in \VKont &::= \epsilon \alt \kcons{\mkframe}{\msctx} \\
-    \sa{Storeable} &::= \wp(\VKont + (\Value \times \sa{Env})) \\
+    \makont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\mctx} \alt \mctx \\
+    \mamkont \in \sa{MKont} &::= \epsilon \alt \mmctx \\
+    \mvkont \in \VKont &::= \epsilon \alt \mactx \\
+    \mktab_{\makont} \in \KStore &= \ExactContext \finto \wp(\sa{Kont}) \\
+    \mktab_{\mamkont} \in \MKStore &= \MContext \finto \wp(\sa{Kont} \times \sa{MKont}) \\
+    \maval \in \sa{Storeable} &= \wp(\VKont + (\Value \times \sa{Env})) \\
   \end{align*}
   \caption{Shift/reset semantic spaces}
   \label{fig:shiftreset-spaces}
@@ -83,18 +120,23 @@ The approximation and flattening happens in $\approximate$:
 \end{equation*}
 \begin{align*}
   \approximate(\mmktab,\maddr,\epsilon) &= \mmktab,\epsilon \\
-  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\mastate^*,\mstore^*,\mmktab^*,\mtime^*}}) &= \joinm{\mmktab\sqcup\mmktab^*}{\maddr}{\mstore^*},\kcons{\mkframe}{\tpl{\mastate^*,\maddr,\mtime^*}} \\
-  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\mastate^*,\maddr^*,\mtime^*}}) &= \joinm{\mmktab}{\maddr}{\mmktab(\maddr^*)},\kcons{\mkframe}{\tpl{\mastate^*,\maddr,\mtime^*}}
+  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\mstore,\mmktab',\mtime}}) &= \joinm{\mmktab\sqcup\mmktab'}{\maddr}{\mstore},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr,\mtime}} \\
+  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddralt,\mtime}}) &= \joinm{\mmktab}{\maddr}{\mmktab(\maddralt)},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr,\mtime}}
 \end{align*}
 The second case is where continuation closures get flattened together.
 %
 The third case is when an already approximate continuation is approximated: the approximation is inherited.
-
-We use this $\approximate$ function in the rule for continuation capture, as modified below.
 %
 Approximating the context and allocating the continuation in the store require two addresses, so we relax the specification of $\alloc$ to allow multiple address allocations in this case.
-\begin{equation*} \overbrace{\tpl{\sshift{\mvar}{\mexpr},\maenv,\makont,\mamkont},\mstore,\mmktab,\mtime}^{\mctx},\mktab \stepto
-  \tpl{\mexpr,\maenv',\epsilon,\mamkont},\mstore',\mmktab',\tick(\mctx),\mktab
+
+Each of the four rules of the original shift/reset machine has a corresponding rule that we explain piecemeal.
+%
+We will write $\mastate \kindastepto \mastate',\ldots$ optionally updating the other components to lessen the notational noise.
+%
+We use the above $\approximate$ function in the rule for continuation capture, as modified here.
+%
+\begin{equation*}\ev{\sshift{\mvar}{\mexpr},\maenv,\makont,\mamkont} \kindastepto
+  \ev{\mexpr,\maenv',\epsilon,\mamkont},\mstore',\mmktab'
 \end{equation*}
 where
 \begin{align*}
@@ -103,4 +145,35 @@ where
   \mstore' &= \joinm{\mstore}{\maddr}{\mvkont}
 \end{align*}
 
-\todo{Explain $\MKont$ approximation and additional $\mktab$}
+The rule for {\tt reset} stores the continuation and meta-continuation in $\mktab_{\mamkont}$:
+\begin{align*}
+\ev{\sreset{\mexpr},\maenv,\makont,\mamkont} &\kindastepto
+  \ev{\mexpr,\maenv,\epsilon,\mmctx},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont,\mamkont)} \\
+\text{where } \mmctx &= \tpl{\mexpr,\maenv,\mstore,\mmktab,\mtime}
+\end{align*}
+
+The prompt-popping rule simply dereferences $\mktab_{\mamkont}$:
+\begin{align*}
+  \co{\epsilon,\mmctx,\maval} &\kindastepto \co{\makont,\mamkont,\maval} \text{ if } (\makont,\mamkont) \in \mktab_{\mamkont}(\mmctx)
+\end{align*}
+
+The continuation installation rule extends $\mktab_{\mamkont}$ at the different context:
+\begin{align*}
+  \co{\makont,\mamkont,\maval} &\kindastepto \co{\mvkont,\mmctx,\maval},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont',\mamkont)} \\ 
+\text{if } & (\appr{\mvkont},\makont') \in \pop(\mktab_{\makont},\mmktab, \makont) \\
+\text{where } \mmctx &= \mvkont,\maval,\mstore,\mmktab,\mtime
+\end{align*}
+Again we have a meta-function $\pop$, but this time to interpret approximated continuations:
+\begin{align*}
+  \pop(\mktab_{\makont}, \mmktab, \makont) &= \popaux(\makont,\emptyset) \\
+  \text{where } 
+   \popaux(\epsilon, G) &= \emptyset \\
+   \popaux(\kcons{\mkframe}{\mctx}, G) &= \set{(\mkframe,\mctx)} \\
+   \popaux(\mctx, G) &= \bigcup\limits_{\makont \in G'}(\popaux(\makont, G\cup G')) \\
+    \text{where } G' &= \bigcup\limits_{\msctx \in I(\mctx)}{\mktab_{\makont}(\msctx)} \setminus G \\
+  I(\msctx) &= \set{\msctx} \\
+  I(\tpl{\maval_f,\maval_a,\maddr,\mtime}) &=
+  \setbuild{\tpl{\maval_f,\maval_a,\mstore,\mmktab',\mtime} \in \dom(\mktab_{\makont})}
+           {\mstore \in \mmktab(\maddr),
+            \mmktab' \sqsubseteq \mmktab}
+\end{align*}

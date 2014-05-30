@@ -11,6 +11,7 @@
 \newcommand{\mvar}{x}
 \newcommand{\mvaralt}{y}
 \newcommand{\mval}{v}
+\newcommand{\maval}{\hat{v}}
 \newcommand{\mvalpre}{v_\mathit{pre}}
 \newcommand{\mvalpost}{v_\mathit{post}}
 \newcommand{\mtag}{v_{\mathit{t}}}
@@ -39,8 +40,10 @@
 \newcommand{\mmktab}{\chi}
 \newcommand{\mmemo}{M}
 \newcommand{\mpoint}{p}
-\newcommand{\mctx}{s}
-\newcommand{\msctx}{\hat{\mctx}}
+\newcommand{\mctx}{\tau}
+\newcommand{\mmctx}{\upsilon}
+\newcommand{\mactx}{\hat{\mctx}}
+\newcommand{\msctx}{\dot{\mctx}}
 \newcommand{\mframe}{\xi}
 \newcommand{\mkframe}{\phi}
 \newcommand{\mlab}{\ell}
@@ -66,12 +69,14 @@
 \newcommand{\Expr}{\mathit{Expr}}
 \newcommand{\Store}{\mathit{Store}}
 \newcommand{\KStore}{\mathit{KStore}}
+\newcommand{\MKStore}{\mathit{CStore}}
 \newcommand{\LKont}{\mathit{LKont}}
 \newcommand{\Kont}{\mathit{Kont}}
 \newcommand{\VKont}{\widetilde{\mathit{Kont}}}
 \newcommand{\SKont}{\widehat{\mathit{Kont}}}
 \newcommand{\MKont}{\mathit{MKont}}
 \newcommand{\Env}{\mathit{Env}}
+\newcommand{\Prestate}{\mathit{Prestate}}
 \newcommand{\State}{\mathit{State}}
 \newcommand{\System}{\mathit{System}}
 \newcommand{\Value}{\mathit{Value}}
@@ -81,7 +86,9 @@
 \newcommand{\makont}{\hat{\mkont}}
 \newcommand{\mvkont}{\tilde{\mkont}}
 
+\newcommand{\ExactContext}{\mathit{ExactContext}}
 \newcommand{\Context}{\mathit{Context}}
+\newcommand{\MContext}{\mathit{MContext}}
 \newcommand{\SContext}{\mathit{VContext}}
 
 \newcommand{\Point}{\mathit{Point}}
@@ -98,6 +105,7 @@
 \newcommand{\pop}{\mathit{pop}}
 \newcommand{\popaux}{\mathit{pop}^*}
 
+\newcommand{\fv}{\mathit{fv}}
 \newcommand{\alloc}{\mathit{alloc}}
 \newcommand{\tick}{\mathit{tick}}
 
@@ -152,8 +160,8 @@
 \newcommand{\sapp}[3][{}]{(#2\ #3)#1}
 \newcommand{\slam}[3][{}]{\lambda#1 #2. #3}
 \newcommand{\sprim}[1]{#1}
-\newcommand{\sreset}[1]{(\texttt{reset}\ #1)}
-\newcommand{\sshift}[2]{(\texttt{shift}\ #1. #2)}
+\newcommand{\sreset}[1]{\texttt{reset}\ #1}
+\newcommand{\sshift}[2]{\texttt{shift}\ #1. #2}
 
 \newcommand{\swcm}[3]{(\texttt{wcm}\ #1\ #2\ #3)}
 \newcommand{\sccms}{(\texttt{ccm})}
@@ -178,6 +186,9 @@
 
 \newcommand{\appl}[1]{\mathbf{appL}(#1)}
 \newcommand{\appr}[1]{\mathbf{appR}(#1)}
+
+\newcommand{\ev}[1]{\mathbf{ev}(#1)}
+\newcommand{\co}[1]{\mathbf{co}(#1)}
 
 
 \newcommand{\rt}{\mathbf{rt}}
@@ -207,7 +218,7 @@
 \newcommand{\set}[1]{\{ #1 \}}
 \newcommand{\setbuild}[2]{\{ #1\ :\ #2\}}
 \newcommand{\setbuildb}[2]{\left\{ #1\ :\ #2\right\}}
-\newcommand{\nequiv}{\centernot\equiv}
+%\newcommand{\nequiv}{\centernot\equiv}
 
 \newcommand{\many}[1]{\overline{#1}}
 \newcommand{\kcons}[2]{#1{\tt :} #2}
@@ -224,6 +235,7 @@
 
 %% Relations
 \newcommand{\stepto}{\longmapsto}
+\newcommand{\kindastepto}{\dashedrightarrow}
 \newcommand{\pdstepto}{\longmapsto_{\mathit{\Xi{}M}}}
 \newcommand{\astepto}{\mathrel{\widehat{\longmapsto}}}
 \newcommand{\tred}[1]{\mathrel{\underset{\Pi}{#1}}}

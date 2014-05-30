@@ -14,17 +14,18 @@ The following function will produce the set of live addresses in the stack:
 \begin{align*}
   \kontlive(\makont) &= \kontliveaux(\makont,\emptyset) \\[2pt]
   \kontliveaux(\epsilon,L) &= L \\
-  \kontliveaux(\kcons{\mkframe}{\makont}, L) &= \kontliveaux(\makont, L\cup\touches(\mkframe))
+  \kontliveaux(\kcons{\mkframe}{\makont}, L) &= \kontliveaux(\makont, L\cup\touches(\mkframe)) \\
+  \text{where } \touches(\appl{\mexpr,\menv}) &= \setbuild{\menv(\mvar)}{\mvar \in \fv(\mexpr)} \\
+                \touches(\appr{\mval,\menv}) &= \setbuild{\menv(\mvar)}{\mvar \in \fv(\mval)}
 \end{align*}
 
-When interpreted via AAM, the continuation is indirected through $K$ and leads to multiple results, and possibly loops through $K$.
+When interpreted via AAM, the continuation is indirected through $\mktab$ and leads to multiple results, and possibly loops through $\mktab$.
 %
 Thus this is more properly understood as
 \begin{align*}
-  \kontlive(K,\makont) &= \terminal(\overline{\stepto},\kontliveaux(K,\makont,\emptyset)) \\[2pt]
-  \kontliveaux(K,\epsilon,L) &\stepto_0 L \\
-  \kontliveaux(K,\kcons{\mkframe}{\makont}, L) &\stepto_1 \kontliveaux(K,\makont, L\cup\touches(\mkframe)) \\
-  \kontliveaux(K,\mctx, L) &\stepto_2 \kontliveaux(K,\makont,L) \text{ if } \makont \in K(\mctx)
+  \kontlive(\mktab,\makont) &= \terminal(\overline{\stepto},\kontliveaux(\mktab,\makont,\emptyset)) \\[2pt]
+  \kontliveaux(\mktab,\epsilon,L) &\stepto_0 L \\
+  \kontliveaux(\mktab,\kcons{\mkframe}{\mctx}, L) &\stepto_1 \kontliveaux(\mktab,\makont, L\cup\touches(\mkframe)) \text{ if } \makont \in \mktab(\mctx)
 \end{align*}
 
 where $\terminal$ is a metafunction that produces the set of irreducible terms of an input list of relations given a starting point:
@@ -46,7 +47,7 @@ If a rule does not match a given term, the intermediate set, $I$ will be empty, 
 %
 
 %
-A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.\footnote{The garbage collecting version of PDCFA~\citep{dvanhorn:Earl2012Introspective} chooses the second of these two strategies.}
+A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.\footnote{The garbage collecting version of PDCFA~\citep{ianjohnson:DBLP:journals/jfp/JohnsonSEMH14} evaluates the second of these two strategies.}
 %
 On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hopes that the state space will be smaller.
 %
