@@ -11,6 +11,8 @@
   [fin ([any ↦ any] ...)]
   ;; Finite function with a set codomain. Used as a store.
   [(fin℘ σ) ([any ↦ (any ...)] ...)]
+  ;; Sets
+  [℘ (side-condition any_S (set? (term any_S)))]
   ;; Machine states
   [ς (ev e ρ σ κ)
      (co κ v σ)
@@ -61,6 +63,12 @@
   lookup : fin any -> any
   [(lookup (_ ... [any_k ↦ any_v] _ ...) any_k) any_v])
 
+(define-metafunction L
+  debug-lookup : fin any string -> any
+  [(debug-lookup (_ ... [any_k ↦ any_v] _ ...) any_k _) any_v]
+  [(debug-lookup fin any_k string)
+   ,(error 'lookup "~a ~a ~a" (term string) (term fin) (term any_k))])
+
 ;; Extend finite map
 (define-metafunction L
   ext : fin any any -> fin
@@ -73,7 +81,7 @@
 
 ;; Union of sets
 (define-metafunction L
-  ∪ : any ... -> any
+  ∪ : ℘ ... -> ℘
   [(∪ any ...)
    ,(apply set-union (term (∅ any ...)))])
 
@@ -318,7 +326,7 @@
    (where τs_seen* (∪ τs_seen ,(set (term τ))))
    (where τs_frontier*
           ,(set-subtract (term (∪ τs_frontier ,(list->set (term (τ_1 ...)))))
-                         (term (∪ τs_seen ,(set (term τ))))))])
+                         (term τs_seen*)))])
 
 ;; Reachable continuations
 (define-metafunction Lτ

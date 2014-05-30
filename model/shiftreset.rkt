@@ -49,25 +49,25 @@
 ;; Metafunction extension sucks.
 ;; We can't just add a new value and expect ll-κ to work.
 (define-metafunction SR
-  ll-sr-κ : κ -> any
-  [(ll-sr-κ ()) ∅]
-  [(ll-sr-κ ((AppL e ρ) φ ...))
-   (∪ (rng ρ) (ll-sr-κ (φ ...)))]
-  [(ll-sr-κ ((AppR v) φ ...))
-   (∪ (touched v) (ll-sr-κ (φ ...)))]
-  [(ll-sr-κ ((op2L op2 e ρ) φ ...))
-   (∪ (rng ρ) (ll-sr-κ (φ ...)))]
-  [(ll-sr-κ ((op2R op2 v) φ ...))
-   (ll-sr-κ (φ ...))])
+  ll-sr-φs : (φ ...) -> any
+  [(ll-sr-φs ()) ∅]
+  [(ll-sr-φs ((AppL e ρ) φ ...))
+   (∪ (rng ρ) (ll-sr-φs (φ ...)))]
+  [(ll-sr-φs ((AppR v) φ ...))
+   (∪ (touched v) (ll-sr-φs (φ ...)))]
+  [(ll-sr-φs ((op2L op2 e ρ) φ ...))
+   (∪ (rng ρ) (ll-sr-φs (φ ...)))]
+  [(ll-sr-φs ((op2R op2 v) φ ...))
+   (ll-sr-φs (φ ...))])
 
 (define-metafunction SR
   ll-C : C -> any
-  [(ll-C (κ ...)) (∪ (ll-sr-κ κ) ...)])
+  [(ll-C (κ ...)) (∪ (ll-sr-φs κ) ...)])
 
 (define-metafunction SR
   touched : v -> any
   [(touched (Clos x e ρ)) (rng ρ)]
-  [(touched (comp κ)) (ll-sr-κ κ)]
+  [(touched (comp κ)) (ll-sr-φs κ)]
   [(touched primv) ∅])
 
 ;; Live locations from an address
@@ -95,17 +95,17 @@
   [(gc-sr (ev e ρ σ κ C))
    (ev e ρ_0 σ_0 κ C)
    (where ρ_0 (↓ ρ (fv-sr e)))
-   (where σ_0 (↓ σ (live-sr ∅ (∪ (rng ρ) (ll-sr-κ κ) (ll-C C)) σ)))]
+   (where σ_0 (↓ σ (live-sr ∅ (∪ (rng ρ) (ll-sr-φs κ) (ll-C C)) σ)))]
   [(gc-sr (co κ C (Clos x e ρ) σ))
    (co κ C (Clos x e ρ_0) σ_0)
    (where ρ_0 (↓ ρ ,(set-remove (term (fv-sr e)) (term x))))
-   (where σ_0 (↓ σ (live-sr ∅ (∪ (rng ρ) (ll-sr-κ κ) (ll-C C)) σ)))]
+   (where σ_0 (↓ σ (live-sr ∅ (∪ (rng ρ) (ll-sr-φs κ) (ll-C C)) σ)))]
   [(gc-sr (co κ C primv σ))
    (co κ C primv σ_0)
-   (where σ_0 (↓ σ (live-sr ∅ (∪ (ll-sr-κ κ) (ll-C C)) σ)))]
+   (where σ_0 (↓ σ (live-sr ∅ (∪ (ll-sr-φs κ) (ll-C C)) σ)))]
   [(gc-sr (co κ C (comp κ_1) σ))
    (co κ C (comp κ_1) σ_0)
-   (where σ_0 (↓ σ (live-sr ∅ (∪ (ll-sr-κ κ) (ll-sr-κ κ_1) (ll-C C)) σ)))])
+   (where σ_0 (↓ σ (live-sr ∅ (∪ (ll-sr-φs κ) (ll-sr-φs κ_1) (ll-C C)) σ)))])
 
 (define-metafunction SR
   δ : op2 primv primv -> primv
@@ -163,6 +163,11 @@
         δ
         (where v (δ op2 v_0 v_1))]))
 
+(define-syntax-rule (set-of L pat S)
+  (and (set? (term S))
+       (for/and ([x (in-set (term S))])
+         (redex-match? L pat x))))
+
 (define-extended-language SRι SR
   [ς (ev e ρ σ χ ι κ C)
      (co ι κ C v σ χ)
@@ -179,41 +184,153 @@
   [ςK ς (Ξ Ξ)]
   [χ ([a ↦ (σ ...)] ...)]
   [ι (φ ...)]
-  [κ̃ (approx ι τ̂) ι]
+  [κ̃ (approx ι τ̂) (exact ι ())]
   [κ () τ τ̂]
   [C () υ]
-  [v (Clos x e ρ) (comp κ̃) primv])
+  [v (Clos x e ρ) (comp κ̃) primv]
+  ;; For workset management
+  [ιs (side-condition any_ιs (set-of SRι ι any_ιs))]
+  [κs (side-condition any_κs (set-of SRι κ any_κs))]
+  [Cs (side-condition any_Cs (set-of SRι C any_Cs))]
+  [τs (side-condition any_τs (set-of SRι τ any_τs))]
+  [ικs (side-condition any_ικs (set-of SRι (ι κ) any_ικs))]
+  [τικs (side-condition any_τικs (set-of SRι (τ ικs) any_τικs))]
+  [ικCs (side-condition any_ικCs (set-of SRι (ι κ C) any_ικCS))])
 
 (define-metafunction SRι
   inj-srι : e -> ς
   [(inj-srι e) (ev e () () () () () ())])
 
 (define-metafunction SRι
-  ll-κι : κ χ Ξ -> any
-  [(ll-κι () χ Ξ) ()]
-  [(ll-κι τ χ Ξ) ,(set->list (term (reach-τι Ξ ,(set (term τ)) ∅ ∅)))])
+  touchedι : Ξ χ v -> any
+  [(touchedι Ξ χ (Clos x e ρ)) (rng ρ)]
+  [(touchedι Ξ χ (comp (exact ι ()))) (ll-sr-ι Ξ χ ι)]
+  [(touchedι Ξ χ (comp (approx ι (name τ̂ (_ _ a)))))
+   (∪ (ll-sr-ι Ξ χ ι) (ll-κι Ξ χ τ̂) ,(set (term a)))]
+  [(touchedι Ξ χ primv) ∅])
 
-;; TODO
 (define-metafunction SRι
-  gc-srι : ς Ξ Ξ -> ς
-  [(gc-srι ς _ _) ς])
+  ll-sr-ι : Ξ χ ι -> any
+  [(ll-sr-ι Ξ χ ()) ∅]
+  [(ll-sr-ι Ξ χ ((AppL e ρ) φ ...))
+   (∪ (rng ρ) (ll-sr-ι Ξ χ (φ ...)))]
+  [(ll-sr-ι Ξ χ ((AppR v) φ ...))
+   (∪ (touchedι Ξ χ v) (ll-sr-ι Ξ χ (φ ...)))]
+  [(ll-sr-ι Ξ χ ((op2L op2 e ρ) φ ...))
+   (∪ (rng ρ) (ll-sr-ι Ξ χ (φ ...)))]
+  [(ll-sr-ι Ξ χ ((op2R op2 v) φ ...))
+   (ll-sr-ι Ξ χ (φ ...))])
 
-#;
+(define-metafunction SRι
+  ll-κι : Ξ χ κ -> any
+  [(ll-κι Ξ χ κ) (reach-ι Ξ χ ,(set (term κ)) ∅ ∅)])
+
+(define-metafunction SRι
+  ll-Cι : Ξ Ξ χ C -> any
+  [(ll-Cι Ξ_κ Ξ_C χ C) (reach-κ Ξ_κ Ξ_C χ ,(set (term C)) ∅ ∅)])
+
+(define-metafunction SRι
+  reach-ι : Ξ χ κs κs any -> any
+  [(reach-ι Ξ χ κs_frontier κs_seen any_addrs)
+   any_addrs
+   (side-condition (set-empty? (term κs_frontier)))]
+
+  [(reach-ι Ξ χ κs_frontier κs_seen any_addrs)
+   (reach-ι Ξ χ ,(set-rest (term κs_frontier)) κs_seen any_addrs)
+   (where () ,(set-first (term κs_frontier)))]
+  
+  [(reach-ι Ξ χ κs_frontier κs_seen any_addrs)
+   (reach-ι Ξ χ κs_frontier* κs_seen* any_addrs*)
+   (where strict-τ ,(set-first (term κs_frontier)))
+   (where ((ι_1 κ_1) ...) ,(set->list (hash-ref (term Ξ) (term strict-τ))))
+   (where any_addrs* (∪ any_addrs (ll-sr-ι Ξ χ ι_1) ...))
+   (where κs_seen* (∪ κs_seen ,(set (term strict-τ))))
+   (where κs_frontier*
+          ,(set-subtract (term (∪ κs_frontier ,(list->set (term (κ_1 ...)))))
+                         (term (∪ κs_seen ,(set (term strict-τ))))))]
+
+  [(reach-ι Ξ χ κs_frontier κs_seen any_addrs)
+   (reach-ι Ξ χ κs_frontier* κs_seen* ,(set-add (term any_addrs*) (term a)))
+   (where (v_f v_a a) ,(set-first (term κs_frontier)))
+   (where (κs_frontier* κs_seen* any_addrs*)
+          ,(let ()
+             (define-values (seen frontier* addrs*)
+               (for-τ̂ "reach-ι" for*/fold (([seen (term κs_seen)]
+                                  [frontier* (set)]
+                                  [addrs* (term any_addrs)]))
+                      [Ξ χ v_f v_a a] [σ τ ικs χ*]
+                      (define-values (frontier** addrs**)
+                        (for*/fold ([frontier* frontier*] [addrs* addrs*])
+                            ([ικ (in-set ικs)])
+                          (match-define (list ι κ) ικ)
+                          (values (set-add frontier* κ)
+                                  (set-union addrs* (term (ll-sr-ι Ξ χ ,ι))))))
+                      (values (set-add seen τ) frontier** addrs**)))
+             (list seen (set-subtract frontier* seen) addrs*)))])
+
+;; Get all ιs reached by metacontinuations in frontier.
+(define-metafunction SRι
+  reach-κ : Ξ Ξ χ Cs Cs any -> any
+  [(reach-κ Ξ_κ Ξ_C χ Cs_frontier Cs_seen any_addrs)
+   any_addrs
+   (side-condition (set-empty? (term Cs_frontier)))]
+
+  [(reach-κ Ξ_κ Ξ_C χ Cs_frontier Cs_seen any_addrs)
+   (reach-κ Ξ_κ Ξ_C χ ,(set-rest (term Cs_frontier)) Cs_seen any_addrs)
+   (where () ,(set-first (term Cs_frontier)))]
+
+  [(reach-κ Ξ_κ Ξ_C χ Cs_frontier Cs_seen any_addrs)
+   (reach-κ Ξ_κ Ξ_C χ Cs_frontier* Cs_seen* any_addrs*)
+   (where υ ,(begin0 (set-first (term Cs_frontier)) (printf "bad case?~%")))
+   (where ((ι_1 κ_1 C_1) ...) ,(set->list (hash-ref (term Ξ_C) (term υ))))
+   (where any_addrs* (reach-ι Ξ_κ χ ,(list->set (term (κ_1 ...))) ∅
+                              (∪ any_addrs (ll-sr-ι Ξ_κ χ ι_1) ...)))
+   (where Cs_seen* (∪ Cs_seen ,(set (term υ))))
+   (where Cs_frontier*
+          ,(set-subtract (term (∪ Cs_frontier ,(list->set (term (C_1 ...)))))
+                         (term Cs_seen*)))])
+
+;; Live locations from an address
+(define-metafunction SRι
+  ll-aι : Ξ χ σ a -> any
+  [(ll-aι Ξ χ σ a)
+   (∪ (touchedι Ξ χ v) ...)
+   (where (v ...) (lookup σ a))])
+
+(define-metafunction SRι
+  live-srι : Ξ χ any any σ -> any
+  [(live-srι Ξ χ any_g any_b σ)
+   any_b
+   (side-condition (set-empty? (term any_g)))]
+  [(live-srι Ξ χ any_g any_b σ)
+   (live-srι Ξ χ any_g0 any_b0 σ)
+   (where a ,(set-first (term any_g)))
+   (where any_g0 ,(set-subtract
+                   (term (∪ any_g (ll-aι Ξ χ σ a)))
+                   (term (∪ any_b ,(set (term a))))))
+   (where any_b0 (∪ any_b ,(set (term a))))])
+
 (define-metafunction SRι
   gc-srι : ς Ξ Ξ -> ς
   [(gc-srι (ev e ρ σ χ ι κ C) Ξ_κ Ξ_C)
    (ev e ρ_0 σ_0 χ_0 ι κ C)
    (where ρ_0 (↓ ρ (fv-sr e)))
-   (where (ι_0 ...) (reachable-ι κ χ Ξ_κ))
-   ;;; FIXME!
-   (where (κ_0 ...) (reachable-κι C Ξ_C))
-   (where (ι_1 ...) (∪ (reachable-ι κ_0 χ Ξ_κ)))
-   (where any_live (live-sr ∅ (∪ (rng ρ) (ll-sr-κ ι) (ll-sr-κ ι_0) ...) σ))
+   (where any_live (live-srι Ξ_κ χ
+                             ∅ (∪ (rng ρ)
+                                  (ll-sr-ι Ξ_κ χ ι)
+                                  (ll-κι Ξ_κ χ κ)
+                                  (ll-Cι Ξ_κ Ξ_C χ C))
+                              σ))
    (where σ_0 (↓ σ any_live))
    (where χ_0 (↓ χ any_live))]
   [(gc-srι (co ι κ C v σ χ) Ξ_κ Ξ_C)
    (co ι κ C v σ_0 χ_0)
-   (where any_live (live-sr ∅ (∪ (touched v) (ll-sr-κ ι) (ll-κι κ χ Ξ_κ) (ll-Cι C Ξ_C)) σ))
+   (where any_live (live-srι Ξ_κ χ
+                             ∅ (∪ (touchedι Ξ_κ χ v)
+                                 (ll-sr-ι Ξ_κ χ ι)
+                                 (ll-κι Ξ_κ χ κ)
+                                 (ll-Cι Ξ_κ Ξ_C χ C))
+                              σ))
    (where σ_0 (↓ σ any_live))
    (where χ_0 (↓ χ any_live))])
 
@@ -263,7 +380,7 @@
    [--> (co ι κ () v σ χ) (ans v σ χ) Halt
         (where #t (no-top? ,Ξκ χ ι κ))]
    [--> (co ι κ C v σ χ)
-        (ev e ρ σ χ ((AppR v) φ ...) κ C)
+        (gc-srι (ev e ρ σ χ ((AppR v) φ ...) κ C) ,Ξκ ,ΞC)
         AppR
         (where (_ ... ((AppL e ρ) (φ ...) κ_1) _ ...) (pop ,Ξκ χ ι κ))]
    [--> (name ς (co ι κ C v σ χ))
@@ -277,17 +394,14 @@
         β-comp
         (where (_ ... ((AppR (comp κ̃)) (φ ...) κ_0) _ ...) (pop ,Ξκ χ ι κ))
         (where υ (κ̃ v σ χ))
-        (where (ι_1 κ_1) ,((term-match/single SRι
-                             [ι (term (ι ()))]
-                             [(approx ι τ̂) (term (ι τ̂))])
-                           (term κ̃)))]
+        (where (ι_1 κ_1) ,(rest (term κ̃)))] ;; the payload is the same for exact and approx κ̃
    ;; Continue transitions for primitives
    [--> (co ι κ C v σ χ)
-        (ev e ρ σ χ ((op2R op2 v) φ ...) κ_1 C)
+        (gc-srι (ev e ρ σ χ ((op2R op2 v) φ ...) κ_1 C) ,Ξκ ,ΞC)
         op2R
         (where (_ ... ((op2L op2 e ρ) (φ ...) κ_1) _ ...) (pop ,Ξκ χ ι κ))]
    [--> (co ι κ C v_1 σ χ)
-        (co (φ ...) κ_1 C v σ χ)
+        (gc-srι (co (φ ...) κ_1 C v σ χ) ,Ξκ ,ΞC)
         δ
         (where (_ ... ((op2R op2 v_0) (φ ...) κ_1) _ ...) (pop ,Ξκ χ ι κ))
         (where v (δ op2 v_0 v_1))]))
@@ -302,6 +416,22 @@
                       (printf "That's weird~%") (pretty-print (term Ξ_κ)))
                     res)])
 
+(define-syntax-rule (for-τ̂ ds folder (pre ...) [Ξ χ v_f v_a a] [σ τ ικs χ*] body ...)
+  (folder pre ...
+          ([σ (in-list (term (debug-lookup χ a ,(format "~a Bad χ" ds))))]
+           [(τ ικs) (in-hash (term Ξ))]
+           [χ* (in-value (fourth τ))]
+           #:when (and (equal? (first τ) (term v_f))
+                       (equal? (second τ) (term v_a))
+                       (equal? (third τ) σ)
+                       (term (f⊑ ,χ* χ))))
+      body ...))
+(define-metafunction SRι
+  lookup-τ̂ : Ξ χ τ̂ -> τικs
+  [(lookup-τ̂ Ξ_κ χ (v_f v_a a))
+   ,(for-τ̂ "lookup-τ̂" for*/fold (([acc (set)])) [Ξ_κ χ v_f v_a a] [σ τ ικs χ*]
+           (set-union acc ικs))])
+
 (define-metafunction SRι
   [(pop* Ξ_κ χ (φ_0 φ ...) κ _) ,(set (term (φ_0 (φ ...) κ)))]
   [(pop* Ξ_κ χ () strict-τ any_G)
@@ -314,17 +444,12 @@
                      (term (pop* Ξ_κ χ ,ι ,κ ,(set-add (term any_G) (term strict-τ)))))))]
   [(pop* Ξ_κ χ () () _) ∅] ;; for the rules that test popping but should fail and move on.
   [(pop* Ξ_κ χ () (v_f v_a a) any_G) ;; τ̂
-   ,(for*/fold ([acc (set)])
-        ([σ (in-list (term (lookup χ a)))]
-         [(τ ικs) (in-hash (term Ξ_κ))]
-         [χ* (in-value (fourth τ))]
-         #:when (and (equal? (third τ) σ)
-                     (term (f⊑ ,χ* χ)))
-         [G* (in-value (set-add (term any_G) τ))]
-         [ικ (in-set ικs)])
-      (match-define (list ι κ) ικ)
-      ;; FIXME: should this be χ or χ*? χ is definitely sound.
-      (set-union acc (term (pop* Ξ_κ χ ,ι ,κ ,G*))))])
+   ,(for-τ̂ "pop*" for*/fold (([acc (set)])) [Ξ_κ χ v_f v_a a] [σ τ ικs χ*]
+           (define G* (set-add (term any_G) τ))
+           (for*/fold ([acc acc]) ([ικ (in-set ικs)])
+             (match-define (list ι κ) ικ)
+             ;; FIXME: should this be χ or χ*? χ is definitely sound.
+             (set-union acc (term (pop* Ξ_κ χ ,ι ,κ ,G*)))))])
 
 (define-metafunction SRι
   [(no-top? Ξ_κ χ ι κ) (no-top?* Ξ_κ χ ι κ ∅)])
@@ -337,16 +462,12 @@
            (match-define (list ι κ) ικ)
            (term (no-top?* Ξ_κ χ ,ι ,κ ,(set-add (term any_G) (term strict-τ))))))]
   [(no-top?* Ξ_κ χ () (v_f v_a a) any_G)
-   ,(for*/or ([σ (in-list (term (lookup χ a)))]
-              [(τ ικs) (in-hash (term Ξ_κ))]
-              [χ* (in-value (fourth τ))]
-              #:when (and (equal? (third τ) σ)
-                          (term (f⊑ ,χ* χ)))
-              [G* (in-value (set-add (term any_G) τ))]
-              [ικ (in-set ικs)])
-      (match-define (list ι κ) ικ)
-      ;; FIXME: should this be χ or χ*? χ is definitely sound.
-      (term (no-top?* Ξ_κ χ ,ι ,κ ,G*)))])
+   ,(for-τ̂ "no-top?*" for*/or () [Ξ_κ χ v_f v_a a] [σ τ ικs χ*]
+           (define G* (set-add (term any_G) τ))
+           (for/or ([ικ (in-set ικs)])
+             (match-define (list ι κ) ικ)
+             ;; FIXME: should this be χ or χ*? χ is definitely sound.
+             (term (no-top?* Ξ_κ χ ,ι ,κ ,G*))))])
 
 (define (update-Ξ Ξκ ΞC)
   (reduction-relation
@@ -407,11 +528,11 @@
 
 (define-metafunction SRι
   approximate : any χ ι κ -> (χ κ̃)
-  [(approximate a χ ι ()) (χ ι)]
+  [(approximate a χ ι ()) (χ (exact ι ()))]
   [(approximate a χ ι (v_f v_a σ χ_1))
    ((⊔ (f⊔ χ χ_1) a σ) (approx ι (v_f v_a a)))]
   [(approximate a χ ι (approx ι_1 (v_f v_a b)))
-   ((⊔* χ a (lookup χ b)) (approx ι_1 (v_f v_a a)))])
+   ((⊔* χ a (debug-lookup χ b "Approximate Bad χ")) (approx ι_1 (v_f v_a a)))])
 
 ;; 117
 (define-term SHIFT1 (+ 10 (reset (+ 2 (shift k (+ 100 (App k (App k 3))))))))
