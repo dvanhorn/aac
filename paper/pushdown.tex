@@ -20,6 +20,8 @@ By not storing the continuations in the value store, we separate ``relevant'' co
 %
 We split the stack store from the value store and use only the value store in stack addresses.
 %
+Stack addresses generally describe the relevant context that lead to their allocation, so we will refer to them henceforth as \emph{contexts}.
+%
 The resulting state space is updated here:
   \begin{align*}
     \sa{State} &= \sa{CEK} \times \Store \times \Time \times \KStore \\
@@ -28,28 +30,16 @@ The resulting state space is updated here:
     \mctx \in \Context &::=  \tpl{\mexpr,\maenv,\mstore,\mtime} \\
     \mktab \in \KStore &= \Context \finto \wp(\Kont) \\
   \end{align*}
-%
-Stack addresses generally describe the relevant context that lead to their allocation, so we will refer to them henceforth as \emph{contexts}.
 
 The semantics is modified slightly in \autoref{fig:ceskkstart-semantics} to use $\mktab$ instead of $\mstore$ for continuation allocation and lookup.
 %
-Since continuation addresses are drawn from a finite space, but still are precise enough to capture the unbounded behavior of the pushdown system, the machine will always terminate.
+Given finite allocation, contexts are drawn from a finite space, but are still precise enough to describe an unbounded stack.
 %
-The computed $\stepto$ relation thus represents the full description of a pushdown system of reachable states.
-%%
-\begin{theorem}[Correctness]
-  \todo{Ian}
-\end{theorem}
-
-%%
-There are three optimizations that may be employed to accelerate the fixed-point computation.
-\begin{enumerate}
-\item{Observe that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.}
-\item{Continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.}
-\item{Since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.}
-\end{enumerate}
+The computed $\stepto$ relation thus represents the full description of a pushdown system of reachable states (and the set of paths).
 %
-This last optimization will be covered in more detail in \autoref{sec:memo}
+Of course this semantics does not always define a pushdown system since $\alloc$ can have an unbounded codomain.
+%
+The correctness claim is therefore a correspondence between the same machine but with an unbounded stack, no $\mktab$, and an $\alloc$ function that behaves the same disregarding the different representations (a reasonable assumption).
 
 \begin{figure}
   \centering
@@ -84,7 +74,93 @@ This last optimization will be covered in more detail in \autoref{sec:memo}
   \label{fig:ceskkstart-semantics}
 \end{figure}
 
-\subsection{A more economical representation}
+\subsection{Correctness}
+
+The high level argument for correctness exploits properties of both machines.
+%
+Where the stack is unbounded (call this $\CESKt$), any trace where states share a common tail in their continuations, that tail can be replaced with anything and the trace will still be valid.
+%
+We call this property more generally, ``context irrelevance.''
+%
+The second machine maintains an invariant on $\mktab$ that essentially says if $\makont \in \mktab(\mctx)$, then there is a trace in the first machine that starts at the tail of $\makont$ and reaches $\mctx$ with $\makont$ on top.
+%
+We can use this invariant and context irrelevance to translate steps in the second machine into steps of the first.
+%
+The other way around, we use a proposition that a full stack is represented by $\mktab$ via unrolling.
+
+The common tail proposition we will call $\hastail$ and the replacement function we will call $\replacetail$; they both have obvious inductive and recursive definitions respectively.
+%
+The invariant is stated with respect to the entire program, $\mexpr_\mathit{pgm}$:
+\begin{mathpar}
+  \inferrule{ }{\invmktab(\bot)} \quad
+  \inferrule{\invmktab(\mktab) \\
+      \forall \makont_c \in K. \startstate(\makont_c) \stepto_\CESKt^* \tpl{\mexpr_c,\maenv_c,\append{\mkont_c}{\epsilon}},\mstore_c,\mtime_c}
+            {\invmktab(\mktab[\tpl{\mexpr_c,\maenv_c,\mstore_c,\mtime_c} \mapsto K])} \\
+
+  \inferrule{
+    % invariant for current state
+    \startstate(\makont) \stepto_\CESKt^* \tpl{\mexpr,\maenv,\append{\makont}{\epsilon}},\mstore,\mtime \\
+    % invariant for all entries
+    \invmktab(\mktab)}
+    {\inv(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab,\mtime)}
+  \end{mathpar}
+where
+\begin{align*}
+ \startstate(\epsilon) &= \tpl{\mexpr_\mathit{pgm},\bot,\epsilon},\bot,\mtime_0 \\
+                \startstate(\kcons{\mkframe}{\tpl{\mexpr_c,\maenv_c,\mstore_c,\mtime_c}}) &=
+                \tpl{\mexpr_c,\maenv_c,\epsilon},\mstore_c,\mtime_c
+\end{align*}
+We use $\append{\cdot}{\epsilon}$ to treat $\mctx$ like $\epsilon$ and construct a continuation in $\Kont$ rather than $\sa{Kont}$.
+%%
+\begin{lemma}[Context irrelevance]\label{lem:irrelevance}
+  For all traces $\mtrace \in \CESKt^*$ and continuations $\mkont$ such that $\hastail(\mtrace,\mkont)$, for any $\mkont'$, $\replacetail(\mtrace,\mkont,\mkont')$ is also a valid trace.
+\end{lemma}
+\begin{proof}
+  Simple induction on $\mtrace$ and cases on $\stepto_{\CESKt}$.
+\end{proof}
+\begin{lemma}[$\CESKKstart$ Invariant]\label{lem:invariant}
+  For all $\mstate,\mstate' \in \sa{State}$, if $\inv(\mstate)$ and $\mstate \stepto \mstate'$, then $\inv(\mstate')$
+\end{lemma}
+\begin{proof}
+  Routine case analysis.
+\end{proof}
+
+The unrolling proposition is the following
+\begin{mathpar}
+  \inferrule{ }{\epsilon \in \unroll{\mktab}{\epsilon}} \quad
+  \inferrule{\makont \in \mktab(\mctx),
+             \mkont \in \unroll{\mktab}{\makont}}
+            {\kcons{\mkframe}{\mkont} \in \unroll{\mktab}{\kcons{\mkframe}{\mctx}}}
+\end{mathpar}
+\begin{theorem}[Correctness]
+  For all expressions $\mexpr_\mathit{pgm}$,
+  \begin{itemize}
+  \item{%for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
+        if $\mstate,\mstore,\mtime \stepto_{\CESKt} \mstate',\mstore',\mtime'$,
+        for all $\mktab,\makont$ if $\inv(\mstate\set{\mkont := \makont},\mstore,\mktab,\mtime)$
+        and $\mkont \in \unroll{\mktab}{\makont}$, then
+        there is a $\mktab',\makont'$ such that
+        $\mstate\set{\mkont := \makont},\mstore,\mktab,\mtime \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$}
+  \item{if $\mastate,\mstore,\mktab,\mtime \stepto_{\CESKKstart} \mastate',\mstore',\mktab',\mtime'$
+      and $\inv(\mastate,\mstore,\mktab,\mtime)$,
+      for all $\mkont$, if $\mkont \in \unroll{\mktab}{\mastate.\makont}$ then
+      there exists an $\mkont'$ such that
+      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\CESKt}
+       \mastate'\set{\makont := \mkont'},\mstore',\mtime'$ and
+       $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$.}
+  \end{itemize}
+\end{theorem}
+
+\subsection{Engineered semantics for efficiency}
+%%
+There are three optimizations that may be employed to accelerate the fixed-point computation.
+\begin{enumerate}
+\item{Observe that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.}
+\item{Continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.}
+\item{Since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.}
+\end{enumerate}
+%
+This last optimization will be covered in more detail in \autoref{sec:memo}.
 
 Flow analyses commonly split control-flow graphs at function call boundaries to enable the combination of intra- and inter-procedural analyses.
 %

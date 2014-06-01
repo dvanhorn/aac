@@ -1,0 +1,137 @@
+\documentclass{article}
+\usepackage{amsmath,amsthm,pfsteps,mathpartir,mnsymbol}
+\usepackage{hyperref}
+\input{local-macros}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\title{Proofs for Abstracting Abstract Control}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Proofs for section 3: $\CESKKstart$}
+
+\begin{mathpar}
+  \inferrule{ }{\hastailkont(\mkont,\mkont)} \quad
+  \inferrule{\hastailkont(\mkont,\mkont')}{\hastailkont(\kcons{\mkframe}{\mkont},\mkont')} \quad
+  \inferrule{\hastailkont(\mkont,\mkont')}
+            {\hastailstate((\tpl{\mexpr,\maenv,\mkont},\mstore,\mtime),\mkont')} \\
+  \inferrule{ }{\hastail(\epsilon,\mkont)} \quad
+  \inferrule{\hastail(\mtrace\mstate,\mkont) \quad
+             \mstate \stepto \mstate' \quad
+             \hastailstate(\mstate',\mkont)}
+            {\hastail(\mtrace\mstate\mstate',\mkont)}
+\end{mathpar}
+
+\begin{align*}
+  \replacetailkont(\mkont,\mkont,\mkont') &= \mkont' \\
+  \replacetailkont(\kcons{\mkframe}{\mkont},\mkont',\mkont'') &=
+    \kcons{\mkframe}{\replacetailkont(\mkont,\mkont',\mkont'')} \\
+  \replacetailstate((\tpl{\mexpr,\maenv,\mkont},\mstore,\mtime),\mkont',\mkont'') &=
+    \tpl{\mexpr,\maenv,\replacetailkont(\mkont,\mkont',\mkont'')},\mstore,\mtime \\
+  \replacetail(\epsilon,\mkont,\mkont'') &= \epsilon \\
+  \replacetail(\mtrace\mstate,\mkont,\mkont') &= \replacetail(\mtrace,\mkont,\mkont')\replacetailstate(\mstate,\mkont,\mkont')
+\end{align*}
+
+\begin{lemma}[$\hastailkont$ implies $\replacetailkont$ defined]\label{lem:htk-rtk}
+  $\forall \mkont,\mkont'$.
+  $\hastailkont(\mkont,\mkont') \implies \forall \mkont'' \in \Kont.$
+  $\exists \mkont'''. \replacetailkont(\mkont,\mkont',\mkont'') = \mkont'''$
+\end{lemma}
+\begin{proof}
+  By induction on $\mkont$:
+  \begin{byCases}
+    \case{\text{Base: } \epsilon}{By inversion on $\hastailkont(\mkont,\mkont')$, $\mkont' = \epsilon$, so $\replacetailkont(\mkont,\mkont',\mkont'') = \mkont''$.}
+    \case{\text{Induction step: } \kcons{\mkframe}{\mkont_\mathit{pre}}}{
+      By cases on $\hastailkont(\mkont,\mkont')$:
+      \begin{byCases}
+        \case{\mkont = \mkont'}{By definition $\replacetailkont(\mkont,\mkont',\mkont'') = \mkont''$}
+        \case{\hastailkont(\mkont_\mathit{pre},\mkont')}{
+          By let $\mkont_\mathit{IH}$ be the witness from the induction hypothesis.
+          By definition $\replacetailkont(\mkont,\mkont',\mkont'') = \kcons{\mkframe}{\mkont_\mathit{IH}}$.}
+      \end{byCases}
+      }
+  \end{byCases}
+\end{proof}
+
+\begin{lemma}[$\hastail$ implies $\replacetail$ defined]\label{lem:ht-rt}
+  $\forall \mtrace ,\in \CESKt^*, \mkont,\mkont' \in \Kont$. $\hastail(\mtrace,\mkont) \implies \exists \mtrace'. \replacetail(\mtrace,\mkont,\mkont') = \mtrace'$
+\end{lemma}
+\begin{proof}
+  By induction on $\mtrace$ and application of \autoref{lem:htk-rtk}.
+% :
+%   \begin{byCases}
+%     \case{\epsilon}{$\mtrace' = \epsilon$ is a valid witness by computation.}
+%     \case{\mtrace_\mathit{prev}\mstate}
+%   \end{byCases}
+\end{proof}
+
+\begin{lemma}[Context irrelevance]\label{lem:irrelevance}
+  $\forall \mtrace \in \CESKt^*, \mkont \in \Kont$.
+  $\IsTrace(\mtrace) \wedge \hastail(\mtrace,\mkont) \implies \forall \mkont'. \IsTrace(\replacetail(\mtrace,\mkont,\mkont'))$
+\end{lemma}
+\begin{proof}
+  By induction on $\mtrace$:
+  \begin{byCases}
+    \case{\text{Base: } \mtrace=\epsilon}{By definition of $\replacetail$ and no such $i \in [0,-1)$}
+    \case{\text{Base: } \mtrace\equiv\mstate}{By definition of $\replacetail$, \autoref{lem:ht-rt} and no such $i \in [0,0)$.}
+    \case{\text{Induction step: } \mtrace\equiv\mtrace'\mstate\mstate'}{
+      By $\IsTrace$ assumption, $\mstate \stepto \mstate'$, so we proceed by cases.
+      \begin{byCases}
+        \case{\tpl{\svar\mvar,\maenv,\mkont},\mstore,\mtime \stepto
+              \tpl{\mval,\maenv',\mkont},\mstore,\tick(\mstate,\mstore,\mtime)}{
+              where $(\mval,\maenv') \in \mstore(\maenv(\mvar))$. \\
+              Let $\mkont_r$ be the witness from \autoref{lem:htk-rtk} for $\mkont$.
+              The reduction is still valid with $\mkont_r$, and by IH the trace up to $\mtrace\mstate$ has a valid replacement, so the goal holds.}
+
+        \case{\tpl{\sapp{\mexpri0}{\mexpri1}, \maenv,\mkont},\mstore,\mtime \stepto
+          \tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mkont}},
+               \mstore,\tick(\mstate,\mstore,\mtime)}{
+               ...}
+
+        \case{\tpl{\mval,\maenv,\kcons{\appl{\mexpr,\maenv'}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mkont}},\mstore,\tick(\mstate,\mstore,\mtime)}{
+              ...}
+
+        \case{\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv'',\mkont},\mstore',\tick(\mstate,\mstore,\mtime)}{
+              where $\maddr = \alloc(\mstate,\mstore,\mtime)$,
+                    $\maenv'' = \extm{\maenv'}{\mvar}{\maddr}$,
+                    $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$. \\
+
+              ...}
+      \end{byCases}
+      }
+  \end{byCases}
+\end{proof}
+\begin{lemma}[$\CESKKstart$ Invariant]\label{lem:invariant}
+  For all $\mstate,\mstate' \in \sa{State}$, if $\inv(\mstate)$ and $\mstate \stepto \mstate'$, then $\inv(\mstate')$
+\end{lemma}
+\begin{proof}
+      \begin{byCases}
+        \case{\tpl{\svar\mvar,\maenv,\mkont},\mstore,\mtime \stepto
+              \tpl{\mval,\maenv',\mkont},\mstore,\tick(\mstate,\mstore,\mtime)}{
+              where $(\mval,\maenv') \in \mstore(\maenv(\mvar))$.}
+
+        \case{\tpl{\sapp{\mexpri0}{\mexpri1}, \maenv,\mkont},\mstore,\mtime \stepto
+          \tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mkont}},
+               \mstore,\tick(\mstate,\mstore,\mtime)}{
+               ...}
+
+        \case{\tpl{\mval,\maenv,\kcons{\appl{\mexpr,\maenv'}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mkont}},\mstore,\tick(\mstate,\mstore,\mtime)}{
+              ...}
+
+        \case{\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv'',\mkont},\mstore',\tick(\mstate,\mstore,\mtime)}{
+              where $\maddr = \alloc(\mstate,\mstore,\mtime)$,
+                    $\maenv'' = \extm{\maenv'}{\mvar}{\maddr}$,
+                    $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$. \\
+
+              ...}
+      \end{byCases}
+\end{proof}
+
+\end{document}
