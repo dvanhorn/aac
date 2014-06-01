@@ -2,13 +2,19 @@ Some semantic features allow a language to inspect some arbitrarily deep part of
 %
 Java's access control security features are an example of the first form of inspection, and garbage collection is an example of the second.
 %
-Recursive meta-functions that inspect the stack can be thought of as out-of-band reduction relations that match rules in order until one fires, repeatedly until a return value is produced.
+We will demonstrate both forms are simple first-order metafunctions that the AAM methodology will soundly interpret.
 %
-Interpreted via AAM, non-deterministic meta-function evaluation leads to a set of possible results.
+Access control can be modeled with continuation marks, so we demonstrate with the CM machine of \citeauthor{dvanhorn:Clements2004Tailrecursive}.
+
+%%
+Recursive metafunctions that inspect the stack can be thought of as out-of-band reduction relations that match rules in order until one fires, repeatedly until a return value is produced.
 %
-The finite restriction on the state space carries over to meta-function inputs, so we can always detect infinite loops and bail out of that execution path.
+Interpreted via AAM, non-deterministic metafunction evaluation leads to a set of possible results.
+%
+The finite restriction on the state space carries over to metafunction inputs, so we can always detect infinite loops and bail out of that execution path.
 
 Garbage collection, for example, needs to crawl the stack for live addresses.
+%
 The following function will produce the set of live addresses in the stack:
 
 \begin{align*}
