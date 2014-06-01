@@ -25,7 +25,7 @@ Fresh allocation still maintains the concrete semantics, but we necessarily lose
 
 \subsection{Case study: shift and reset}
 %%
-Our concrete test subject is the abstract machine for shift and reset, adapted from \citet{ianjohnson:Biernacki2006274} in the ``eval, continue'' style in \autoref{fig:shift-reset}.
+Our concrete test subject is the abstract machine for shift and reset, adapted from \citet{ianjohnson:Biernacki2006274} in the ``{\bf ev}al, {\bf co}ntinue'' style in \autoref{fig:shift-reset}.
 %
 The figure elides the rules for standard function calls.
 %
@@ -67,7 +67,7 @@ Composable continuations are indistinguishable from functions, so even though th
 \end{figure}
 %%
 
-\subsection{Reformulated with tables}
+\subsection{Reformulated with continuation stores}
 %
 The machine in \autoref{fig:shift-reset} is transformed now to have three new tables: one for continuations, one as discussed in the section beginning to close stored continuations, and one for meta-continuations.
 %
@@ -163,7 +163,7 @@ The continuation installation rule extends $\mktab_{\mamkont}$ at the different 
 \text{if } & (\appr{\mvkont},\makont') \in \pop(\mktab_{\makont},\mmktab, \makont) \\
 \text{where } \mmctx &= \mvkont,\maval,\mstore,\mmktab,\mtime
 \end{align*}
-Again we have a meta-function $\pop$, but this time to interpret approximated continuations:
+Again we have a metafunction $\pop$, but this time to interpret approximated continuations:
 \begin{align*}
   \pop(\mktab_{\makont}, \mmktab, \makont) &= \popaux(\makont,\emptyset) \\
   \text{where } 
