@@ -13,7 +13,7 @@ Abstracting abstract machines is founded on three ideas:
 \item{Similarly, elements of abstract spaces have hats: \eg{} $\makont \in \sa{Kont}$.}
 \item{We will write $n$-tuples as $\tpl{t_1,\ldots,t_n}$, $(t_1,\ldots,t_n)$ or just $t_1,\ldots,t_n$, and their $i^\text{th}$ projections as $\pi_i$.}
 \item{$\sqcup$ \textbf{:} a join operator that lifts pointwise over tuples and functions. Sets are unioned. Ground terms are implicitly lifted to singleton sets.}
-\item{$S^*$ \textbf{:} the space of lists of $S$.}
+\item{$S^*$ \textbf{:} the space of lists of elements of $S$.}
 \item{$\epsilon$ \textbf{:} the empty list.}
 \item{$\kcons{a}{l}$ \textbf{:} a list $l$ with $a$ added to the front.}
 \item{$\append{l}{l'}$ \textbf{:} list $l'$ appended to list $l$.}
@@ -38,7 +38,9 @@ Inductive Expr : Set :=
 Inductive Value : Set :=
 | vlam : Variable -> Expr -> Value.
 \end{verbatim}}
+\item{We use element variables to treat tuples with record syntax. For example, For a space defined like $\mstate \in \State ::= \tpl{\mexpr,\menv,\mkont}$, we may write $\mstate.\mkont$ to mean that there exists some $\mexpr',\menv',\mkont'$ such that $\mstate = \tpl{\mexpr',\menv',\mkont'}$ and $\mstate.\mkont = \mkont'$. We may also write $\mstate\{\menv := \bot\}$ to mean $\tpl{\mexpr',\bot,\mkont'}$.}
 \item{$s \stepto s'$ \textbf{:} a state $s$ steps to another state $s'$ via a reduction relation $\stepto \subseteq \State \times \State$. The relation should be clear from the context and the space of $s, s'$.}
+\item{$\mtrace$ \textbf{:} a trace with respect to some reduction relation $\stepto$, \ie{}, a sequence of states $\set{s_i}_{i=0}^n$ such that this proposition holds $\IsTrace(\mtrace) = \forall i \in [0..n-1). s_i \stepto s_{i+1}$}
 \item{We implicitly reassociate tuples or splice them into a larger context to have a cleaner presentation.
 For example, we may write $\tpl{\menv(\mexpr), \mkont}$ for an element of $\Expr \times \Env \times \Kont$ instead of ``$\tpl{\mval,\menv',\mkont}$ where $(\mval,\menv') = \menv(\mvar)$.''}
 \end{itemize}
@@ -106,9 +108,9 @@ AAM suggests that the codomain of $\Env$ and the tail of the $\Frame$ list in $\
 %
 Extensions to maps in $\Env$, and conses of frames in $\Kont$ then instead allocate an address, update the heap with the recursive value, and use the address in place of the recursive value.
 %
-To help an $\alloc : \State \to \Addr$ function choose its addresses, the state space can be extended with an arbitrary finite space that can be updated each step.
+To help an $\alloc : \State \to \Addr$ function choose its addresses, the state space can be extended with an arbitrary pointed space that can be updated each step.
 %
-The original AAM paper calls this space and update function $\Time$ and $\tick$ respectively.
+The original AAM paper calls this pointed space and update function $(\Time,\mtime_0)$ and $\tick$ respectively.
 %
 Later work on widening~\citep{ianjohnson:DBLP:conf/vmcai/HardekopfWCK14} suggests less arbitrary constructions, and to think of $\Time$ as a space of abstract traces, though the ``abstraction'' need not be sound~\citep{dvanhorn:Might2009Posteriori}.
 
@@ -123,10 +125,10 @@ The semantics of this machine follow the weak update and non-deterministic looku
   \begin{align*}
     \mastate \in \sa{CEK} &::= \tpl{\mexpr, \maenv, \makont} \\
     \sa{State} &= \sa{CEK} \times \Store \times \Time \\
-    \mstore \in \Store &= \Addr \to \sa{Storeable} \\
-    \menv \in \sa{Env} &= \Var \finto \Addr \\
-    \mkont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\maddr} \\
-    \sa{Storeable} &= \wp(\sa{Kont} + (\Value \times \sa{Env})) \\
+    \mstore \in \Store &= \Addr \to \Storeable \\
+    \maenv \in \sa{Env} &= \Var \finto \Addr \\
+    \makont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\maddr} \\
+    \Storeable &= \wp(\sa{Kont} + (\Value \times \sa{Env})) \\
     \maddr,\maddralt \in \Addr & \quad \mtime,\mtimealt \in \Time
   \end{align*}
   \caption{$\CESKstart$ semantic spaces}
