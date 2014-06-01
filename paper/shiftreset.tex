@@ -75,9 +75,9 @@ The first is like previous sections, albeit continuations may now have the appro
 %
 The meta-continuation table is much like the continuation table of previous sections because they are not storable.
 %
-Meta-continuations do not have simple syntactic strategies for bounding their size, so we choose to bound them to size 1.
+Meta-continuations do not have simple syntactic strategies for bounding their size, so we choose to bound them to size 0.
 %
-They could be lists of $\sa{Kont}$ bounded at an arbitrary $n \in \nat$, but we simplify for presentation.
+They could be paired with lists of $\sa{Kont}$ bounded at an arbitrary $n \in \nat$, but we simplify for presentation.
 
 Contexts for continuations are still at function application, but now contain the $\mmktab$.
 %
@@ -110,7 +110,7 @@ The different context spaces are thus:
     \mktab_{\mamkont} \in \MKStore &= \MContext \finto \wp(\sa{Kont} \times \sa{MKont}) \\
     \maval \in \sa{Storeable} &= \wp(\VKont + (\Value \times \sa{Env})) \\
   \end{align*}
-  \caption{Shift/reset semantic spaces}
+  \caption{Shift/reset abstract semantic spaces}
   \label{fig:shiftreset-spaces}
 \end{figure}
 %
@@ -131,7 +131,7 @@ Approximating the context and allocating the continuation in the store require t
 
 Each of the four rules of the original shift/reset machine has a corresponding rule that we explain piecemeal.
 %
-We will write $\mastate \kindastepto \mastate',\ldots$ optionally updating the other components to lessen the notational noise.
+We will write $\mastate \kindastepto \mastate',\ldots$ optionally updating the other components instead of the full $\mastate,\mstore,\ldots \stepto \ldots$ to lessen the notational noise.
 %
 We use the above $\approximate$ function in the rule for continuation capture, as modified here.
 %
@@ -177,3 +177,78 @@ Again we have a metafunction $\pop$, but this time to interpret approximated con
            {\mstore \in \mmktab(\maddr),
             \mmktab' \sqsubseteq \mmktab}
 \end{align*}
+Notice that since we flatten $\mmktab$s together, we need to compare for containment rather than for equality (in $I$).
+\subsection{Correctness}
+We suppose a store-allocating timestamped version of the semantics in \autoref{fig:shift-reset}, called $\SRSt$.
+%
+We impose an order on values since stored continuations are more approximate in the analysis than in $\SRSt$:
+\begin{mathpar}
+  \inferrule{ }{\maval \sqsubseteq_{\mktab,\mmktab} \maval} \quad
+  \inferrule{\mkont \in \unroll{\mktab,\mmktab}{\mvkont}}
+            {\vcomp{\mkont} \sqsubseteq_{\mktab,\mmktab} \mvkont} \quad
+  \inferrule{\forall \maval\in\mstore(\maddr).
+             \exists \maval'\in\mastore(\maddr).
+             \maval \sqsubseteq_{\mktab,\mmktab} \maval'}
+            {\mstore \sqsubseteq_{\mktab,\mmktab} \mastore} \\
+  \inferrule{\mkont \sqsubseteq \unroll{\mktab_{\makont},\mmktab}{\makont} \\
+             \mmkont \sqsubseteq \unrollC{\mktab_{\makont},\mktab_{\mamkont},\mmktab}{\mamkont} \\
+             \mstore \sqsubseteq_{\mktab_{\makont},\mmktab} \mastore}
+            {\ev{\mexpr,\maenv,\mkont,\mmkont},\mstore,\mtime \sqsubseteq
+             \ev{\mexpr,\maenv,\makont,\mamkont},\mastore, \mmktab, \mtime, \mktab_{\makont}, \mktab_{\mamkont}} \\
+  \inferrule{\maval \sqsubseteq_{\mktab_{\makont},\mmktab} \maval' \\
+             \mkont \sqsubseteq \unroll{\mktab_{\makont},\mmktab}{\makont} \\
+             \mmkont \sqsubseteq \unrollC{\mktab_{\makont},\mktab_{\mamkont},\mmktab}{\mamkont} \\
+             \mstore \sqsubseteq_{\mktab_{\makont},\mmktab} \mastore}
+            {\co{\mkont,\mmkont,\maval},\mstore,\mtime \sqsubseteq
+             \co{\makont,\mamkont,\maval'},\mastore, \mmktab, \mtime, \mktab_{\makont}, \mktab_{\mamkont}}
+\end{mathpar}
+Unrolling differs from the previous sections because the values in frames can be approximate.
+%
+Thus, instead of expecting the exact continuation to be in the unrolling, we have a judgment that an unrolling approximates a given continuation in \autoref{fig:cont-order} (note we reuse $I$ from $\popaux$'s definition).
+
+\begin{figure}
+  \centering
+  \begin{mathpar}
+    \inferrule{ }{\appl{\mexpr,\maenv} \sqsubseteq_{\mktab,\mmktab}
+      \appl{\mexpr,\maenv}} \quad \inferrule{\maval
+      \sqsubseteq_{\mktab,\mmktab}{\maval'}}
+    {\appr{\maval} \sqsubseteq_{\mktab,\mmktab} \appr{\maval'}} \\
+    \inferrule{ }{\epsilon \sqsubseteq
+      \unroll{\mktab,\mmktab}{\epsilon}} \quad
+    \inferrule{\mkframe \sqsubseteq_{\mktab,\mmktab} \makframe \\
+      \mkont \sqsubseteq \unroll{\mktab,\mmktab}{\mctx}}
+    {\kcons{\mkframe}{\mkont} \sqsubseteq
+      \unroll{\mktab,\mmktab}{\kcons{\makframe}{\mctx}}}
+    \\
+    \inferrule{\makont \in \mktab(\msctx) \quad
+      \mkont \sqsubseteq \unroll{\mktab,\mmktab}{\makont}} {\mkont
+      \sqsubseteq \unroll{\mktab,\mmktab}{\msctx}}
+    \quad
+    \inferrule{\msctx \in I(\mktab,\mmktab,\mactx) \quad
+      \mkont \sqsubseteq \unroll{\mktab,\mmktab}{\msctx}} {\mkont
+      \sqsubseteq \unroll{\mktab,\mmktab}{\mactx}}
+    \\
+    \inferrule{ }
+              {\epsilon \sqsubseteq \unrollC{\mktab_{\makont},\mktab_{\mamkont},\mmktab}{\epsilon}}
+    \\
+    \inferrule{(\makont,\mamkont) \in \mktab_{\mamkont}(\mmctx) \\
+               \mkont \sqsubseteq \unroll{\mktab_{\makont},\mmktab}{\makont} \\
+               \mmkont \sqsubseteq \unrollC{\mktab_{\makont},\mktab_{\mamkont},\mmktab}{\mamkont}}
+              {\mkapp{\mkont}{\mmkont} \sqsubseteq \unrollC{\mktab_{\makont},\mktab_{\mamkont},\mmktab}{\mmctx}}
+  \end{mathpar}
+  
+  \caption{Order on (meta-)continuations}
+\label{fig:cont-order}
+\end{figure}
+\begin{theorem}[Soundness]
+  If $\mstate,\mstore,\mtime \stepto_{\SRSt} \mstate',\mstore',\mtime'$, and $\mstate,\mstore,\mtime$ $\sqsubseteq$ $\mastate,\mastore,\mmktab,\mtime,\mktab_{\makont},\mktab_{\mamkont}$ then there are $\mastate',\mastore',\mmktab',\mktab_{\makont}',\mktab_{\mamkont}'$ such that $\mastate,\mastore,\mmktab,\mtime,\mktab_{\makont},\mktab_{\mamkont} \stepto \mastate',\mastore',\mmktab',\mtime,\mktab_{\makont}',\mktab_{\mamkont}'$ and
+$\mstate',\mstore',\mtime'$ $\sqsubseteq$ $\mastate',\mastore',\mmktab',\mtime',\mktab_{\makont}',\mktab_{\mamkont}'$.
+\end{theorem}
+
+To substantiate our claim that fresh allocation leads to an exact semantics, we need to show an invariant on our continuation stores.
+\begin{align*}
+  \inv(\mastate,\mastore,\mmktab,\mtime,\mktab_{\makont},\mktab_{\mamkont})
+\end{align*}
+\begin{theorem}[Exact for fresh allocation]
+  \todo{Ian}
+\end{theorem}

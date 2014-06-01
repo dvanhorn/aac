@@ -39,7 +39,7 @@ The computed $\stepto$ relation thus represents the full description of a pushdo
 %
 Of course this semantics does not always define a pushdown system since $\alloc$ can have an unbounded codomain.
 %
-The correctness claim is therefore a correspondence between the same machine but with an unbounded stack, no $\mktab$, and an $\alloc$ function that behaves the same disregarding the different representations (a reasonable assumption).
+The correctness claim is therefore a correspondence between the same machine but with an unbounded stack, no $\mktab$, and $\alloc, \tick$ functions that behave the same disregarding the different representations (a reasonable assumption).
 
 \begin{figure}
   \centering
@@ -78,15 +78,17 @@ The correctness claim is therefore a correspondence between the same machine but
 
 The high level argument for correctness exploits properties of both machines.
 %
-Where the stack is unbounded (call this $\CESKt$), any trace where states share a common tail in their continuations, that tail can be replaced with anything and the trace will still be valid.
+Where the stack is unbounded (call this $\CESKt$), if every state in a trace shares a common tail in their continuations, that tail is \emph{irrelevant}.
+%
+This means the tail can be replaced with anything and still produce a valid trace.
 %
 We call this property more generally, ``context irrelevance.''
 %
-The second machine maintains an invariant on $\mktab$ that essentially says if $\makont \in \mktab(\mctx)$, then there is a trace in the first machine that starts at the tail of $\makont$ and reaches $\mctx$ with $\makont$ on top.
+The $\CESKKstart$ machine maintains an invariant on $\mktab$ that says that $\makont \in \mktab(\mctx)$ represents a trace in $\CESKt$ that starts at the base of $\makont$ and reaches $\mctx$ with $\makont$ on top.
 %
-We can use this invariant and context irrelevance to translate steps in the second machine into steps of the first.
+We can use this invariant and context irrelevance to translate steps in the $\CESKKstart$ machine into steps in $\CESKt$.
 %
-The other way around, we use a proposition that a full stack is represented by $\mktab$ via unrolling.
+The other way around, we use a proposition that a full stack is represented by $\mktab$ via unrolling and follow a simple simulation argument.
 
 The common tail proposition we will call $\hastail$ and the replacement function we will call $\replacetail$; they both have obvious inductive and recursive definitions respectively.
 %
@@ -102,7 +104,7 @@ The invariant is stated with respect to the entire program, $\mexpr_\mathit{pgm}
     \startstate(\makont) \stepto_\CESKt^* \tpl{\mexpr,\maenv,\append{\makont}{\epsilon}},\mstore,\mtime \\
     % invariant for all entries
     \invmktab(\mktab)}
-    {\inv(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab,\mtime)}
+    {\inv(\tpl{\mexpr,\maenv,\makont},\mstore,\mtime,\mktab)}
   \end{mathpar}
 where
 \begin{align*}
@@ -113,7 +115,7 @@ where
 We use $\append{\cdot}{\epsilon}$ to treat $\mctx$ like $\epsilon$ and construct a continuation in $\Kont$ rather than $\sa{Kont}$.
 %%
 \begin{lemma}[Context irrelevance]\label{lem:irrelevance}
-  For all traces $\mtrace \in \CESKt^*$ and continuations $\mkont$ such that $\hastail(\mtrace,\mkont)$, for any $\mkont'$, $\replacetail(\mtrace,\mkont,\mkont')$ is also a valid trace.
+  For all traces $\mtrace \in \CESKt^*$ and continuations $\mkont$ such that $\hastail(\mtrace,\mkont)$, for any $\mkont'$, $\replacetail(\mtrace,\mkont,\mkont')$ is a valid trace.
 \end{lemma}
 \begin{proof}
   Simple induction on $\mtrace$ and cases on $\stepto_{\CESKt}$.
@@ -124,10 +126,11 @@ We use $\append{\cdot}{\epsilon}$ to treat $\mctx$ like $\epsilon$ and construct
 \begin{proof}
   Routine case analysis.
 \end{proof}
+Note that the injection of $\mexpr_\mathit{pgm}$ into $\CESKKstart$, $(\tpl{\mexpr_\mathit{pgm},\bot,\epsilon},\bot,\mtime_0,\bot)$, trivially satisfies $\inv$.
 
 The unrolling proposition is the following
 \begin{mathpar}
-  \inferrule{ }{\epsilon \in \unroll{\mktab}{\epsilon}} \quad
+  \inferrule{ }{\epsilon \in \unroll{\mktab}{\Halt}} \quad
   \inferrule{\makont \in \mktab(\mctx),
              \mkont \in \unroll{\mktab}{\makont}}
             {\kcons{\mkframe}{\mkont} \in \unroll{\mktab}{\kcons{\mkframe}{\mctx}}}
@@ -135,16 +138,17 @@ The unrolling proposition is the following
 \begin{theorem}[Correctness]
   For all expressions $\mexpr_\mathit{pgm}$,
   \begin{itemize}
-  \item{%for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
+  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
         if $\mstate,\mstore,\mtime \stepto_{\CESKt} \mstate',\mstore',\mtime'$,
-        for all $\mktab,\makont$ if $\inv(\mstate\set{\mkont := \makont},\mstore,\mktab,\mtime)$
+        %for all $\mktab,\makont$ if
+        $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
         and $\mkont \in \unroll{\mktab}{\makont}$, then
-        there is a $\mktab',\makont'$ such that
-        $\mstate\set{\mkont := \makont},\mstore,\mktab,\mtime \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$}
-  \item{if $\mastate,\mstore,\mktab,\mtime \stepto_{\CESKKstart} \mastate',\mstore',\mktab',\mtime'$
-      and $\inv(\mastate,\mstore,\mktab,\mtime)$,
+        there are $\mktab',\makont'$ such that
+        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$}
+  \item{{\bf Completeness:} if $\mastate,\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mastate',\mstore',\mtime',\mktab'$
+      and $\inv(\mastate,\mstore,\mtime,\mktab)$,
       for all $\mkont$, if $\mkont \in \unroll{\mktab}{\mastate.\makont}$ then
-      there exists an $\mkont'$ such that
+      there is a $\mkont'$ such that
       $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\CESKt}
        \mastate'\set{\makont := \mkont'},\mstore',\mtime'$ and
        $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$.}
@@ -153,7 +157,7 @@ The unrolling proposition is the following
 
 \subsection{Engineered semantics for efficiency}
 %%
-There are three optimizations that may be employed to accelerate the fixed-point computation.
+We cover three optimizations that may be employed to accelerate the fixed-point computation.
 \begin{enumerate}
 \item{Observe that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.}
 \item{Continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.}
@@ -168,11 +172,11 @@ In an abstract machines, this split looks like installing a continuation prompt 
 %
 We borrow a representation from literature on delimited continuations to split the continuation into two components: the continuation and meta-continuation.
 %
-Our delimiters are special since each continuation ``chunk'' until the next prompt will be of bounded length.
+Our delimiters are special since each continuation ``chunk'' until the next prompt has bounded length.
 %
 The bound is roughly the deepest nesting depth of an expression in functions' bodies.
 %
-Instead of ``continuation'' and ``meta-continuation'' then, we will use terminology from CFA2 and call the top chunk a ``local continuation,'' and the rest the ``continuation.''
+Instead of ``continuation'' and ``meta-continuation'' then, we will use terminology from CFA2 and call the top chunk a ``local continuation,'' and the rest the ``continuation.''\footnote{Since the continuation is either $\Halt$ or a context, CFA2 calls these ``entries'' to mean execution entry into the program ($\Halt$) or a function ($\mctx$). One can also understand these as entries in a table ($\mktab$). We stay with the ``continuation'' nomenclature because they represent full continuations.}
 %
 %
 
@@ -256,16 +260,67 @@ However, when adding the administrative state, the ``seen'' check requires searc
 \end{figure}
 
 \begin{align*}
-  {\mathcal F}(S,R,F,\mktab) &= (S \cup F, R \cup R', F'\setminus S, \mktab') \\
+  {\mathcal F}_{\mexpr}(S,R,F,\mktab) &= (S \cup F, R \cup R', F'\setminus S, \mktab') \\
   I &= \bigcup\limits_{s=(\mstate,\mstore,\mtime) \in F}{\setbuild{(\tpl{s,s'}, \mktab')}{s,\mktab \stepto s',\mktab'}} \\
   R' &= \pi_0 I \\
   F' &= \pi_1 R' \\
   \mktab' &= \bigsqcup\pi_1 I
 \end{align*}
-For a program $\mexpr$, we will say $(\emptyset,\emptyset,\set{\tpl{\mexpr,\bot,\epsilon,\Halt}},\bot)$ is the bottom element of ${\mathcal F}$'s domain.
+For a program $\mexpr$, we will say $(\emptyset,\emptyset,\set{\tpl{\mexpr,\bot,\epsilon,\Halt}},\bot)$ is the bottom element of ${\mathcal F}_{\mexpr}$'s domain.
 %
-The ``analysis'' then is then the pair of the $R$ and $\mktab$ components of $\lfp({\mathcal F})$.
+The ``analysis'' then is then the pair of the $R$ and $\mktab$ components of $\lfp({\mathcal F}_{\mexpr})$.
 
+The correctness argument for this semantics is not about single steps but instead about the entire relation that ${\mathcal F}$ computes.
+%
+The argument is that the $R$ and $\mktab$ components of the system represent a slice of the unbounded relation $\stepto_{\CESKt}$ (restricted to reachable states).
+%
+We will show that traces in any $n \in \nat$ times we \emph{unfold} $\stepto_{\CESKt}$ from the initial state, there is a corresponding $m$ applications of ${\mathcal F}$ that reify into a relation that exhibit the same trace.
+%
+Conversely, any trace in the reification of ${\mathcal F}_{\mexpr}^m(\bot)$ has the same trace in some $n$ unfoldings of $\stepto_{\CESKt}$.
+%
+For an arbitrary $\alloc$ function, we cannot expect ${\mathcal F}$ to have a fixed point, so this property is the best we can get.
+%
+For a finite $\alloc$ function, Kleene's fixed point theorem dictates there is a $m$ such that ${\mathcal F}_{\mexpr}^m(\bot)$ is a fixed point, so every trace in the reified relation is also a trace in an unbounded number of unfoldings of $\stepto_{\CESKt}$.
+%
+This is the corresponding completeness argument for the algorithm.
+
+\begin{align*}
+  \reachrestrict(\mstate_0, \stepto, 0) &= \setbuild{(\mstate_0,\mstate)}{\mstate_0 \stepto \mstate} \\
+  \reachrestrict(\mstate_0, \stepto, n+1) &= \stepextend(\reachrestrict(\mstate_0,\stepto,n)) \\
+  \textit{where } \stepextend(R) &= R \cup \setbuild{(\mstate,\mstate')}{(\_,\mstate) \in R, \mstate \stepto \mstate'}
+\end{align*}
+The reification simply realizes all possible complete continuations that a state could have, given $\mktab$:
+\begin{mathpar}
+  \inferrule{
+  \tpl{(\tpl{\mexpr,\maenv,\makont},\mstore,\mtime),
+      (\tpl{\mexpr',\maenv',\makont'},\mstore',\mtime')} \in R \\
+  \mkont \in \tails{\mktab}{\makont}}
+  {\tpl{\mexpr,\maenv,\append{\makont}{\mkont}},\mstore,\mtime \stepto_{\reify(S,F,R,\mktab)}
+   \tpl{\mexpr',\maenv',\append{\makont'}{\mkont}},\mstore',\mtime'}
+  % \reify(S,F,R,\mktab) &= \setbuild{}
+  % {\\ &\phantom{= \{}
+  %   \tpl{(\tpl{\mexpr,\maenv,\makont},\mstore,\mtime),
+  %     (\tpl{\mexpr',\maenv',\makont'},\mstore',\mtime')} \in R,
+  %   \\ &\phantom{= \{}
+  %   \mkont \in \tails{\mktab}{\makont}}
+\end{mathpar}
+The additional judgment about tails is a variant of $\mathit{unroll}$ in order to get a common tail:
+\begin{mathpar}
+  \inferrule{ }{\epsilon \in \tails{\mktab}{\Halt}} \quad
+  \inferrule{\makont \in \mktab(\mctx) \\
+             \mkont \in \unroll{\mktab}{\makont}}
+            {\mkont \in \tails{\mktab}{\kcons{\mkframe}{\mctx}}}
+\end{mathpar}
 \begin{theorem}[Correctness]
-  \todo{Ian}
+  For all $\mexpr_\mathit{pgm}$, let $\mstate_0 = \tpl{\mexpr_\mathit{pgm},\bot,\epsilon},\bot,\mtime_0$ in
+  $\forall n \in \nat, \mstate,\mstate' \in \CESKt$:
+  \begin{itemize}
+  \item{if $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},n)$ then
+      there is an $m$ such that $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_\mathit{pgm}}^m(\bot))} \mstate'$}
+  \item{if $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_\mathit{pgm}}^n(\bot))} \mstate'$ then
+      there is an $m$ such that $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},m)$}
+  \end{itemize}
 \end{theorem}
+\begin{proof}
+  By induction on $n$.
+\end{proof}
