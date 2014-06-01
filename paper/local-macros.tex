@@ -57,6 +57,7 @@
 
 % Metavariables for Spaces
 \newcommand{\CEK}{\mathit{CEK}}
+\newcommand{\CESKt}{\mathit{CESK_t}}
 \newcommand{\CESKstart}{\mathit{CESK^*_t}}
 \newcommand{\CESKKstart}{\mathit{CESK^*_t\mktab}}
 \newcommand{\CESIKKstart}{\mathit{CESIK^*_t\mktab}}
@@ -68,6 +69,7 @@
 
 \newcommand{\Expr}{\mathit{Expr}}
 \newcommand{\Store}{\mathit{Store}}
+\newcommand{\Storeable}{\mathit{Storeable}}
 \newcommand{\KStore}{\mathit{KStore}}
 \newcommand{\MKStore}{\mathit{CStore}}
 \newcommand{\LKont}{\mathit{LKont}}
@@ -140,13 +142,19 @@
 \newcommand{\konts}{\mathit{konts}}
 
 \newcommand{\inv}{\mathit{inv}}
+\newcommand{\IsTrace}{\mathit{\Pi_\mathit{wf}}}
+\newcommand{\invmktab}{\mathit{inv}_\mktab}
 \newcommand{\reachable}{\mathit{reach}}
 \newcommand{\memo}{\mathit{memo}}
 \newcommand{\unroll}[2]{\mathit{unroll}_{#1}(#2)}
 \newcommand{\unrollK}[3]{\mathit{unrollK}^{#1}_{#2}(#3)}
 \newcommand{\unrollC}[2]{\mathit{unrollC}_{#1}(#2)}
 \newcommand{\hastail}{\mathit{ht}}
+\newcommand{\hastailkont}{\mathit{ht}_{\mkont}}
+\newcommand{\hastailstate}{\mathit{ht}_{\mastate}}
 \newcommand{\replacetail}{\mathit{rt}}
+\newcommand{\replacetailkont}{\mathit{rt}_{\mkont}}
+\newcommand{\replacetailstate}{\mathit{rt}_{\mastate}}
 
 \newcommand{\kontlive}{K{\mathcal L}{\mathcal L}}
 \newcommand{\kontliveaux}{K{\mathcal L}{\mathcal L}^*}
