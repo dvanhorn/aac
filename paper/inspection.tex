@@ -7,22 +7,44 @@ We will demonstrate both forms are simple first-order metafunctions that the AAM
 Access control can be modeled with continuation marks, so we demonstrate with the CM machine of \citeauthor{dvanhorn:Clements2004Tailrecursive}.
 
 %%
-Recursive metafunctions that inspect the stack can be thought of as out-of-band reduction relations that match rules in order until one fires, repeatedly until a return value is produced.
+Semantics that inspect the stack do so with metafunction calls that recur down the stack.
+%
+Recursive metafunctions can be thought of as out-of-band reduction relations that match rules in order until one fires, repeatedly until a return value is produced.
 %
 Interpreted via AAM, non-deterministic metafunction evaluation leads to a set of possible results.
 %
 The finite restriction on the state space carries over to metafunction inputs, so we can always detect infinite loops and bail out of that execution path.
+%
+Specifically, a metafunction call can be seen as an initial state, $s$, in a reduction system for which we can compute all terminal states:
+\begin{align*}
+  \terminal &: \forall A. (\text{relation } A)^* \times A \to \wp(A) \\
+  \terminal(\overline{R},s) &= \terminalaux(\set{s},\set{s},\emptyset) \\[2pt]
+  \text{where } \terminalaux(S, \emptyset, T) &= T \\
+   \terminalaux(S, F \uplus \set{s}, T) &= \terminalaux(S\cup I, F \cup (I \setminus S), T') \\
+   & \text{where } (I',T') = \trystep(\overline{R}) \\
+   \trystep(\epsilon) &= (\emptyset,T\cup\set{s}) \\
+   \trystep(\stepto:\overline{R}) &= I\deceq\emptyset \to \trystep(\overline{R}), (I, T) \\
+    & \text{where } I = \setbuild{s'}{s \stepto s'}
+\end{align*}
 
+This definition is a typical worklist algorithm.
+%
+It builds the set of terminal terms, $T$, by exploring the frontier (or worklist), $F$, and only adding terms to the frontier that have not been seen, as represented by $S$.
+%
+If a rule does not match a given term, the intermediate set, $I$ will be empty, and $\terminalaux$ will continue trying the following rules until it finds a match.
+
+\subsection{Pushdown GC}
 Garbage collection, for example, needs to crawl the stack for live addresses.
 %
 The following function will produce the set of live addresses in the stack:
 
 \begin{align*}
+  \kontlive &: \Frame^* \to \wp(\Addr) \\
   \kontlive(\makont) &= \kontliveaux(\makont,\emptyset) \\[2pt]
   \kontliveaux(\epsilon,L) &= L \\
   \kontliveaux(\kcons{\mkframe}{\makont}, L) &= \kontliveaux(\makont, L\cup\touches(\mkframe)) \\
-  \text{where } \touches(\appl{\mexpr,\menv}) &= \setbuild{\menv(\mvar)}{\mvar \in \fv(\mexpr)} \\
-                \touches(\appr{\mval,\menv}) &= \setbuild{\menv(\mvar)}{\mvar \in \fv(\mval)}
+  \text{where } \touches(\appl{\mexpr,\maenv}) &= \touches(\appr{\mexpr,\maenv}) = \touches(\mexpr,\maenv) \\
+                \touches(\mexpr,\maenv) &= \setbuild{\maenv(\mvar)}{\mvar \in \fv(\mexpr)}
 \end{align*}
 
 When interpreted via AAM, the continuation is indirected through $\mktab$ and leads to multiple results, and possibly loops through $\mktab$.
@@ -33,28 +55,114 @@ Thus this is more properly understood as
   \kontliveaux(\mktab,\epsilon,L) &\stepto_0 L \\
   \kontliveaux(\mktab,\kcons{\mkframe}{\mctx}, L) &\stepto_1 \kontliveaux(\mktab,\makont, L\cup\touches(\mkframe)) \text{ if } \makont \in \mktab(\mctx)
 \end{align*}
-
-where $\terminal$ is a metafunction that produces the set of irreducible terms of an input list of relations given a starting point:
-\begin{align*}
-  \terminal(\overline{R},s) &= \terminalaux(\set{s},\set{s},\emptyset) \\[2pt]
-  \text{where } \terminalaux(S, \emptyset, T) &= T \\
-   \terminalaux(S, F \uplus \set{s}, T) &= \terminalaux(S\cup I, F \cup (I \setminus S), T') \\
-   & \text{where } (I',T') = \trystep(\overline{R}) \\
-   \trystep(\epsilon) &= (\emptyset,T\cup\set{s}) \\
-   \trystep(\stepto:\overline{R}) &= I\deceq\emptyset \to \trystep(\overline{R}), (I, T) \\
-    & \text{where } I = \setbuild{s'}{s \stepto s'}
-\end{align*}
-
-This definition is a typical worklist implementation of a fixed-point computation.
-%
-It builds the set of terminal terms, $T$, by exploring the frontier (or worklist), $F$, and only adding terms to the frontier that have not been seen, as represented by $S$.
-%
-If a rule does not match a given term, the intermediate set, $I$ will be empty, and $\terminalaux$ will continue trying the following rules until it finds a match.
 %
 
-%
 A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.\footnote{The garbage collecting version of PDCFA~\citep{ianjohnson:DBLP:journals/jfp/JohnsonSEMH14} evaluates the second of these two strategies.}
 %
 On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hopes that the state space will be smaller.
 %
-\todo{DVH's CM machine}
+\todo{Fix GC definition since the output can be a set or a single state.}
+
+%
+A state is collected only if live addresses remain in the domain of $\mstore$.
+%
+We say a value $\maval \in \mstore(\maddr)$ is live if $\maddr$ is live.
+%
+If a value is live, any addresses it touches are live; this is captured by the computation in $\reaches$:
+%
+\begin{align*}
+  \Gamma(\mastate,\mstore,\mtime,\mktab) &=
+  \mastate,\mstore|_{\reaches(\mastate,\mstore,\mktab)},\mtime,\mktab \\
+  \text{where }
+  \reaches(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab) &=
+ \setbuild{\maddralt}{\maddr \in \touches(\mexpr,\maenv) \cup \kontlive(\mktab,\makont), \maddr \leadsto_\mstore^* \maddralt} \\
+&  \infer{\maval \in \mstore(\maddr) \\ \maddralt \in \touches(\maval)}{\maddr \leadsto_\mstore \maddralt}
+\end{align*}
+Suppose at arbitrary times we decide to perform garbage collection rather than continue with garbage.
+%
+So when $\mstate \stepto \mstate'$, we instead do $\mstate \stepto \Gamma(\mstate')$.
+%
+The times we perform GC do not matter, since we are not analyzing GC behavior.
+%
+We expect a correctness condition that says any step our garbage collecting semantics with $\mktab$ takes will have states that compare exactly up-to garbage to states in a (possibly) garbage collecting semantics without $\mktab$.
+%
+By up-to garbage we mean that we only compare stores that have been garbage-collected; sound abstractions should disregard concrete garbage: $[\maddr \mapsto 0,\maddralt \mapsto 1] \sqsubseteq [\maddr \mapsto 0]$ when $\maddralt$ is dead.
+
+\begin{theorem}[Correctness of GC]
+  For all expressions $\mexpr_\mathit{pgm}$,
+  \begin{itemize}
+  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
+        if $\mstate,\mstore,\mtime \stepto_{\CESKt} \mstate',\mstore',\mtime'$,
+        %for all $\mktab,\makont$ if
+        $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
+        and $\mkont \in \unroll{\mktab}{\makont}$, then
+        there are $\mktab',\makont',\mstore''$ such that
+        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally $\mstore''|_{\reaches(\mstate'\set{\mkont := \makont'},\mstore'',\mktab')} = \mstore'|_{\reaches(\mstate',\mstore')}$}
+  \item{{\bf Completeness:} if $\mastate,\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mastate',\mstore',\mtime',\mktab'$
+      and $\inv(\mastate,\mstore,\mtime,\mktab)$,
+      for all $\mkont$, if $\mkont \in \unroll{\mktab}{\mastate.\makont}$ then
+      there are $\mkont',\mstore''$ such that
+      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\CESKt}
+       \mastate'\set{\makont := \mkont'},\mstore'',\mtime'$ and
+       $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$ and finally
+     $\mstore''|_{\reaches(\mastate'\set{\mkont := \mkont'},\mstore'')} = \mstore'|_{\reaches(\mastate',\mstore',\mktab')}$}
+  \end{itemize}  
+\end{theorem}
+
+\subsection{Analyzing security features: the CM machine}
+The CM machine provides a model of access control: a dynamic branch of execution is given permission to use some resource if a continuation mark for that permission is set to ``grant.''
+%
+There are three new forms we add to the lambda calculus to model this feature: {\tt grant}, {\tt frame}, and {\tt test}.
+%
+The {\tt grant} construct of course adds a permission to the stack.
+%
+The concern of unforgeable permissions is orthogonal, so we simplify with a set of permissions that is textually present in the program:
+\begin{align*}
+  \mperm \in \Permissions & \text{ a set} \\
+  \Expr &::= \ldots \alt \sframe{\mperm}{\mexpr} \alt \sgrant{\mperm}{\mexpr} \alt \stest{\mperm}{\mexpr}{\mexpr}
+\end{align*}
+%
+The {\tt frame} construct ensures that only a given set of permissions are allowed, but not necessarily granted.
+%
+The security is in the semantics of {\tt test}: we can test if all marks in some set $\mperm$ have been granted in the stack without first being denied; this involves crawling the stack.
+%
+
+%
+Continuation marks respect tail calls and have an interface that abstracts over the stack implementation.
+%
+Each stack frame added to the continuation carries the permission map.
+The empty continuation also carries a permission map.
+%
+Crucially, the added constructs do not add frames to the stack; instead, they update the permission map in the top frame.
+\begin{align*}
+  \mpermmap \in \PermissionMap &= \Permissions \finto \GD \\
+  \mgd \in \GD &::= \Grant \alt \Deny \\
+  \mkont \in \Kont &::= \epsilon^\mpermmap \alt \kconsm{\mkframe}{\mpermmap}{\mkont}
+\end{align*}
+Update for continuation marks:
+\begin{align*}
+  \extm{\mpermmap}{\mperm}{\mgd} &= \lambda x. x \decin \mperm \to \mgd, \mpermmap(x) \\
+  \extm{\mpermmap}{\overline{\mperm}}{\mgd} &= \lambda x. x \decin \mperm \to \mpermmap(x),\mgd \end{align*}
+
+\begin{figure}
+  \centering
+  \begin{tabular}{r|l}
+    \hline
+    $\tpl{\sframe{\mperm}{\mexpr}, \maenv, \mkont}$
+    &
+    $\tpl{\mexpr,\maenv,\mkont{\overline{\mperm}}{\Deny}}$
+    \\
+    $\tpl{\sgrant{\mperm}{\mexpr}, \maenv, \mkont}$
+    &
+    $\tpl{\mexpr,\maenv,\mkont{\mperm}{\Grant}}$
+    \\
+    $\tpl{\stest{\mperm}{\mexpri0}{\mexpri1}, \maenv, \mkont}$
+    &
+    $\tpl{\mexpri0,\maenv,\mkont}$ if $\#t = \OK(\mperm,\mkont)$
+    \\
+    &
+    $\tpl{\mexpri1,\maenv,\mkont}$ if $\#f = \OK(\mperm,\mkont)$
+  \end{tabular}
+  \caption{CM machine semantics}
+  \label{fig:cm-semantics}
+\end{figure}

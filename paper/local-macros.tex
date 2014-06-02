@@ -87,6 +87,15 @@
 \newcommand{\Value}{\mathit{Value}}
 \newcommand{\Prims}{\mathit{Prims}}
 
+\newcommand{\mperm}{P}
+\newcommand{\mpermmap}{m}
+\newcommand{\Grant}{\mathbf{Grant}}
+\newcommand{\Deny}{\mathbf{Deny}}
+\newcommand{\mgd}{\mathit{gd}}
+\newcommand{\Permissions}{\mathit{Permissions}}
+\newcommand{\GD}{\mathit{GD}}
+\newcommand{\PermissionMap}{\mathit{PermissionMap}}
+
 \newcommand{\maenv}{\hat{\menv}}
 \newcommand{\makont}{\hat{\mkont}}
 \newcommand{\mvkont}{\tilde{\mkont}}
@@ -173,6 +182,9 @@
 \newcommand{\sprim}[1]{#1}
 \newcommand{\sreset}[1]{\texttt{reset}\ #1}
 \newcommand{\sshift}[2]{\texttt{shift}\ #1. #2}
+\newcommand{\sframe}[2]{\texttt{frame}\ #1\ #2}
+\newcommand{\sgrant}[2]{\texttt{grant}\ #1\ #2}
+\newcommand{\stest}[3]{\texttt{test}\ #1\ #2\ #3}
 
 \newcommand{\swcm}[3]{(\texttt{wcm}\ #1\ #2\ #3)}
 \newcommand{\sccms}{(\texttt{ccm})}
@@ -233,6 +245,7 @@
 
 \newcommand{\many}[1]{\overline{#1}}
 \newcommand{\kcons}[2]{#1{\tt :} #2}
+\newcommand{\kconsm}[3]{#1{\tt :}^{#2} #3}
 \newcommand{\alt}{\mathrel{\mid}}
 
 \newcommand{\snglm}[2]{[#1 \mapsto \set{#2}]}
@@ -241,6 +254,9 @@
 \newcommand{\joinone}[3]{#1\sqcup[#2 \mapsto \set{#3}]}
 \DeclareMathOperator*{\finto}{\rightharpoonup}
 \DeclareMathOperator*{\deceq}{\overset{?}{=}}
+\DeclareMathOperator*{\decin}{\overset{?}{\in}}
+
+\newcommand{\OK}{{\mathcal O}{\mathcal K}}
 
 \newcommand{\append}[2]{#1 {\tt ++} #2}
 

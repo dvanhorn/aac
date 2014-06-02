@@ -25,7 +25,7 @@ Stack addresses generally describe the relevant context that lead to their alloc
 The resulting state space is updated here:
   \begin{align*}
     \sa{State} &= \sa{CEK} \times \Store \times \Time \times \KStore \\
-    \sa{Storeable} &= \wp(\Value \times \sa{Env}) \\
+    \maval \in \sa{Storeable} &= \wp(\Value \times \sa{Env}) \\
     \mkont \in \Kont &::= \epsilon \alt \kcons{\mkframe}{\mctx} \\
     \mctx \in \Context &::=  \tpl{\mexpr,\maenv,\mstore,\mtime} \\
     \mktab \in \KStore &= \Context \finto \wp(\Kont) \\
