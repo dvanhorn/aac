@@ -1,1 +1,10 @@
-\todo{Ian}
+Context irrelevance means if we have seen the results of a computation before from a different context, we can reuse them.
+%
+The semantic counterpart to this idea is a memo table that we extend when popping and appeal to when about to push.
+%
+This simple idea works well with a deterministic semantics, but the non-determinism of abstraction requires care.
+%
+\todo{Explain the difference between global $\mktab$ and global $\mmemo$}
+%
+What happens if we use the memo table and then the fixed-point computation finds another result for that context?
+%

@@ -134,6 +134,62 @@
       \end{byCases}
 \end{proof}
 
+\section{Proofs for section 4}
+
+\begin{lemma}[Correctness of $\kontlive$]
+  For all $\mktab,\mkont,\makont$,
+  \begin{itemize}
+  \item{\textbf{Soundness:} if $\mkont \in \unroll{\mktab}{\makont}$ then $\kontlive(\mkont) \in \kontlive(\mktab,\mkont)$}
+  \item{\textbf{Completeness:} for all $L \in \kontlive(\mktab,\makont)$ there is a $\mkont \in \unroll{\mktab}{\makont}$ such that $L = \kontlive(\mkont)$.}
+  \end{itemize}
+\end{lemma}
+
+\begin{theorem}[Correctness of $\Gamma^*\CESKKstart$]
+  For all expressions $\mexpr_0$,
+  \begin{itemize}
+  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
+        if $\mstate,\mstore,\mtime \stepto_{\Gamma\CESKt} \mstate',\mstore',\mtime'$,
+        %for all $\mktab,\makont$ if
+        $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
+        and $\mkont \in \unroll{\mktab}{\makont}$, then
+        there are $\mktab',\makont',\mstore''$ such that
+        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\Gamma^*\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally there is an $L \in \live^*(\mstate'\set{\mkont := \makont'},\mstore'',\mktab')$ such that $\mstore''|_L = \mstore'|_{\live(\mstate',\mstore')}$}
+  \item{{\bf Completeness:} if $\mastate\equiv\tpl{\mexpr,\maenv,\makont},\mstore,\mtime,\mktab \stepto_{\Gamma^*\CESKKstart} \mastate',\mstore',\mtime',\mktab'$ and there is an $L_\mkont \in \kontlive(\mktab,\makont)$ such that $\mstore|_L = \mstore$ (where $L = \reaches(\touches(\mexpr,\maenv) \cup L_\mkont, \mstore)$) and $\inv(\mastate,\mstore,\mtime,\mktab)$,
+      for all $\mkont \in \unroll{\mktab}{\makont}$ such that $\kontlive(\mkont) = L_\mkont$,
+      there are $\mkont',\mstore''$ such that
+      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\Gamma\CESKt}
+      \mastate'\set{\makont := \mkont'},\mstore',\mtime'$ (a GC step) and
+      $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$}
+  \end{itemize}  
+\end{theorem}
+
+\begin{theorem}[Soundness of $\hat\Gamma\CESKKstart$]
+  For all expressions $\mexpr_0$,
+  if $\mstate,\mstore,\mtime \stepto_{\Gamma\CESKt} \mstate',\mstore',\mtime'$,
+  % for all $\mktab,\makont$ if
+  $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
+  and $\mkont \in \unroll{\mktab}{\makont}$, then
+  there are $\mktab',\makont',\mstore''$ such that
+  $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\hat\Gamma\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally $\mstore'|_{\live(\mstate',\mstore')} \sqsubseteq \mstore''|_{\widehat{live}(\mastate,\mstore'',\mktab')}$
+\end{theorem}
+
+\begin{lemma}[Correctness of $\widehat{\OK}$]
+  \begin{itemize}
+  \item{\textbf{Soundness:} if $b = \OK(\mperm,\mkont)$ and $\mkont \in \unroll{\mktab}{\makont}$ then $b \in \widehat{\OK}(\mktab,\mperm,\makont)$.}
+  \item{\textbf{Completeness:} if $b \in \widehat{\OK}(\mktab,\mperm,\makont)$ then there is a $\mkont \in \unroll{\mktab}{\makont}$ such that $b = \OK(\mperm,\mkont)$.}
+  \end{itemize}
+\end{lemma}
+\begin{proof}
+  \todo{Ian}
+\end{proof}
+
+\begin{theorem}[Correctness]
+  The abstract semantics is sound and complete in the same sense as \autoref{thm:pushdown-correct}.
+\end{theorem}
+\begin{proof}
+  \todo{Ian}
+\end{proof}
+
 \section{Proofs for section 5}
 
 \begin{theorem}[Soundness]

@@ -32,6 +32,10 @@ This definition is a typical worklist algorithm.
 It builds the set of terminal terms, $T$, by exploring the frontier (or worklist), $F$, and only adding terms to the frontier that have not been seen, as represented by $S$.
 %
 If a rule does not match a given term, the intermediate set, $I$ will be empty, and $\terminalaux$ will continue trying the following rules until it finds a match.
+%
+It is possible for metafunctions' rewrite rules to themselves use metafunctions, but the \emph{seen} set for $\terminal$ must be dynamically bound\footnote{This is a reference to dynamic scope as opposed to lexical scope.} -- it cannot restart at $\emptyset$ upon reentry.
+%
+Without this precaution, the host language will exceed its stack limits when an infinite path is explored, rather than bail out.
 
 \subsection{Pushdown GC}
 Garbage collection, for example, needs to crawl the stack for live addresses.
@@ -57,11 +61,10 @@ Thus this is more properly understood as
 \end{align*}
 %
 
-A garbage collecting semantics can choose to collect the heap with respect to each live set, or (soundly) collect with respect to their union.\footnote{The garbage collecting version of PDCFA~\citep{ianjohnson:DBLP:journals/jfp/JohnsonSEMH14} evaluates the second of these two strategies.}
+A garbage collecting semantics can choose to collect the heap with respect to each live set (call this $\Gamma^*$), or, soundly, collect with respect to their union (call this $\hat\Gamma$).\footnote{The garbage collecting version of PDCFA~\citep{ianjohnson:DBLP:journals/jfp/JohnsonSEMH14} evaluates the $\hat\Gamma$ strategy.}
 %
 On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hopes that the state space will be smaller.
 %
-\todo{Fix GC definition since the output can be a set or a single state.}
 
 %
 A state is collected only if live addresses remain in the domain of $\mstore$.
@@ -71,69 +74,134 @@ We say a value $\maval \in \mstore(\maddr)$ is live if $\maddr$ is live.
 If a value is live, any addresses it touches are live; this is captured by the computation in $\reaches$:
 %
 \begin{align*}
-  \Gamma(\mastate,\mstore,\mtime,\mktab) &=
-  \mastate,\mstore|_{\reaches(\mastate,\mstore,\mktab)},\mtime,\mktab \\
-  \text{where }
-  \reaches(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab) &=
- \setbuild{\maddralt}{\maddr \in \touches(\mexpr,\maenv) \cup \kontlive(\mktab,\makont), \maddr \leadsto_\mstore^* \maddralt} \\
+  \reaches(\mathit{root},\mstore) &=
+ \setbuild{\maddralt}{\maddr \in \mathit{root}, \maddr \leadsto_\mstore^* \maddralt} \\
 &  \infer{\maval \in \mstore(\maddr) \\ \maddralt \in \touches(\maval)}{\maddr \leadsto_\mstore \maddralt}
 \end{align*}
+So the two collection methods are as follows.
+%
+Exact GC produces different collected states based on the possible stacks' live addresses:
+\begin{align*}
+  \Gamma^*(\mastate,\mstore,\mtime,\mktab) &=
+    \setbuild{\mastate,\mstore|_L,\mtime,\mktab}{L \in \live^*(\mastate,\mstore,\mktab)} \\
+  \live^*(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab) &=
+    \setbuild{\reaches(\touches(\mexpr,\maenv) \cup L, \mstore)}{L \in \kontlive(\mktab,\makont)}
+\end{align*}
+\begin{equation*}
+  \infer{\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\mtime',\mktab' \\
+         \hat{s} \in \Gamma^*(\mstate',\mstore',\mtime',\mktab')}
+        {\mastate,\mstore,\mtime,\mktab \stepto_{\Gamma^*} \hat{s}}
+\end{equation*}
+And inexact GC produces a single state that collects based on all (known) stacks' live addresses:
+\begin{align*}
+  \hat\Gamma(\mastate,\mstore,\mtime,\mktab) &=
+  \mastate,\mstore|_{\widehat{\live}(\mastate,\mstore,\mktab)},\mtime,\mktab \\
+  \widehat{\live}(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab) &=
+    \reaches(\touches(\mexpr,\maenv) \cup \bigcup\kontlive(\mktab,\makont), \mstore)
+\end{align*}
+\begin{equation*}
+  \infer{\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\mtime',\mktab'}
+        {\mastate,\mstore,\mtime,\mktab \stepto_{\hat\Gamma} \hat\Gamma(\mstate',\mstore',\mtime',\mktab')}
+\end{equation*}
+
+Without the continuation store, the baseline GC is
+\begin{align*}
+  \Gamma(\mastate,\mstore,\mtime) &= \mastate,\mstore|_{\live(\mastate,\mstore)},\mtime \\
+  \live(\tpl{\mexpr,\maenv,\mkont},\mstore) &= \reaches(\touches(\mexpr,\maenv)\cup \kontlive(\makont), \mstore)
+\end{align*}
+\begin{equation*}
+  \infer{\mastate,\mstore,\mtime \stepto \mastate',\mstore',\mtime'}
+        {\mastate,\mstore,\mtime \stepto_{\Gamma} \Gamma(\mstate',\mstore',\mtime')}  
+\end{equation*}
 Suppose at arbitrary times we decide to perform garbage collection rather than continue with garbage.
 %
-So when $\mstate \stepto \mstate'$, we instead do $\mstate \stepto \Gamma(\mstate')$.
+So when $\mstate \stepto \mstate'$, we instead do $\mstate \stepto_\Gamma \mstate'$.
 %
-The times we perform GC do not matter, since we are not analyzing GC behavior.
+The times we perform GC do not matter for soundness, since we are not analyzing GC behavior.
 %
-We expect a correctness condition that says any step our garbage collecting semantics with $\mktab$ takes will have states that compare exactly up-to garbage to states in a (possibly) garbage collecting semantics without $\mktab$.
+However, garbage stands in the way of completeness.
 %
-By up-to garbage we mean that we only compare stores that have been garbage-collected; sound abstractions should disregard concrete garbage: $[\maddr \mapsto 0,\maddralt \mapsto 1] \sqsubseteq [\maddr \mapsto 0]$ when $\maddralt$ is dead.
+Mismatches in the GC application for the different semantics lead to mismatches in resulting state spaces, not just up to garbage in stores, but in spurious paths from dereferencing a reallocated address that was not first collected.
+%
 
-\begin{theorem}[Correctness of GC]
-  For all expressions $\mexpr_\mathit{pgm}$,
+%
+The state space compaction that continuation stores gives us makes ensuring GC times match up for the completeness proposition tedious.
+%
+Our statement of completeness then will assume both semantics perform garbage collection on every step.
+%
+
+\begin{lemma}[Correctness of $\kontlive$]
+  For all $\mktab,\mkont,\makont$,
+  \begin{itemize}
+  \item{\textbf{Soundness:} if $\mkont \in \unroll{\mktab}{\makont}$ then $\kontlive(\mkont) \in \kontlive(\mktab,\mkont)$}
+  \item{\textbf{Completeness:} for all $L \in \kontlive(\mktab,\makont)$ there is a $\mkont \in \unroll{\mktab}{\makont}$ such that $L = \kontlive(\mkont)$.}
+  \end{itemize}
+\end{lemma}
+\begin{proof}
+  Soundness follows by induction on the unrolling. Completeness follows
+\end{proof}
+\begin{theorem}[Correctness of $\Gamma^*\CESKKstart$]
+  For all expressions $\mexpr_0$,
   \begin{itemize}
   \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
-        if $\mstate,\mstore,\mtime \stepto_{\CESKt} \mstate',\mstore',\mtime'$,
+        if $\mstate,\mstore,\mtime \stepto_{\Gamma\CESKt} \mstate',\mstore',\mtime'$,
         %for all $\mktab,\makont$ if
         $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
         and $\mkont \in \unroll{\mktab}{\makont}$, then
         there are $\mktab',\makont',\mstore''$ such that
-        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally $\mstore''|_{\reaches(\mstate'\set{\mkont := \makont'},\mstore'',\mktab')} = \mstore'|_{\reaches(\mstate',\mstore')}$}
-  \item{{\bf Completeness:} if $\mastate,\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mastate',\mstore',\mtime',\mktab'$
-      and $\inv(\mastate,\mstore,\mtime,\mktab)$,
-      for all $\mkont$, if $\mkont \in \unroll{\mktab}{\mastate.\makont}$ then
+        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\Gamma^*\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally there is an $L \in \live^*(\mstate'\set{\mkont := \makont'},\mstore'',\mktab')$ such that $\mstore''|_L = \mstore'|_{\live(\mstate',\mstore')}$}
+  \item{{\bf Completeness:} if $\mastate\equiv\tpl{\mexpr,\maenv,\makont},\mstore,\mtime,\mktab \stepto_{\Gamma^*\CESKKstart} \mastate',\mstore',\mtime',\mktab'$ and there is an $L_\mkont \in \kontlive(\mktab,\makont)$ such that $\mstore|_L = \mstore$ (where $L = \reaches(\touches(\mexpr,\maenv) \cup L_\mkont, \mstore)$) and $\inv(\mastate,\mstore,\mtime,\mktab)$,
+      for all $\mkont \in \unroll{\mktab}{\makont}$ such that $\kontlive(\mkont) = L_\mkont$,
       there are $\mkont',\mstore''$ such that
-      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\CESKt}
-       \mastate'\set{\makont := \mkont'},\mstore'',\mtime'$ and
-       $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$ and finally
-     $\mstore''|_{\reaches(\mastate'\set{\mkont := \mkont'},\mstore'')} = \mstore'|_{\reaches(\mastate',\mstore',\mktab')}$}
+      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\Gamma\CESKt}
+      \mastate'\set{\makont := \mkont'},\mstore',\mtime'$ (a GC step) and
+      $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$}
   \end{itemize}  
 \end{theorem}
 
+\begin{theorem}[Soundness of $\hat\Gamma\CESKKstart$]
+  For all expressions $\mexpr_0$,
+  if $\mstate,\mstore,\mtime \stepto_{\Gamma\CESKt} \mstate',\mstore',\mtime'$,
+  % for all $\mktab,\makont$ if
+  $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
+  and $\mkont \in \unroll{\mktab}{\makont}$, then
+  there are $\mktab',\makont',\mstore''$ such that
+  $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\hat\Gamma\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally $\mstore'|_{\live(\mstate',\mstore')} \sqsubseteq \mstore''|_{\widehat{live}(\mastate,\mstore'',\mktab')}$
+\end{theorem}
+The proofs are straightforward, and use the usual lemmas for GC, such as idempotence of $\Gamma$ and $\touches \subseteq \reaches$.
 \subsection{Analyzing security features: the CM machine}
 The CM machine provides a model of access control: a dynamic branch of execution is given permission to use some resource if a continuation mark for that permission is set to ``grant.''
 %
 There are three new forms we add to the lambda calculus to model this feature: {\tt grant}, {\tt frame}, and {\tt test}.
 %
-The {\tt grant} construct of course adds a permission to the stack.
+The {\tt grant} construct adds a permission to the stack.
 %
 The concern of unforgeable permissions is orthogonal, so we simplify with a set of permissions that is textually present in the program:
 \begin{align*}
   \mperm \in \Permissions & \text{ a set} \\
-  \Expr &::= \ldots \alt \sframe{\mperm}{\mexpr} \alt \sgrant{\mperm}{\mexpr} \alt \stest{\mperm}{\mexpr}{\mexpr}
+  \Expr &::= \ldots \alt \sgrant{\mperm}{\mexpr} \alt \sframe{\mperm}{\mexpr} \alt \stest{\mperm}{\mexpr}{\mexpr}
 \end{align*}
 %
 The {\tt frame} construct ensures that only a given set of permissions are allowed, but not necessarily granted.
 %
-The security is in the semantics of {\tt test}: we can test if all marks in some set $\mperm$ have been granted in the stack without first being denied; this involves crawling the stack.
+The security is in the semantics of {\tt test}: we can test if all marks in some set $\mperm$ have been granted in the stack without first being denied; this involves crawling the stack:
+\begin{align*}
+  \OK(\emptyset,\mkont) &= \mathit{True} \\
+  \OK(\mperm,\epsilon^\mpermmap) &= \passp(\mperm,\mpermmap) \\
+  \OK(\mperm,\kconsm{\mkframe}{\mpermmap}{\mkont}) &= \passp(\mperm,\mpermmap) \textbf{ and } \OK(\mperm \setminus \mpermmap^{-1}(\Grant), \mkont) \\
+  \text{where }\passp(\mperm,\mpermmap) &= \mperm \cap \mpermmap^{-1}(\Deny) \deceq \emptyset
+\end{align*}
+The set subtraction is to say that granted permissions do not need to be checked farther down the stack.
 %
 
 %
 Continuation marks respect tail calls and have an interface that abstracts over the stack implementation.
 %
 Each stack frame added to the continuation carries the permission map.
+%
 The empty continuation also carries a permission map.
 %
-Crucially, the added constructs do not add frames to the stack; instead, they update the permission map in the top frame.
+Crucially, the added constructs do not add frames to the stack; instead, they update the permission map in the top frame, or if empty, the empty continuation's permission map.
 \begin{align*}
   \mpermmap \in \PermissionMap &= \Permissions \finto \GD \\
   \mgd \in \GD &::= \Grant \alt \Deny \\
@@ -147,22 +215,58 @@ Update for continuation marks:
 \begin{figure}
   \centering
   \begin{tabular}{r|l}
-    \hline
-    $\tpl{\sframe{\mperm}{\mexpr}, \maenv, \mkont}$
-    &
-    $\tpl{\mexpr,\maenv,\mkont{\overline{\mperm}}{\Deny}}$
-    \\
+    \hline\vspace{-3mm}\\
     $\tpl{\sgrant{\mperm}{\mexpr}, \maenv, \mkont}$
     &
-    $\tpl{\mexpr,\maenv,\mkont{\mperm}{\Grant}}$
+    $\tpl{\mexpr,\maenv,\extm{\mkont}{\mperm}{\Grant}}$
+    \\
+    $\tpl{\sframe{\mperm}{\mexpr}, \maenv, \mkont}$
+    &
+    $\tpl{\mexpr,\maenv,\extm{\mkont}{\overline{\mperm}}{\Deny}}$
     \\
     $\tpl{\stest{\mperm}{\mexpri0}{\mexpri1}, \maenv, \mkont}$
     &
-    $\tpl{\mexpri0,\maenv,\mkont}$ if $\#t = \OK(\mperm,\mkont)$
+    $\tpl{\mexpri0,\maenv,\mkont}$ if $\mathit{True} = \OK(\mperm,\mkont)$
     \\
     &
-    $\tpl{\mexpri1,\maenv,\mkont}$ if $\#f = \OK(\mperm,\mkont)$
+    $\tpl{\mexpri1,\maenv,\mkont}$ if $\mathit{False} = \OK(\mperm,\mkont)$
   \end{tabular}
   \caption{CM machine semantics}
   \label{fig:cm-semantics}
 \end{figure}
+
+The abstract version of the semantics has one change.
+%
+The {\tt test} rules are now
+\begin{align*}
+  \tpl{\stest{\mperm}{\mexpri0}{\mexpri1}, \maenv, \mkont}
+  &\stepto
+  \tpl{\mexpri0,\maenv,\mkont} \text{ if } \mathit{True} \in \widehat{\OK}(\mperm,\mkont)
+  \\
+  &\stepto
+  \tpl{\mexpri1,\maenv,\mkont} \text{ if } \mathit{False} \in \widehat{\OK}(\mperm,\mkont)
+\end{align*}
+where the a new $\widehat{\OK}$ function uses $\terminal$ and rewrite rules:
+\begin{align*}
+  \widehat{\OK}(\mktab,\mperm,\makont) &= \terminal(\overline{\stepto},\widehat{\OK}^*(\mktab,\mperm,\makont)) \\[2pt]
+  \widehat{\OK}^*(\mktab,\emptyset,\makont) &\stepto_0 \mathit{True} \\
+  \widehat{\OK}^*(\mktab,\mperm,\epsilon^\mpermmap) &\stepto_1 \passp(\mperm,\mpermmap) \\
+  \widehat{\OK}^*(\mktab,\mperm,\kconsm{\mkframe}{\mpermmap}{\mctx}) &\stepto_2 \setbuild{\passp(\mperm,\mpermmap) \textbf{ and } b}{
+          \makont \in \mktab(\mctx),
+          \\&\phantom{\stepto_2 \{}b \in \widehat{\OK}(\mktab,\mperm\setminus\mpermmap^{-1}(\Grant),\makont))}
+\end{align*}
+This definition works fine with the reentrant $\terminal$ function with a dynamically bound \emph{seen} set, but otherwise needs to be rewritten to accumulate the boolean result as a parameter of $\widehat{OK}^*$.
+%
+We use the accumulator version for the proof for simplicity.
+
+\begin{lemma}[Correctness of $\widehat{\OK}$]
+  For all $\mktab,\mperm,\mkont,\makont$,
+  \begin{itemize}
+  \item{\textbf{Soundness:} if $\mkont \in \unroll{\mktab}{\makont}$ then $\OK(\mperm,\mkont) \in \widehat{\OK}(\mktab,\mperm,\makont)$.}
+  \item{\textbf{Completeness:} if $b \in \widehat{\OK}(\mktab,\mperm,\makont)$ then there is a $\mkont \in \unroll{\mktab}{\makont}$ such that $b = \OK(\mperm,\mkont)$.}
+  \end{itemize}
+\end{lemma}
+With this lemma in hand, the correctness proof is almost identical to the core proof of correctness.
+\begin{theorem}[Correctness]
+  The abstract semantics is sound and complete in the same sense as \autoref{thm:pushdown-correct}.
+\end{theorem}
