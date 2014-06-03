@@ -27,12 +27,14 @@ It has close similarities to ``Big-CFA2'' in Vardoulakis' dissertation~\citep{va
 %%
 
 %%
-\paragraph{CFA2 and PDCFA}
+\paragraph{CFA2, PDCFA and AAM}
 The immediately related work is that of PDCFA \citep{dvanhorn:Earl2010Pushdown, dvanhorn:Earl2012Introspective}, CFA2~\citep{ianjohnson:vardoulakis-lmcs11, ianjohnson:Vardoulakis2011Pushdown}, and AAM~\citep{dvanhorn:VanHorn2010Abstracting}.
+%
+The stack frames in CFA2 that boost precision are an orthogonal feature that fit into our model as an \emph{irrelevant} component along with the stack, which we did not cover in detail due to space constraints.
 %
 The version of CFA2 that handles \rackett{call/cc} does not handle composable control, is dependent on a restricted CPS representation, and has untunable precision for first-class continuations.
 %
-Our semantics adapts to \rackett{call/cc} by removing the meta-continuation operations, and thus this work supersedes theirs.
+Our semantics adapts to \rackett{call/cc} by removing the meta-continuation operations, and thus this work supersedes theirs; the machinery is in fact a strict generalization.
 %
 The extended version of PDCFA that inspects the stack to do garbage collection~\citep{dvanhorn:Earl2012Introspective} also fits into our model;
 the addresses that the stack keeps alive can be accumulated by ``reading through'' the continuation table, building up the set of addresses in each portion of the stack that we come across.

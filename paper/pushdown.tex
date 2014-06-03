@@ -155,7 +155,7 @@ The unrolling proposition is the following
   \end{itemize}
 \end{theorem}
 
-\subsection{Engineered semantics for efficiency}
+\subsection{Engineered semantics for efficiency}\label{sec:eng-frontier}
 %%
 We cover three optimizations that may be employed to accelerate the fixed-point computation.
 \begin{enumerate}
@@ -262,9 +262,7 @@ However, when adding the administrative state, the ``seen'' check requires searc
 \begin{align*}
   {\mathcal F}_{\mexpr}(S,R,F,\mktab) &= (S \cup F, R \cup R', F'\setminus S, \mktab') \\
   I &= \bigcup\limits_{s=(\mstate,\mstore,\mtime) \in F}{\setbuild{(\tpl{s,s'}, \mktab')}{s,\mktab \stepto s',\mktab'}} \\
-  R' &= \pi_0 I \\
-  F' &= \pi_1 R' \\
-  \mktab' &= \bigsqcup\pi_1 I
+  R' &= \pi_0 I \qquad F' = \pi_1 R' \qquad \mktab' = \bigsqcup\pi_1 I
 \end{align*}
 For a program $\mexpr$, we will say $(\emptyset,\emptyset,\set{\tpl{\mexpr,\bot,\epsilon,\Halt}},\bot)$ is the bottom element of ${\mathcal F}_{\mexpr}$'s domain.
 %
@@ -311,13 +309,13 @@ The additional judgment about tails is a variant of $\mathit{unroll}$ in order t
              \mkont \in \unroll{\mktab}{\makont}}
             {\mkont \in \tails{\mktab}{\kcons{\mkframe}{\mctx}}}
 \end{mathpar}
-\begin{theorem}[Correctness]
-  For all $\mexpr_\mathit{pgm}$, let $\mstate_0 = \tpl{\mexpr_\mathit{pgm},\bot,\epsilon},\bot,\mtime_0$ in
+\begin{theorem}[Correctness]\label{thm:global-pushdown}
+  For all $\mexpr_0$, let $\mstate_0 = \tpl{\mexpr_0,\bot,\epsilon},\bot,\mtime_0$ in
   $\forall n \in \nat, \mstate,\mstate' \in \CESKt$:
   \begin{itemize}
   \item{if $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},n)$ then
-      there is an $m$ such that $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_\mathit{pgm}}^m(\bot))} \mstate'$}
-  \item{if $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_\mathit{pgm}}^n(\bot))} \mstate'$ then
+      there is an $m$ such that $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_0}^m(\bot))} \mstate'$}
+  \item{if $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_0}^n(\bot))} \mstate'$ then
       there is an $m$ such that $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},m)$}
   \end{itemize}
 \end{theorem}

@@ -65,9 +65,10 @@ A garbage collecting semantics can choose to collect the heap with respect to ea
 %
 On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hopes that the state space will be smaller.
 %
+In the general idea of relevance versus irrelevance, the continuation's live addresses are relevant to execution, but are already implicitly represented in contexts because they must be mapped in the store's domain.
 
 %
-A state is collected only if live addresses remain in the domain of $\mstore$.
+A state is ``collected'' only if live addresses remain in the domain of $\mstore$.
 %
 We say a value $\maval \in \mstore(\maddr)$ is live if $\maddr$ is live.
 %
@@ -80,7 +81,7 @@ If a value is live, any addresses it touches are live; this is captured by the c
 \end{align*}
 So the two collection methods are as follows.
 %
-Exact GC produces different collected states based on the possible stacks' live addresses:
+Exact GC produces different collected states based on the possible stacks' live addresses:\footnote{It is possible and more efficient to build the stack's live addresses piecemeal as an additional component of each state, precluding the need for $\kontlive$. Each stack in $\mktab$ would also store the live addresses to restore on return.}
 \begin{align*}
   \Gamma^*(\mastate,\mstore,\mtime,\mktab) &=
     \setbuild{\mastate,\mstore|_L,\mtime,\mktab}{L \in \live^*(\mastate,\mstore,\mktab)} \\
@@ -138,7 +139,7 @@ Our statement of completeness then will assume both semantics perform garbage co
   \end{itemize}
 \end{lemma}
 \begin{proof}
-  Soundness follows by induction on the unrolling. Completeness follows
+  Soundness follows by induction on the unrolling. Completeness follows by \todo{Ian}.
 \end{proof}
 \begin{theorem}[Correctness of $\Gamma^*\CESKKstart$]
   For all expressions $\mexpr_0$,
@@ -251,13 +252,13 @@ where the a new $\widehat{\OK}$ function uses $\terminal$ and rewrite rules:
   \widehat{\OK}(\mktab,\mperm,\makont) &= \terminal(\overline{\stepto},\widehat{\OK}^*(\mktab,\mperm,\makont)) \\[2pt]
   \widehat{\OK}^*(\mktab,\emptyset,\makont) &\stepto_0 \mathit{True} \\
   \widehat{\OK}^*(\mktab,\mperm,\epsilon^\mpermmap) &\stepto_1 \passp(\mperm,\mpermmap) \\
-  \widehat{\OK}^*(\mktab,\mperm,\kconsm{\mkframe}{\mpermmap}{\mctx}) &\stepto_2 \setbuild{\passp(\mperm,\mpermmap) \textbf{ and } b}{
+  \widehat{\OK}^*(\mktab,\mperm,\kconsm{\mkframe}{\mpermmap}{\mctx}) &\stepto_2 b \text{ where }\\ &\phantom{\stepto_2} b \in \setbuild{\passp(\mperm,\mpermmap) \textbf{ and } b}{
           \makont \in \mktab(\mctx),
-          \\&\phantom{\stepto_2 \{}b \in \widehat{\OK}(\mktab,\mperm\setminus\mpermmap^{-1}(\Grant),\makont))}
+          \\&\phantom{\stepto_2 b \in \{}b \in \widehat{\OK}(\mktab,\mperm\setminus\mpermmap^{-1}(\Grant),\makont))}
 \end{align*}
 This definition works fine with the reentrant $\terminal$ function with a dynamically bound \emph{seen} set, but otherwise needs to be rewritten to accumulate the boolean result as a parameter of $\widehat{OK}^*$.
 %
-We use the accumulator version for the proof for simplicity.
+We use the accumulator version in the proof for simplicity.
 
 \begin{lemma}[Correctness of $\widehat{\OK}$]
   For all $\mktab,\mperm,\mkont,\makont$,

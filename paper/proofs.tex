@@ -1,5 +1,5 @@
 \documentclass{article}
-\usepackage{amsmath,amsthm,pfsteps,mathpartir,mnsymbol}
+\usepackage{amsmath,amsthm,amssymb,pfsteps,mathpartir,mnsymbol}
 \usepackage{hyperref}
 \input{local-macros}
 
@@ -106,6 +106,27 @@
       }
   \end{byCases}
 \end{proof}
+
+\begin{theorem}[Correctness]\label{thm:pushdown-correct}
+  For all expressions $\mexpr_\mathit{pgm}$,
+  \begin{itemize}
+  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
+        if $\mstate,\mstore,\mtime \stepto_{\CESKt} \mstate',\mstore',\mtime'$,
+        %for all $\mktab,\makont$ if
+        $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
+        and $\mkont \in \unroll{\mktab}{\makont}$, then
+        there are $\mktab',\makont'$ such that
+        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$}
+  \item{{\bf Completeness:} if $\mastate,\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mastate',\mstore',\mtime',\mktab'$
+      and $\inv(\mastate,\mstore,\mtime,\mktab)$,
+      for all $\mkont$, if $\mkont \in \unroll{\mktab}{\mastate.\makont}$ then
+      there is a $\mkont'$ such that
+      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\CESKt}
+       \mastate'\set{\makont := \mkont'},\mstore',\mtime'$ and
+       $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$.}
+  \end{itemize}
+\end{theorem}
+
 \begin{lemma}[$\CESKKstart$ Invariant]\label{lem:invariant}
   For all $\mstate,\mstate' \in \sa{State}$, if $\inv(\mstate)$ and $\mstate \stepto \mstate'$, then $\inv(\mstate')$
 \end{lemma}
@@ -132,6 +153,20 @@
 
               ...}
       \end{byCases}
+\end{proof}
+
+\begin{theorem}[Correctness]\label{thm:global-pushdown}
+  For all $\mexpr_0$, let $\mstate_0 = \tpl{\mexpr_0,\bot,\epsilon},\bot,\mtime_0$ in
+  $\forall n \in \nat, \mstate,\mstate' \in \CESKt$:
+  \begin{itemize}
+  \item{if $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},n)$ then
+      there is an $m$ such that $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_0}^m(\bot))} \mstate'$}
+  \item{if $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_0}^n(\bot))} \mstate'$ then
+      there is an $m$ such that $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},m)$}
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  By induction on $n$.
 \end{proof}
 
 \section{Proofs for section 4}
@@ -206,4 +241,14 @@ $\mstate',\mstore',\mtime'$ $\sqsubseteq$ $\mastate',\mastore',\mmktab',\mtime',
 \begin{proof}
   \todo{Ian}
 \end{proof}
+
+\section{Proofs for section 6}
+\begin{lemma}
+  If $\inv(\mstate,\mstore,\mtime,\mktab,\mmemo)$, $\inv_M(\mktab,\mmemo)$ and
+  $\mstate,\mstore,\mtime,\mktab,\mmemo \stepto_{\CESKKMstart} \mstate',\mstore',\mtime',\mktab',\mmemo'$
+  then $\inv(\mstate',\mstore',\mtime',\mktab',\mmemo')$ and $\inv_M(\mktab,\mmemo)$.
+\end{lemma}
+
+\todo{Some lemma that combines table invariants for ${\mathcal F}$.}
+
 \end{document}
