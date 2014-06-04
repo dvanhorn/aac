@@ -47,8 +47,8 @@ The following function will produce the set of live addresses in the stack:
   \kontlive(\makont) &= \kontliveaux(\makont,\emptyset) \\[2pt]
   \kontliveaux(\epsilon,L) &= L \\
   \kontliveaux(\kcons{\mkframe}{\makont}, L) &= \kontliveaux(\makont, L\cup\touches(\mkframe)) \\
-  \text{where } \touches(\appl{\mexpr,\maenv}) &= \touches(\appr{\mexpr,\maenv}) = \touches(\mexpr,\maenv) \\
-                \touches(\mexpr,\maenv) &= \setbuild{\maenv(\mvar)}{\mvar \in \fv(\mexpr)}
+  \text{where } \touches(\appl{\mexpr,\menv}) &= \touches(\appr{\mexpr,\menv}) = \touches(\mexpr,\menv) \\
+                \touches(\mexpr,\menv) &= \setbuild{\menv(\mvar)}{\mvar \in \fv(\mexpr)}
 \end{align*}
 
 When interpreted via AAM, the continuation is indirected through $\mktab$ and leads to multiple results, and possibly loops through $\mktab$.
@@ -83,40 +83,40 @@ So the two collection methods are as follows.
 %
 Exact GC produces different collected states based on the possible stacks' live addresses:\footnote{It is possible and more efficient to build the stack's live addresses piecemeal as an additional component of each state, precluding the need for $\kontlive$. Each stack in $\mktab$ would also store the live addresses to restore on return.}
 \begin{align*}
-  \Gamma^*(\mastate,\mstore,\mtime,\mktab) &=
-    \setbuild{\mastate,\mstore|_L,\mtime,\mktab}{L \in \live^*(\mastate,\mstore,\mktab)} \\
-  \live^*(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab) &=
-    \setbuild{\reaches(\touches(\mexpr,\maenv) \cup L, \mstore)}{L \in \kontlive(\mktab,\makont)}
+  \Gamma^*(\mastate,\mktab) &=
+    \setbuild{\mastate\set{\mstore:=\mastate.\mstore|_L}}{L \in \live^*(\mastate,\mktab)} \\
+  \live^*(\tpl{\mexpr,\menv,\mstore,\makont},\mktab) &=
+    \setbuild{\reaches(\touches(\mexpr,\menv) \cup L, \mstore)}{L \in \kontlive(\mktab,\makont)}
 \end{align*}
 \begin{equation*}
-  \infer{\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\mtime',\mktab' \\
-         \hat{s} \in \Gamma^*(\mstate',\mstore',\mtime',\mktab')}
-        {\mastate,\mstore,\mtime,\mktab \stepto_{\Gamma^*} \hat{s}}
+  \infer{\mastate,\mktab \stepto \mastate',\mktab' \\
+         \mastate' \in \Gamma^*(\mstate',\mktab')}
+        {\mastate,\mktab \stepto_{\Gamma^*} \mastate',\mktab}
 \end{equation*}
 And inexact GC produces a single state that collects based on all (known) stacks' live addresses:
 \begin{align*}
-  \hat\Gamma(\mastate,\mstore,\mtime,\mktab) &=
-  \mastate,\mstore|_{\widehat{\live}(\mastate,\mstore,\mktab)},\mtime,\mktab \\
-  \widehat{\live}(\tpl{\mexpr,\maenv,\makont},\mstore,\mktab) &=
-    \reaches(\touches(\mexpr,\maenv) \cup \bigcup\kontlive(\mktab,\makont), \mstore)
+  \hat\Gamma(\mastate,\mktab) &=
+  \mastate\set{\mstore:=\mastate.\mstore|_{\widehat{\live}(\mastate,\mktab)}} \\
+  \widehat{\live}(\tpl{\mexpr,\menv,\mstore,\makont},\mktab) &=
+    \reaches(\touches(\mexpr,\menv) \cup \bigcup\kontlive(\mktab,\makont), \mstore)
 \end{align*}
 \begin{equation*}
-  \infer{\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\mtime',\mktab'}
-        {\mastate,\mstore,\mtime,\mktab \stepto_{\hat\Gamma} \hat\Gamma(\mstate',\mstore',\mtime',\mktab')}
+  \infer{\mastate,\mktab \stepto \mastate',\mktab'}
+        {\mastate,\mktab \stepto_{\hat\Gamma} \hat\Gamma(\mstate',\mktab')\mktab'}
 \end{equation*}
 
 Without the continuation store, the baseline GC is
 \begin{align*}
-  \Gamma(\mastate,\mstore,\mtime) &= \mastate,\mstore|_{\live(\mastate,\mstore)},\mtime \\
-  \live(\tpl{\mexpr,\maenv,\mkont},\mstore) &= \reaches(\touches(\mexpr,\maenv)\cup \kontlive(\makont), \mstore)
+  \Gamma(\mastate) &= \mastate\set{\mstore:=\mastate.\mstore|_{\live(\mastate)}} \\
+  \live(\mexpr,\menv,\mstore,\mkont) &= \reaches(\touches(\mexpr,\menv)\cup \kontlive(\makont), \mstore)
 \end{align*}
 \begin{equation*}
-  \infer{\mastate,\mstore,\mtime \stepto \mastate',\mstore',\mtime'}
-        {\mastate,\mstore,\mtime \stepto_{\Gamma} \Gamma(\mstate',\mstore',\mtime')}  
+  \infer{\mastate \stepto \mastate'}
+        {\mastate \stepto_{\Gamma} \Gamma(\mstate')}  
 \end{equation*}
 Suppose at arbitrary times we decide to perform garbage collection rather than continue with garbage.
 %
-So when $\mstate \stepto \mstate'$, we instead do $\mstate \stepto_\Gamma \mstate'$.
+So when $\mastate \stepto \mastate'$, we instead do $\mastate \stepto_\Gamma \mastate'$.
 %
 The times we perform GC do not matter for soundness, since we are not analyzing GC behavior.
 %
@@ -144,30 +144,36 @@ Our statement of completeness then will assume both semantics perform garbage co
 \begin{theorem}[Correctness of $\Gamma^*\CESKKstart$]
   For all expressions $\mexpr_0$,
   \begin{itemize}
-  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
-        if $\mstate,\mstore,\mtime \stepto_{\Gamma\CESKt} \mstate',\mstore',\mtime'$,
+  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\menv,\mkont},\mstate'\equiv{\mexpr',\menv',\mkont'} \in \CESKt$,
+        if $\mstate \stepto_{\Gamma\CESKt} \mstate'$,
         %for all $\mktab,\makont$ if
-        $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
-        and $\mkont \in \unroll{\mktab}{\makont}$, then
-        there are $\mktab',\makont',\mstore''$ such that
-        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\Gamma^*\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally there is an $L \in \live^*(\mstate'\set{\mkont := \makont'},\mstore'',\mktab')$ such that $\mstore''|_L = \mstore'|_{\live(\mstate',\mstore')}$}
-  \item{{\bf Completeness:} if $\mastate\equiv\tpl{\mexpr,\maenv,\makont},\mstore,\mtime,\mktab \stepto_{\Gamma^*\CESKKstart} \mastate',\mstore',\mtime',\mktab'$ and there is an $L_\mkont \in \kontlive(\mktab,\makont)$ such that $\mstore|_L = \mstore$ (where $L = \reaches(\touches(\mexpr,\maenv) \cup L_\mkont, \mstore)$) and $\inv(\mastate,\mstore,\mtime,\mktab)$,
+        $\inv(\mstate\set{\mkont := \makont},\mktab)$,
+        and $\mstate.\mkont \in \unroll{\mktab}{\makont}$, then
+        there are $\mktab',\makont',\mstore'$ such that
+        $\mstate\set{\mkont := \makont},\mktab \stepto_{\Gamma^*\CESKKstart} \mastate',\mktab'$ where
+        $\mastate' = \mstate'\set{\mkont := \makont',\mstore:=\mstore'}$ 
+        and $\mstate'.\mkont \in \unroll{\mktab'}{\makont'}$
+        and finally there is an $L \in \live^*(\mastate',\mktab')$ such that $\mstore'|_L = \mstate'.\mstore|_{\live(\mstate')}$}
+  \item{{\bf Completeness:} if $\mastate\equiv\tpl{\mexpr,\menv,\mstore,\makont},\mktab \stepto_{\Gamma^*\CESKKstart} \mastate',\mktab'$ and there is an $L_\mkont \in \kontlive(\mktab,\makont)$ such that $\mstore|_L = \mstore$ (where $L = \reaches(\touches(\mexpr,\menv) \cup L_\mkont, \mstore)$) and $\inv(\mastate,\mktab)$,
       for all $\mkont \in \unroll{\mktab}{\makont}$ such that $\kontlive(\mkont) = L_\mkont$,
-      there are $\mkont',\mstore''$ such that
-      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\Gamma\CESKt}
-      \mastate'\set{\makont := \mkont'},\mstore',\mtime'$ (a GC step) and
+      there is a $\mkont'$ such that
+      $\mastate\set{\makont := \mkont} \stepto_{\Gamma\CESKt}
+      \mastate'\set{\makont := \mkont'}$ (a GC step) and
       $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$}
   \end{itemize}  
 \end{theorem}
 
 \begin{theorem}[Soundness of $\hat\Gamma\CESKKstart$]
   For all expressions $\mexpr_0$,
-  if $\mstate,\mstore,\mtime \stepto_{\Gamma\CESKt} \mstate',\mstore',\mtime'$,
+  if $\mstate \stepto_{\Gamma\CESKt} \mstate'$,
   % for all $\mktab,\makont$ if
-  $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
-  and $\mkont \in \unroll{\mktab}{\makont}$, then
+  $\inv(\mstate\set{\mkont := \makont},\mktab)$,
+  and $\mstate.\mkont \in \unroll{\mktab}{\makont}$, then
   there are $\mktab',\makont',\mstore''$ such that
-  $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\hat\Gamma\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore'',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$ and finally $\mstore'|_{\live(\mstate',\mstore')} \sqsubseteq \mstore''|_{\widehat{live}(\mastate,\mstore'',\mktab')}$
+  $\mstate\set{\mkont := \makont},\mktab \stepto_{\hat\Gamma\CESKKstart} \mastate',\mktab'$ where
+  $\mastate' = \mstate'\set{\mkont := \makont',\mstore:=\mstore''}$
+  and $\mstate'.\mkont \in \unroll{\mktab'}{\makont'}$
+  and finally $\mstate'.\mstore|_{\live(\mstate')} \sqsubseteq \mstore''|_{\widehat{live}(\mastate',\mktab')}$
 \end{theorem}
 The proofs are straightforward, and use the usual lemmas for GC, such as idempotence of $\Gamma$ and $\touches \subseteq \reaches$.
 \subsection{Analyzing security features: the CM machine}
@@ -217,20 +223,20 @@ Update for continuation marks:
   \centering
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
-    $\tpl{\sgrant{\mperm}{\mexpr}, \maenv, \mkont}$
+    $\tpl{\sgrant{\mperm}{\mexpr}, \menv, \mstore, \mkont}$
     &
-    $\tpl{\mexpr,\maenv,\extm{\mkont}{\mperm}{\Grant}}$
+    $\tpl{\mexpr,\menv,\mstore, \extm{\mkont}{\mperm}{\Grant}}$
     \\
-    $\tpl{\sframe{\mperm}{\mexpr}, \maenv, \mkont}$
+    $\tpl{\sframe{\mperm}{\mexpr}, \menv,\mstore,  \mkont}$
     &
-    $\tpl{\mexpr,\maenv,\extm{\mkont}{\overline{\mperm}}{\Deny}}$
+    $\tpl{\mexpr,\menv,\mstore, \extm{\mkont}{\overline{\mperm}}{\Deny}}$
     \\
-    $\tpl{\stest{\mperm}{\mexpri0}{\mexpri1}, \maenv, \mkont}$
+    $\tpl{\stest{\mperm}{\mexpri0}{\mexpri1}, \menv,\mstore,  \mkont}$
     &
-    $\tpl{\mexpri0,\maenv,\mkont}$ if $\mathit{True} = \OK(\mperm,\mkont)$
+    $\tpl{\mexpri0,\menv,\mstore, \mkont}$ if $\mathit{True} = \OK(\mperm,\mkont)$
     \\
     &
-    $\tpl{\mexpri1,\maenv,\mkont}$ if $\mathit{False} = \OK(\mperm,\mkont)$
+    $\tpl{\mexpri1,\menv,\mstore, \mkont}$ if $\mathit{False} = \OK(\mperm,\mkont)$
   \end{tabular}
   \caption{CM machine semantics}
   \label{fig:cm-semantics}
@@ -240,12 +246,12 @@ The abstract version of the semantics has one change on top of the usual continu
 %
 The {\tt test} rules are now
 \begin{align*}
-  \tpl{\stest{\mperm}{\mexpri0}{\mexpri1}, \maenv, \mkont}
+  \tpl{\stest{\mperm}{\mexpri0}{\mexpri1}, \menv, \mstore, \makont},\mktab
   &\stepto
-  \tpl{\mexpri0,\maenv,\mkont} \text{ if } \mathit{True} \in \widehat{\OK}(\mperm,\mkont)
+  \tpl{\mexpri0,\menv,\mstore, \makont},\mktab \text{ if } \mathit{True} \in \widehat{\OK}(\mktab,\mperm,\makont)
   \\
   &\stepto
-  \tpl{\mexpri1,\maenv,\mkont} \text{ if } \mathit{False} \in \widehat{\OK}(\mperm,\mkont)
+  \tpl{\mexpri1,\menv,\mstore,\makont},\mktab \text{ if } \mathit{False} \in \widehat{\OK}(\mktab,\mperm,\makont)
 \end{align*}
 where the a new $\widehat{\OK}$ function uses $\terminal$ and rewrite rules:
 \begin{align*}

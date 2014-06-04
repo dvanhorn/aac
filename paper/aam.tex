@@ -5,164 +5,175 @@ Abstracting abstract machines is founded on three ideas:
 \item{reused addresses mean the heap must use weak updates: $[a \mapsto v]\sqcup[a \mapsto v'] = [a \mapsto \set{v,v'}]$ and lookups make non-deterministic choices.}
 \end{enumerate}
 
-\subsection{Notations and conventions}
-\begin{itemize}
-\item{$D \finto R$ \textbf{:} a finite function from domain $D$ to codomain $R$.}
-\item{$\setbuild{\mathit{term}}{\mathit{formula}}$ \textbf{:} a set comprehension where the free variables are implicitly existentially bound. Consider it a set denotation of a $\Sigma$ type.}
-\item{We use $\widehat{\mathit{space}}$ to say a space is an abstracted form of the concrete semantics' analogous $\mathit{space}$. We will not add hats to spaces that are added to the abstraction.}
-\item{Similarly, elements of abstract spaces have hats: \eg{} $\makont \in \sa{Kont}$.}
-\item{We will write $n$-tuples as $\tpl{t_1,\ldots,t_n}$, $(t_1,\ldots,t_n)$ or just $t_1,\ldots,t_n$, and their $i^\text{th}$ projections as $\pi_i$.}
-\item{$\sqcup$ \textbf{:} a join operator that lifts pointwise over tuples and functions. Sets are unioned. Ground terms are implicitly lifted to singleton sets.}
-\item{$S^*$ \textbf{:} the space of lists of elements of $S$.}
-\item{$\epsilon$ \textbf{:} the empty list.}
-\item{$\kcons{a}{l}$ \textbf{:} a list $l$ with $a$ added to the front.}
-\item{$\append{l}{l'}$ \textbf{:} list $l'$ appended to list $l$.}
-\item{$g \to t, e$ \textbf{:} Dijkstra notation for ``if $g$ then $t$ else $e$''}
-\item{$t \deceq t'$ \textbf{:} a Boolean decision for equality of terms $t$ and $t'$.}
-\item{$\extm{\menv}{\mvar}{\maddr}$ \textbf{:} $\lambda \mvaralt. \mvar \deceq \mvaralt \to \maddr, \menv(\mvaralt)$.}
-\item{$\mathit{elem} \in \mathit{Space} ::= \mathit{term} \alt \ldots$ \textbf{:} a set of Backus-Nauer-form alternates that inductively define a space $\mathit{Space}$. The $\mathit{term}$s in each alternate are constructors where element variables like $\mathit{elem}$ denote their containing space. Unwrapped elements of other spaces are implicitly injected. Refined constructors of other spaces are overloaded for the refining space.
+% \subsection{Notations and conventions}
+% \begin{itemize}
+% \item{$D \finto R$ \textbf{:} a finite function from domain $D$ to codomain $R$.}
+% \item{$\setbuild{\mathit{term}}{\mathit{formula}}$ \textbf{:} a set comprehension where the free variables are implicitly existentially bound. Consider it a set denotation of a $\Sigma$ type.}
+% \item{We use $\widehat{\mathit{space}}$ to say a space is an abstracted form of the concrete semantics' analogous $\mathit{space}$. We will not add hats to spaces that are added to the abstraction.}
+% \item{Similarly, elements of abstract spaces have hats: \eg{} $\makont \in \sa{Kont}$.}
+% \item{We will write $n$-tuples as $\tpl{t_1,\ldots,t_n}$, $(t_1,\ldots,t_n)$ or just $t_1,\ldots,t_n$, and their $i^\text{th}$ projections as $\pi_i$.}
+% \item{$\sqcup$ \textbf{:} a join operator that lifts pointwise over tuples and functions. Sets are unioned. Ground terms are implicitly lifted to singleton sets.}
+% \item{$S^*$ \textbf{:} the space of lists of elements of $S$.}
+% \item{$\epsilon$ \textbf{:} the empty list.}
+% \item{$\kcons{a}{l}$ \textbf{:} a list $l$ with $a$ added to the front.}
+% \item{$\append{l}{l'}$ \textbf{:} list $l'$ appended to list $l$.}
+% \item{$g \to t, e$ \textbf{:} Dijkstra notation for ``if $g$ then $t$ else $e$''}
+% \item{$t \deceq t'$ \textbf{:} a Boolean decision for equality of terms $t$ and $t'$.}
+% \item{$\extm{\menv}{\mvar}{\maddr}$ \textbf{:} $\lambda \mvaralt. \mvar \deceq \mvaralt \to \maddr, \menv(\mvaralt)$.}
+% \item{$\mathit{elem} \in \mathit{Space} ::= \mathit{term} \alt \ldots$ \textbf{:} a set of Backus-Nauer-form alternates that inductively define a space $\mathit{Space}$. The $\mathit{term}$s in each alternate are constructors where element variables like $\mathit{elem}$ denote their containing space. Unwrapped elements of other spaces are implicitly injected. Refined constructors of other spaces are overloaded for the refining space.
 
-For example:
-\begin{align*}
-  \mvar \in \mathit{Variable} &\text{ a set} \\
-  \mexpr \in \Expr &::= \svar{\mvar} \alt \sapp{\mexpr}{\mexpr} \alt \slam{\mvar}{\mexpr} \\
-  \mval \in \Value &::= \slam{\mvar}{\mexpr}
-\end{align*}
-can be written as inductive datatypes with no overloading
-\begin{verbatim}
-Parameter Variable : Set.
-Inductive Expr : Set :=
-| var : Variable -> Expr
-| app : Expr -> Expr -> Expr
-| lam : Variable -> Expr -> Expr.
-Inductive Value : Set :=
-| vlam : Variable -> Expr -> Value.
-\end{verbatim}}
-\item{We use element variables to treat tuples with record syntax. For example, For a space defined like $\mstate \in \State ::= \tpl{\mexpr,\menv,\mkont}$, we may write $\mstate.\mkont$ to mean that there exists some $\mexpr',\menv',\mkont'$ such that $\mstate = \tpl{\mexpr',\menv',\mkont'}$ and $\mstate.\mkont = \mkont'$. We may also write $\mstate\{\menv := \bot\}$ to mean $\tpl{\mexpr',\bot,\mkont'}$.}
-\item{$s \stepto s'$ \textbf{:} a state $s$ steps to another state $s'$ via a reduction relation $\stepto \subseteq \State \times \State$. The relation should be clear from the context and the space of $s, s'$.}
-\item{$\mtrace$ \textbf{:} a trace with respect to some reduction relation $\stepto$, \ie{}, a sequence of states $\set{s_i}_{i=0}^n$ such that this proposition holds $\IsTrace(\mtrace) = \forall i \in [0..n-1). s_i \stepto s_{i+1}$}
-\item{We implicitly reassociate tuples or splice them into a larger context to have a cleaner presentation.
-For example, we may write $\tpl{\menv(\mexpr), \mkont}$ for an element of $\Expr \times \Env \times \Kont$ instead of ``$\tpl{\mval,\menv',\mkont}$ where $(\mval,\menv') = \menv(\mvar)$.''}
-\end{itemize}
+% For example:
+% \begin{align*}
+%   \mvar \in \mathit{Variable} &\text{ a set} \\
+%   \mexpr \in \Expr &::= \svar{\mvar} \alt \sapp{\mexpr}{\mexpr} \alt \slam{\mvar}{\mexpr} \\
+%   \mval \in \Value &::= \slam{\mvar}{\mexpr}
+% \end{align*}
+% can be written as inductive datatypes with no overloading
+% \begin{verbatim}
+% Parameter Variable : Set.
+% Inductive Expr : Set :=
+% | var : Variable -> Expr
+% | app : Expr -> Expr -> Expr
+% | lam : Variable -> Expr -> Expr.
+% Inductive Value : Set :=
+% | vlam : Variable -> Expr -> Value.
+% \end{verbatim}}
+% \item{We use element variables to treat tuples with record syntax. For example, For a space defined like $\mstate \in \State ::= \tpl{\mexpr,\menv,\mkont}$, we may write $\mstate.\mkont$ to mean that there exists some $\mexpr',\menv',\mkont'$ such that $\mstate = \tpl{\mexpr',\menv',\mkont'}$ and $\mstate.\mkont = \mkont'$. We may also write $\mstate\{\menv := \bot\}$ to mean $\tpl{\mexpr',\bot,\mkont'}$.}
+% \item{$s \stepto s'$ \textbf{:} a state $s$ steps to another state $s'$ via a reduction relation $\stepto \subseteq \State \times \State$. The relation should be clear from the context and the space of $s, s'$.}
+% \item{$\mtrace$ \textbf{:} a trace with respect to some reduction relation $\stepto$, \ie{}, a sequence of states $\set{s_i}_{i=0}^n$ such that this proposition holds $\IsTrace(\mtrace) = \forall i \in [0..n-1). s_i \stepto s_{i+1}$}
+% \item{We implicitly reassociate tuples or splice them into a larger context to have a cleaner presentation.
+% For example, we may write $\tpl{\menv(\mexpr), \mkont}$ for an element of $\Expr \times \Env \times \Kont$ instead of ``$\tpl{\mval,\menv',\mkont}$ where $(\mval,\menv') = \menv(\mvar)$.''}
+% \end{itemize}
 
 \subsection{The $\CESKstart$ machine}
 
-Concretely, let us consider an abstract machine for the call-by-value untyped lambda calculus: the CEK machine.
+The case studies in this paper all build off the call-by-value untyped lambda calculus, whose semantics we recount as
+\begin{align*}
+  E[\sapp{\slam{\mvar}{\mexpr}}{\mval}] \stepto_\beta E[[\mval/\mvar]\mexpr] \\
+\text{where } E \in \mathit{EvaluationContext} &::= [] \alt \sapp{E}{\mexpr} \alt \sapp{\mval}{E} \\
+              \mexpr \in Expr &::= \svar\mvar \alt \sapp{\mexpr}{\mexpr} \alt \mval \\
+              \mval \in \Value &::= \slam{\mvar}{\mexpr}
+\end{align*}
+The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and replugging this semantics provides does not reflect what an effective implementation looks like.
 %
-The semantic spaces in \autoref{fig:cek-spaces} have three points of recursion: subexpressions, closures and pushed continuation frames.
+We start instead with an abstract machine that manages these steps with a special state representation: the CESK machine.
 %
-The semantics for the CEK machine in \autoref{fig:cek-semantics} shows the delayed substitution semantics that environments enable.
+The semantic spaces in \autoref{fig:cesk-spaces} have three points of recursion: subexpressions, closures and pushed continuation frames.
 %
-Function application delays the substitution of an argument by extending the enviroment.
+The semantics for the CESK machine in \autoref{fig:cesk-semantics} shows the delayed substitution semantics that environments enable.
 %
-Variables dereference the environment to fulfill the delayed substitution semantics that the CEK machine implements.
+Function application delays the substitution of an argument by allocating an address for the argument in the store, and extending the environment to reference the allocated address.
+%
+Variables dereference the environment to fulfill the delayed substitution semantics that the CESK machine implements.
 %
 Function application performs an administrative step to search for the next redex.
-\begin{figure}\centering  
-  \begin{align*}
-    \mstate \in \CEK &::= \tpl{\mexpr, \menv, \mkont} \\
-    \mexpr \in \Expr &::= \svar{\mvar} \alt \sapp{\mexpr}{\mexpr} \alt \mval \\
-    \mval \in \Value &::= \slam{\mvar}{\mexpr} \\
-    \menv \in \Env &= \Var \finto \Value \times \Env \\
-    \mkframe \in \Frame &::= \appl{\mexpr,\menv} \alt \appr{\mval,\menv} \\
-    \mkont \in \Kont &= \Frame^* \\
-    \mvar \in \Var & \text{ a set}
-  \end{align*}
-  \caption{CEK semantic spaces}
+%
+\begin{figure}\centering
+  \begin{tabular}{rlrl}
+    $\mstate \in \CESK$ &\multicolumn{2}{l}{\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mstore, \mkont}$} \\
+    $\mlam \in \Lam$ &\hspace{-3mm}$::= \slam{\mvar}{\mexpr}$ & $\mval \in \Value$ &\hspace{-3mm}$::= (\mlam,\menv)$ \\
+    $\menv \in \Env$ &\hspace{-3mm}$= \Var \finto \Addr$ & $\mstore \in \Store$ &\hspace{-3mm}$= \Addr \finto \wp(\Value)$ \\
+    $\mkframe \in \Frame$ &\multicolumn{2}{l}{\hspace{-3mm}$::= \appl{\mexpr,\menv} \alt \appr{\mval}$} \\
+    $\mkont \in \Kont$ &\hspace{-3mm}$= \Frame^*$ & & \\
+    $\mvar \in \Var$ &\hspace{-3mm} a set & $\maddr,\maddralt \in \Addr$ &\hspace{-3mm} a set \\
+    $\alloc$ &\hspace{-3mm}$: \CESK \to \Addr$ & &
+  \end{tabular}
+  \caption{CESK semantic spaces}
 \label{fig:cek-spaces}
 \end{figure}
 
 \begin{figure}
   \centering
-  $\mstate \stepto \mstate'$ \\
+  $\mstate \stepto \mstate'$ \qquad $\maddr = \alloc(\mstate)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
-    $\tpl{\svar\mvar, \menv, \mkont}$
+    $\tpl{\svar\mvar, \menv, \mstore, \mkont}$
     &
-    $\tpl{\mval, \menv', \mkont}$ if $(\mval,\menv') = \menv(\mvar)$
+    $\tpl{\mval, \mstore, \mkont}$ if $\mval \in \mstore(\menv(\mvar))$
     \\
 % Application
-    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mkont}$
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\mkont}$
     &
-    $\tpl{\mexpri0,\menv,\kcons{\appl{\mexpri1,\menv}}{\mkont}}$
+    $\tpl{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mkont}}$
     \\
 % Arg eval
-    $\tpl{\mval,\menv, \kcons{\appl{\mexpr,\menv'}}{\mkont}}$
+    $\tpl{\mval, \mstore,\kcons{\appl{\mexpr,\menv}}{\mkont}}$
     &
-    $\tpl{\mexpr,\menv',\kcons{\appr{\mval,\menv}}{\mkont}}$
+    $\tpl{\mexpr,\menv,\mstore,\kcons{\appr{\mval}}{\mkont}}$
     \\
 % Function call
-    $\tpl{\mval,\menv,\kcons{\appr{\slam{\mvar}{\mexpr},\menv'}}{\mkont}}$
+    $\tpl{\mval,\mstore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\mkont}}$
     &
-    $\tpl{\mexpr,\menv'[\mvar\mapsto(\mval,\menv)],\mkont}$
+    $\tpl{\mexpr,\extm{\menv}{\mvar}{\maddr},\joinm{\mstore}{\maddr}{\mval},\mkont}$
   \end{tabular}
-  \caption{CEK machine}
-  \label{fig:cek-semantics}
+  \caption{CESK machine}
+  \label{fig:cesk-semantics}
 \end{figure}
 
-The recursion in expressions is beneign because they are only destructed. The $\Expr$ space is finite for each program, the size of which is the number of subexpressions.
+In order to make $\stepto$ finite and therefore have a computable graph, the recursive spaces in this machine that the relation \emph{creates new values in} must be finitized.
 %
-The run-away recursion is in $\Env$ and $\Kont$.
+AAM dictates that finitization can be centralized to one place, address allocation, by redirecting values in recursive positions through the store.
 %
-AAM suggests that the codomain of $\Env$ and the tail of the $\Frame$ list in $\Kont$ should instead be some $\Addr$ space.\footnote{The strict criteria suggests $\Env : \Var \finto \Value \times \Addr$, but $\Var \finto \Addr$ is a sound approximation and has a similar shape to other analyses' approximations.}
+Expressions, though recursive, do not need this step because they are only destructed.
 %
-Extensions to maps in $\Env$, and conses of frames in $\Kont$ then instead allocate an address, update the heap with the recursive value, and use the address in place of the recursive value.
+The $\Expr$ space is finite for each program, the size of which is the number of subexpressions.
+%
+
+%
+The runaway recursion is in $\Kont$: the tail of the continuation cons is recursive.
+%
+So then conses of frames in $\Kont$ instead allocate an address, update the heap with the recursive value, and use the address in place of the recursive value.
 %
 To help an $\alloc : \State \to \Addr$ function choose its addresses, the state space can be extended with an arbitrary pointed space that can be updated each step.
 %
 The original AAM paper calls this pointed space and update function $(\Time,\mtime_0)$ and $\tick$ respectively.
 %
 Later work on widening~\citep{ianjohnson:DBLP:conf/vmcai/HardekopfWCK14} suggests less arbitrary constructions, and to think of $\Time$ as a space of abstract traces, though the ``abstraction'' need not be sound~\citep{dvanhorn:Might2009Posteriori}.
+%
+The timestamp machinery is important to implementing specific allocation schemes, but is primarily noise for the exposition in this paper, so we omit it past the first couple demonstrations.
 
 The new semantic spaces in \autoref{fig:ceskstart-spaces} form the $\CESKstart$ machine.
-%
-We represent the machine differently than the original AAM paper to separate induced components (\eg{} the store and $\Time$) from transformed components (\eg{} the environment) for a uniform presentation.
 %
 The semantics of this machine follow the weak update and non-deterministic lookup principles of AAM in \autoref{fig:ceskstart-semantics}.
 
 \begin{figure}
   \centering
-  \begin{align*}
-    \mastate \in \sa{CEK} &::= \tpl{\mexpr, \maenv, \makont} \\
-    \sa{State} &= \sa{CEK} \times \Store \times \Time \\
-    \mstore \in \Store &= \Addr \to \Storeable \\
-    \maenv \in \sa{Env} &= \Var \finto \Addr \\
-    \makont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\maddr} \\
-    \Storeable &= \wp(\sa{Kont} + (\Value \times \sa{Env})) \\
-    \maddr,\maddralt \in \Addr & \quad \mtime,\mtimealt \in \Time
-  \end{align*}
+  \begin{tabular}{rlrl}
+    $\mastate \in \sa{CESK}_t$ &\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mastore, \makont}_\mtime$ & & \\
+    $\mastore \in \sa{Store}$ &\hspace{-3mm}$= \Addr \to \wp(\Storeable)$ & $\makont \in \sa{Kont}$ &\hspace{-3mm}$::= \epsilon \alt \kcons{\mkframe}{\maddr}$ \\
+    \hspace{-1mm}$\mtime,\mtimealt$ &\hspace{-3mm}$\in \Time$ & \hspace{-1mm}$\Storeable$ &\hspace{-3mm}$::= \makont \alt \mval$
+  \end{tabular}
   \caption{$\CESKstart$ semantic spaces}
   \label{fig:ceskstart-spaces}
 \end{figure}
 
 \begin{figure}
   \centering
-  $\mastate,\mstore,\mtime \stepto \mastate',\mstore',\tick(\mastate,\mstore,\mtime)$ \quad $\maddr = \alloc(\mastate,\mstore,\mtime)$ \\
+  $\mastate \stepto \mastate'$ \quad $\maddr = \alloc(\mastate)$ \quad $\mtimealt = \tick(\mastate)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
-    $\tpl{\svar\mvar, \maenv, \makont}$
+    $\tpl{\svar\mvar, \menv, \mastore,\makont}_\mtime$
     &
-    $\tpl{\mval, \maenv',\makont}$ if $(\mval,\menv') \in \mstore(\maenv(\mvar))$
+    $\tpl{\mval, \mastore,\makont}_\mtimealt$ if $\mval \in \mstore(\menv(\mvar))$
     \\
 % Application
-    $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\makont}$
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mastore,\makont}_\mtime$
     &
-    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\maddr}}$ \\
-    where & $\mstore' = \joinm{\mstore}{\maddr}{\makont}$
+    $\tpl{\mexpri0,\menv,\mastore',\kcons{\appl{\mexpri1,\menv}}{\maddr}}_\mtimealt$ \\
+    where & $\mastore' = \joinm{\mastore}{\maddr}{\makont}$
     \\
 % Arg eval
-    $\tpl{\mval,\maenv, \kcons{\appl{\mexpr,\maenv'}}{\maddralt}}$
+    $\tpl{\mval,\menv, \mastore,\kcons{\appl{\mexpr,\menv'}}{\maddralt}}_\mtime$
     &
-    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\maddralt}}$
+    $\tpl{\mexpr,\menv',\mastore,\kcons{\appr{\mval,\menv}}{\maddralt}}_\mtimealt$
     \\
 % Function call
-    $\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\maddralt}}$
+    $\tpl{\mval,\mastore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\maddralt}}_\mtime$
     &
-    $\tpl{\mexpr,\maenv'',\makont}$ if $\makont \in \mstore(\maddralt)$ \\
-    where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
-          & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$
+    $\tpl{\mexpr,\menv',\mastore',\makont}_\mtimealt$ if $\makont \in \mastore(\maddralt)$ \\
+    where & $\menv' = \extm{\menv}{\mvar}{\maddr}$ \\
+          & $\mastore' = \joinm{\mastore}{\maddr}{\mval}$
   \end{tabular} \\
-  Where $\mstore' = \mstore$ unless otherwise stated.
   \caption{$\CESKstart$ semantics}
   \label{fig:ceskstart-semantics}
 \end{figure}

@@ -24,10 +24,10 @@ Stack addresses generally describe the relevant context that lead to their alloc
 %
 The resulting state space is updated here:
   \begin{align*}
-    \sa{State} &= \sa{CEK} \times \Store \times \Time \times \KStore \\
-    \maval \in \sa{Storeable} &= \wp(\Value \times \sa{Env}) \\
+    \sa{State} &= \sa{CESK}_t \times \KStore \\
+    \Storeable &= \Value \\
     \mkont \in \Kont &::= \epsilon \alt \kcons{\mkframe}{\mctx} \\
-    \mctx \in \Context &::=  \tpl{\mexpr,\maenv,\mstore,\mtime} \\
+    \mctx \in \Context &::=  \tpl{\mexpr,\menv,\mstore}_\mtime \\
     \mktab \in \KStore &= \Context \finto \wp(\Kont) \\
   \end{align*}
 
@@ -43,33 +43,32 @@ The correctness claim is therefore a correspondence between the same machine but
 
 \begin{figure}
   \centering
-  $\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\tick(\mastate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mastate,\mstore,\mtime)$ \\
+  $\mastate,\mktab \stepto \mastate',\mktab'$ \quad $\maddr = \alloc(\mastate,\mktab)$ \quad $\mtimealt = \tick(\mastate,\mktab)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
-    $\tpl{\svar\mvar, \maenv, \makont}$
+    $\tpl{\svar\mvar, \menv, \mstore, \makont}_\mtime,\mktab$
     &
-    $\tpl{\mval, \maenv',\makont}$ if $(\mval,\menv') \in \mstore(\maenv(\mvar))$
+    $\tpl{\mval, \mstore,\makont}_\mtimealt,\mktab$ if $\mval \in \mstore(\menv(\mvar))$
     \\
 % Application
-    $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\makont}$
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\makont}_\mtime,\mktab$
     &
-    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mctx}}$ \\
-    where & $\mctx = \tpl{\sapp{\mexpri}{\mexpri1},\maenv,\mstore,\mtime}$ \\
+    $\tpl{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mctx}}_\mtimealt,\mktab'$ \\
+    where & $\mctx = \tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore}_\mtime$ \\
           & $\mktab' = \joinm{\mktab}{\mctx}{\makont}$
     \\
 % Arg eval
-    $\tpl{\mval,\maenv, \kcons{\appl{\mexpr,\maenv'}}{\mctx}}$
+    $\tpl{\mval,\mstore,\kcons{\appl{\mexpr,\menv'}}{\mctx}}_\mtime,\mktab$
     &
-    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mctx}}$
+    $\tpl{\mexpr,\menv',\mstore,\kcons{\appr{\mval}}{\mctx}}_\mtimealt,\mktab$
     \\
 % Function call
-    $\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\mctx}}$
+    $\tpl{\mval,\menv,\mstore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv'}}{\mctx}}_\mtime,\mktab$
     &
-    $\tpl{\mexpr,\maenv'',\makont}$ if $\makont \in \mktab(\mctx)$ \\
-    where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
-          & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$
-  \end{tabular} \\
-  Where $\mstore' = \mstore$ and $\mktab' = \mktab$ unless otherwise stated.
+    $\tpl{\mexpr,\menv'',\mstore',\makont}_\mtimealt,\mktab$ if $\makont \in \mktab(\mctx)$ \\
+    where & $\menv'' = \extm{\menv'}{\mvar}{\maddr}$ \\
+          & $\mstore' = \joinm{\mstore}{\maddr}{\mval}$
+  \end{tabular}
   \caption{$\CESKKstart$ semantics}
   \label{fig:ceskkstart-semantics}
 \end{figure}
@@ -96,21 +95,21 @@ The invariant is stated with respect to the entire program, $\mexpr_\mathit{pgm}
 \begin{mathpar}
   \inferrule{ }{\invmktab(\bot)} \quad
   \inferrule{\invmktab(\mktab) \\
-      \forall \makont_c \in K. \startstate(\makont_c) \stepto_\CESKt^* \tpl{\mexpr_c,\maenv_c,\append{\mkont_c}{\epsilon}},\mstore_c,\mtime_c}
-            {\invmktab(\mktab[\tpl{\mexpr_c,\maenv_c,\mstore_c,\mtime_c} \mapsto K])} \\
+      \forall \makont_c \in K. \startstate(\makont_c) \stepto_\CESKt^* \tpl{\mexpr_c,\menv_c,\mstore_c,\append{\mkont_c}{\epsilon}}_{\mtime_c}}
+            {\invmktab(\extm{\mktab}{\tpl{\mexpr_c,\menv_c,\mstore_c}_{\mtime_c}}{K})} \\
 
   \inferrule{
     % invariant for current state
-    \startstate(\makont) \stepto_\CESKt^* \tpl{\mexpr,\maenv,\append{\makont}{\epsilon}},\mstore,\mtime \\
+    \startstate(\makont) \stepto_\CESKt^* \tpl{\mexpr,\menv,\mstore,\append{\makont}{\epsilon}}_\mtime \\
     % invariant for all entries
     \invmktab(\mktab)}
-    {\inv(\tpl{\mexpr,\maenv,\makont},\mstore,\mtime,\mktab)}
+    {\inv(\tpl{\mexpr,\menv,\mstore,\makont}_\mtime,\mktab)}
   \end{mathpar}
 where
 \begin{align*}
- \startstate(\epsilon) &= \tpl{\mexpr_\mathit{pgm},\bot,\epsilon},\bot,\mtime_0 \\
-                \startstate(\kcons{\mkframe}{\tpl{\mexpr_c,\maenv_c,\mstore_c,\mtime_c}}) &=
-                \tpl{\mexpr_c,\maenv_c,\epsilon},\mstore_c,\mtime_c
+ \startstate(\epsilon) &= \tpl{\mexpr_\mathit{pgm},\bot,\bot,\epsilon}_{\mtime_0} \\
+                \startstate(\kcons{\mkframe}{\tpl{\mexpr_c,\menv_c,\mstore_c}_{\mtime_c}}) &=
+                \tpl{\mexpr_c,\menv_c,\mstore_c,\epsilon}_{\mtime_c}
 \end{align*}
 We use $\append{\cdot}{\epsilon}$ to treat $\mctx$ like $\epsilon$ and construct a continuation in $\Kont$ rather than $\sa{Kont}$.
 %%
@@ -126,11 +125,11 @@ We use $\append{\cdot}{\epsilon}$ to treat $\mctx$ like $\epsilon$ and construct
 \begin{proof}
   Routine case analysis.
 \end{proof}
-Note that the injection of $\mexpr_\mathit{pgm}$ into $\CESKKstart$, $(\tpl{\mexpr_\mathit{pgm},\bot,\epsilon},\bot,\mtime_0,\bot)$, trivially satisfies $\inv$.
+Note that the injection of $\mexpr_\mathit{pgm}$ into $\CESKKstart$, $(\tpl{\mexpr_\mathit{pgm},\bot,\bot,\epsilon}_{\mtime_0},\bot)$, trivially satisfies $\inv$.
 
 The unrolling proposition is the following
 \begin{mathpar}
-  \inferrule{ }{\epsilon \in \unroll{\mktab}{\Halt}} \quad
+  \inferrule{ }{\epsilon \in \unroll{\mktab}{\epsilon}} \quad
   \inferrule{\makont \in \mktab(\mctx),
              \mkont \in \unroll{\mktab}{\makont}}
             {\kcons{\mkframe}{\mkont} \in \unroll{\mktab}{\kcons{\mkframe}{\mctx}}}
@@ -138,19 +137,19 @@ The unrolling proposition is the following
 \begin{theorem}[Correctness]\label{thm:pushdown-correct}
   For all expressions $\mexpr_\mathit{pgm}$,
   \begin{itemize}
-  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\maenv,\mkont},\mstate'\equiv{\mexpr',\maenv',\mkont'} \in \CESKt$,
-        if $\mstate,\mstore,\mtime \stepto_{\CESKt} \mstate',\mstore',\mtime'$,
+  \item{{\bf Soundness: } %for all $\mstate\equiv\tpl{\mexpr,\menv,\mkont},\mstate'\equiv{\mexpr',\menv',\mkont'} \in \CESKt$,
+        if $\mstate \stepto_{\CESKt} \mstate'$,
         %for all $\mktab,\makont$ if
-        $\inv(\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab)$,
+        $\inv(\mstate\set{\mkont := \makont},\mktab)$,
         and $\mkont \in \unroll{\mktab}{\makont}$, then
         there are $\mktab',\makont'$ such that
-        $\mstate\set{\mkont := \makont},\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mstore',\mktab',\mtime'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$}
-  \item{{\bf Completeness:} if $\mastate,\mstore,\mtime,\mktab \stepto_{\CESKKstart} \mastate',\mstore',\mtime',\mktab'$
-      and $\inv(\mastate,\mstore,\mtime,\mktab)$,
+        $\mstate\set{\mkont := \makont},\mktab \stepto_{\CESKKstart} \mstate'\set{\mkont := \makont'},\mktab'$ and $\mkont' \in \unroll{\mktab'}{\makont'}$}
+  \item{{\bf Completeness:} if $\mastate,\mktab \stepto_{\CESKKstart} \mastate',\mktab'$
+      and $\inv(\mastate,\mktab)$,
       for all $\mkont$, if $\mkont \in \unroll{\mktab}{\mastate.\makont}$ then
       there is a $\mkont'$ such that
-      $\mastate\set{\makont := \mkont},\mstore,\mtime \stepto_{\CESKt}
-       \mastate'\set{\makont := \mkont'},\mstore',\mtime'$ and
+      $\mastate\set{\makont := \mkont} \stepto_{\CESKt}
+       \mastate'\set{\makont := \mkont'}$ and
        $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$.}
   \end{itemize}
 \end{theorem}
@@ -176,24 +175,23 @@ Our delimiters are special since each continuation ``chunk'' until the next prom
 %
 The bound is roughly the deepest nesting depth of an expression in functions' bodies.
 %
-Instead of ``continuation'' and ``meta-continuation'' then, we will use terminology from CFA2 and call the top chunk a ``local continuation,'' and the rest the ``continuation.''\footnote{Since the continuation is either $\Halt$ or a context, CFA2 calls these ``entries'' to mean execution entry into the program ($\Halt$) or a function ($\mctx$). One can also understand these as entries in a table ($\mktab$). We stay with the ``continuation'' nomenclature because they represent full continuations.}
+Instead of ``continuation'' and ``meta-continuation'' then, we will use terminology from CFA2 and call the top chunk a ``local continuation,'' and the rest the ``continuation.''\footnote{Since the continuation is either $\epsilon$ or a context, CFA2 calls these ``entries'' to mean execution entry into the program ($\epsilon$) or a function ($\mctx$). One can also understand these as entries in a table ($\mktab$). We stay with the ``continuation'' nomenclature because they represent full continuations.}
 %
 %
 
 \begin{figure}
   \centering
-  \begin{align*}
-    \mstate \in \sa{CEIK} &= \tpl{\mexpr,\menv,\mlkont,\mkont} \\
-    \mlkont \in \LKont &= \Frame^* \\
-    \makont \in \Kont &= \Context + \set{\Halt}
-  \end{align*}
+  \begin{tabular}{rlrl}
+    $\mastate \in \sa{CESIK}$ &\hspace{-3mm}$= \tpl{\mexpr,\menv,\mstore,\mlkont,\makont}$& $\mlkont \in \LKont$ &\hspace{-3mm}$= \Frame^*$ \\
+    & & $\makont \in \Kont$ &\hspace{-3mm}$::= \epsilon \alt \mctx$
+  \end{tabular}
   \caption{$\CESIKKstart$ semantic spaces}
   \label{fig:pushdown-spaces}
 \end{figure}
 
 The resulting shuffling of the semantics to accommodate this new representation is in \autoref{fig:cesikkstart-semantics}.
 %
-The extension to $\mktab$ happens in a different rule -- function entry -- so the shape of the context changes to hold the function, argument, store and time.
+The extension to $\mktab$ happens in a different rule -- function entry -- so the shape of the context changes to hold the function, argument, and store.
 %
 We have a choice of whether to introduce an administrative step to dereference $\mktab$ once $\mlkont$ is empty, or to use a helper metafunction to describe a ``pop'' of both $\mlkont$ and $\mkont$.
 %
@@ -227,58 +225,57 @@ However, when adding the administrative state, the ``seen'' check requires searc
 
 \begin{figure}
   \centering
-  $\mastate,\mstore,\mtime,\mktab \stepto \mastate',\mstore',\tick(\mastate,\mstore,\mtime),\mktab'$ \quad $\maddr = \alloc(\mstate,\mstore,\mtime)$ \\
+  $\mastate,\mktab \stepto \mastate',\mktab'$ \quad $\maddr = \alloc(\mastate,\mktab)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
-    $\tpl{\svar\mvar, \maenv, \mlkont, \makont}$
+    $\tpl{\svar\mvar, \menv, \mstore, \mlkont, \makont},\mktab$
     &
-    $\tpl{\mval, \maenv',\mlkont,\makont}$ if $(\mval,\menv') \in \mstore(\maenv(\mvar))$
+    $\tpl{\mval,\mstore,\mlkont,\makont},\mktab$ if $\mval \in \mstore(\menv(\mvar))$
     \\
 % Application
-    $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\mlkont,\makont}$
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\mlkont,\makont},\mktab$
     &
-    $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mlkont},\makont}$
+    $\tpl{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mlkont},\makont},\mktab$
     \\
 % Arg eval
-    $\tpl{\mval,\maenv, \mlkont,\makont}$
+    $\tpl{\mval, \mstore, \mlkont,\makont},\mktab$
     &
-    $\tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mlkont'},\makont'}$ \\
+    $\tpl{\mexpr,\menv',\mstore,\kcons{\appr{\mval,\menv}}{\mlkont'},\makont'},\mktab$ \\
     &
-    if $\appl{\mexpr,\maenv'}, \mlkont',\makont' \in \pop(\mlkont,\makont,\mktab)$ \\
+    if $\appl{\mexpr,\menv'},\mlkont',\makont' \in \pop(\mlkont,\makont,\mktab)$ \\
 % Function call
-    $\tpl{\mval,\maenv, \mlkont,\makont}$
+    $\tpl{\mval,\mstore, \mlkont,\makont},\mktab$
     &
-    $\tpl{\mexpr,\maenv'[\mvar\mapsto\maddr],\epsilon,\mctx}$ \\
-    & if $\appr{\slam{\mvar}{\mexpr},\maenv'}, \mlkont', \makont' \in \pop(\mlkont,\makont,\mktab)$ \\
-    where & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$ \\
-    & $\mctx = (\mval,\maenv,\slam{\mvar}{\mexpr},\maenv',\mstore,\mtime)$ \\
+    $\tpl{\mexpr,\extm{\menv}{\mvar}{\maddr},\mstore',\epsilon,\mctx},\mktab'$ \\
+    & if $\appr{\slam{\mvar}{\mexpr},\menv}, \mlkont', \makont' \in \pop(\mlkont,\makont,\mktab)$ \\
+    where & $\mstore' = \joinm{\mstore}{\maddr}{\mval}$ \\
+    & $\mctx = (\tpl{\slam{\mvar}{\mexpr},\menv},\mval,\mstore)$ \\
     & $\mktab' = \joinm{\mktab}{\mctx}{(\mlkont,\makont)}$
   \end{tabular} \\
-  Where $\mstore' = \mstore$ and $\mktab' = \mktab$ unless otherwise stated.
   \caption{$\CESIKKstart$ semantics}
   \label{fig:cesikkstart-semantics}
 \end{figure}
 
 \begin{align*}
   {\mathcal F}_{\mexpr}(S,R,F,\mktab) &= (S \cup F, R \cup R', F'\setminus S, \mktab') \\
-  I &= \bigcup\limits_{s=(\mstate,\mstore,\mtime) \in F}{\setbuild{(\tpl{s,s'}, \mktab')}{s,\mktab \stepto s',\mktab'}} \\
+  I &= \bigcup\limits_{s=(\mastate,\mstore) \in F}{\setbuild{(\tpl{\mastate,\mastate'}, \mktab')}{\mastate,\mktab \stepto \mastate',\mktab'}} \\
   R' &= \pi_0 I \qquad F' = \pi_1 R' \qquad \mktab' = \bigsqcup\pi_1 I
 \end{align*}
-For a program $\mexpr$, we will say $(\emptyset,\emptyset,\set{\tpl{\mexpr,\bot,\epsilon,\Halt}},\bot)$ is the bottom element of ${\mathcal F}_{\mexpr}$'s domain.
+For a program $\mexpr$, we will say $(\emptyset,\emptyset,\set{\tpl{\mexpr,\bot,\bot,\epsilon,\epsilon}},\bot)$ is the bottom element of ${\mathcal F}_{\mexpr}$'s domain.
 %
 The ``analysis'' then is then the pair of the $R$ and $\mktab$ components of $\lfp({\mathcal F}_{\mexpr})$.
 
 The correctness argument for this semantics is not about single steps but instead about the entire relation that ${\mathcal F}$ computes.
 %
-The argument is that the $R$ and $\mktab$ components of the system represent a slice of the unbounded relation $\stepto_{\CESKt}$ (restricted to reachable states).
+The argument is that the $R$ and $\mktab$ components of the system represent a slice of the unbounded relation $\stepto_{\CESK}$ (restricted to reachable states).
 %
-We will show that traces in any $n \in \nat$ times we \emph{unfold} $\stepto_{\CESKt}$ from the initial state, there is a corresponding $m$ applications of ${\mathcal F}$ that reify into a relation that exhibit the same trace.
+We will show that traces in any $n \in \nat$ times we \emph{unfold} $\stepto_{\CESK}$ from the initial state, there is a corresponding $m$ applications of ${\mathcal F}$ that reify into a relation that exhibit the same trace.
 %
-Conversely, any trace in the reification of ${\mathcal F}_{\mexpr}^m(\bot)$ has the same trace in some $n$ unfoldings of $\stepto_{\CESKt}$.
+Conversely, any trace in the reification of ${\mathcal F}_{\mexpr}^m(\bot)$ has the same trace in some $n$ unfoldings of $\stepto_{\CESK}$.
 %
 For an arbitrary $\alloc$ function, we cannot expect ${\mathcal F}$ to have a fixed point, so this property is the best we can get.
 %
-For a finite $\alloc$ function, Kleene's fixed point theorem dictates there is a $m$ such that ${\mathcal F}_{\mexpr}^m(\bot)$ is a fixed point, so every trace in the reified relation is also a trace in an unbounded number of unfoldings of $\stepto_{\CESKt}$.
+For a finite $\alloc$ function, Kleene's fixed point theorem dictates there is a $m$ such that ${\mathcal F}_{\mexpr}^m(\bot)$ is a fixed point, so every trace in the reified relation is also a trace in an unbounded number of unfoldings of $\stepto_{\CESK}$.
 %
 This is the corresponding completeness argument for the algorithm.
 
@@ -290,33 +287,33 @@ This is the corresponding completeness argument for the algorithm.
 The reification simply realizes all possible complete continuations that a state could have, given $\mktab$:
 \begin{mathpar}
   \inferrule{
-  \tpl{(\tpl{\mexpr,\maenv,\makont},\mstore,\mtime),
-      (\tpl{\mexpr',\maenv',\makont'},\mstore',\mtime')} \in R \\
+  \tpl{\tpl{\mexpr,\menv,\mstore,\makont},
+      \tpl{\mexpr',\menv',\mstore',\makont'}} \in R \\
   \mkont \in \tails{\mktab}{\makont}}
-  {\tpl{\mexpr,\maenv,\append{\makont}{\mkont}},\mstore,\mtime \stepto_{\reify(S,F,R,\mktab)}
-   \tpl{\mexpr',\maenv',\append{\makont'}{\mkont}},\mstore',\mtime'}
+  {\tpl{\mexpr,\menv,\mstore,\append{\makont}{\mkont}} \stepto_{\reify(S,F,R,\mktab)}
+   \tpl{\mexpr',\menv',\mstore'\append{\makont'}{\mkont}}}
   % \reify(S,F,R,\mktab) &= \setbuild{}
   % {\\ &\phantom{= \{}
-  %   \tpl{(\tpl{\mexpr,\maenv,\makont},\mstore,\mtime),
-  %     (\tpl{\mexpr',\maenv',\makont'},\mstore',\mtime')} \in R,
+  %   \tpl{(\tpl{\mexpr,\menv,\makont},\mstore,\mtime),
+  %     (\tpl{\mexpr',\menv',\makont'},\mstore',\mtime')} \in R,
   %   \\ &\phantom{= \{}
   %   \mkont \in \tails{\mktab}{\makont}}
 \end{mathpar}
 The additional judgment about tails is a variant of $\mathit{unroll}$ in order to get a common tail:
 \begin{mathpar}
-  \inferrule{ }{\epsilon \in \tails{\mktab}{\Halt}} \quad
+  \inferrule{ }{\epsilon \in \tails{\mktab}{\epsilon}} \quad
   \inferrule{\makont \in \mktab(\mctx) \\
              \mkont \in \unroll{\mktab}{\makont}}
             {\mkont \in \tails{\mktab}{\kcons{\mkframe}{\mctx}}}
 \end{mathpar}
 \begin{theorem}[Correctness]\label{thm:global-pushdown}
-  For all $\mexpr_0$, let $\mstate_0 = \tpl{\mexpr_0,\bot,\epsilon},\bot,\mtime_0$ in
-  $\forall n \in \nat, \mstate,\mstate' \in \CESKt$:
+  For all $\mexpr_0$, let $\mstate_0 = \tpl{\mexpr_0,\bot,\bot,\epsilon}$ in
+  $\forall n \in \nat, \mstate,\mstate' \in \CESK$:
   \begin{itemize}
-  \item{if $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},n)$ then
+  \item{if $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESK},n)$ then
       there is an $m$ such that $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_0}^m(\bot))} \mstate'$}
   \item{if $\mstate \stepto_{\reify({\mathcal F}_{\mexpr_0}^n(\bot))} \mstate'$ then
-      there is an $m$ such that $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESKt},m)$}
+      there is an $m$ such that $(\mstate,\mstate') \in \reachrestrict(\mstate_0,\stepto_{\CESK},m)$}
   \end{itemize}
 \end{theorem}
 \begin{proof}
