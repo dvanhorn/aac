@@ -235,12 +235,15 @@ $\mstate',\mstore',\mtime'$ $\sqsubseteq$ $\mastate',\mastore',\mmktab',\mtime',
   \todo{Ian}
 \end{proof}
 
-\begin{theorem}[Exact for fresh allocation]
-  \todo{Ian}
+\begin{lemma}[Freshness invariant]
+  If $\alloc$ produces fresh addresses, $\inv_{\mathit{fresh}}(\mastate,\mstore,\mmktab,\mtime,\mktab_\makont,\mktab_\mamkont)$ and
+$\mastate,\mstore,\mmktab,\mtime,\mktab_\makont,\mktab_\mamkont \stepto
+\mastate',\mstore',\mmktab',\mtime',\mktab'_\makont,\mktab'_\mamkont$ then
+$\inv_{\mathit{fresh}}(\mastate',\mstore',\mmktab',\mtime',\mktab'_\makont,\mktab'_\mamkont)$.
+\end{lemma}
+\begin{theorem}[Complete for fresh allocation]
+  If $\alloc$ produces fresh addresses then the resulting semantics is complete with respect to states satisfying the invariant.
 \end{theorem}
-\begin{proof}
-  \todo{Ian}
-\end{proof}
 
 \section{Proofs for section 6}
 \begin{lemma}

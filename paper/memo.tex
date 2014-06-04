@@ -39,11 +39,11 @@ We find the memoization analogy appeals to programmers' and semanticists' operat
 %
 
 %
-A second concern for using memo tables is in creating well-formed states.
-%
-In our case a state is well-formed if all the addresses that occur in them or the store are also mapped in the store's domain, \ie{}, no dangling pointers.
+A second concern for using memo tables is soundness.
 %
 Without the completeness property of the semantics, memoized results in, \eg{}, an inexactly GC'd machine, can have dangling addresses since the possible stacks may have grown to include addresses that were previously garbage.
+%
+If the semantics does n\todo{}
 %
 Context-irrelevance is a property of the semantics \emph{without} continuation stores, so there is an additional invariant to that of \autoref{sec:pushdown} for the semantics with $\mktab$ and $\mmemo$: $\mmemo$ respects context irrelevance.
 \begin{mathpar}

@@ -45,7 +45,7 @@
 \end{abstract}
 
 \section{Introduction}
-\input{introduction}
+\input{introduction-standin}
 \section{The AAM methodology}
 \input{aam}
 \section{A refinement for exact stacks}\label{sec:pushdown}
@@ -59,6 +59,19 @@
 \section{Related Work}
 \input{related}
 \section{Conclusion}
+As the programming world continues to embrace behavioral values, it becomes more important to import the powerful techniques pioneered by the first-order analysis and model-checking communities.
+%
+CFA2 and PDCFA paved the way, and in large part inspired this work.
+%
+We make a modest attempt to explain the core of their techniques in a common framework and extend it in a novel and instructive way.
+%
+It is our view that systematic approaches to applying the techniques are pivotal to scaling them to production programming languages.
+%
+We showed how to systematically construct executable concrete semantics that point-wise abstract to known algorithms for pushdown analyses of higher-order languages.
+%
+We bypass the automata theoretic approach so that we are not chained to a pushdown automaton to model features such as first-class composable control operators.
+%
+The techniques still apply and give better precision than regular methods.
 
 \balance
 \bibliographystyle{plainnat}

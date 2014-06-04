@@ -20,13 +20,13 @@
 \newcommand{\maddralt}{b}
 \newcommand{\menv}{\rho}
 \newcommand{\mstore}{\sigma}
-\newcommand{\mastore}{\hat\sigma}
+\newcommand{\mastore}{{\hat\sigma}}
 \newcommand{\mlkont}{\iota}
 \newcommand{\mkont}{\kappa}
-\newcommand{\mskont}{\hat{\kappa}}
+\newcommand{\mskont}{{\hat{\kappa}}}
 \newcommand{\mmkontacc}{C_\mathit{acc}}
 \newcommand{\mmkont}{C}
-\newcommand{\mamkont}{\hat{C}}
+\newcommand{\mamkont}{{\hat{C}}}
 \newcommand{\mstate}{\varsigma}
 \newcommand{\mastate}{\hat\varsigma}
 
@@ -65,6 +65,7 @@
 \newcommand{\CESIKKstart}{\mathit{CESIK^*_t\mktab}}
 \newcommand{\CESKKMstart}{\mathit{CESK^*_t\mktab\mmemo}}
 \newcommand{\SRSt}{\mathit{SRS_t}}
+\newcommand{\SRSChKKt}{\mathit{SRS\mmktab_t}}
 
 \newcommand{\Var}{\mathit{Var}}
 
@@ -97,8 +98,8 @@
 \newcommand{\GD}{\mathit{GD}}
 \newcommand{\PermissionMap}{\mathit{PermissionMap}}
 
-\newcommand{\maenv}{\hat{\menv}}
-\newcommand{\makont}{\hat{\mkont}}
+\newcommand{\maenv}{{\hat{\menv}}}
+\newcommand{\makont}{{\hat{\mkont}}}
 \newcommand{\mvkont}{\tilde{\mkont}}
 
 \newcommand{\Relevant}{\mathit{Relevant}}
@@ -124,6 +125,10 @@
 \newcommand{\fv}{\mathit{fv}}
 \newcommand{\alloc}{\mathit{alloc}}
 \newcommand{\tick}{\mathit{tick}}
+
+\newcommand{\fresh}{\mathit{fresh}}
+\newcommand{\wf}{\mathit{wf}}
+\newcommand{\wfC}{{\mathit{wf}_C}}
 
 \newcommand{\passp}{\mathit{pass?}}
 \newcommand{\bind}{{\mathcal B}}
@@ -217,7 +222,6 @@
 \newcommand{\ev}[1]{\mathbf{ev}(#1)}
 \newcommand{\co}[1]{\mathbf{co}(#1)}
 
-
 \newcommand{\rt}{\mathbf{rt}}
 \newcommand{\krt}[1]{\rt(#1)}
 \newcommand{\kmt}{\mathbf{mt}}
@@ -235,6 +239,12 @@
 
 % Notations
 \newcommand{\sa}[1]{\widehat{\mathit{#1}}}
+\newcommand{\compatible}[2]{#1\mathrel{\bowtie}#2}
+
+\newcommand{\somestate}{\lozenge}
+\newcommand{\nextstate}{\blacklozenge}
+\newcommand{\someotherstate}{\square}
+\newcommand{\nextotherstate}{\blacksquare}
 
 \newcommand{\lfp}{\mathbf{lfp}}
 \newcommand{\tpl}[1]{\langle #1 \rangle}
