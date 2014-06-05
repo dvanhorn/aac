@@ -1,9 +1,21 @@
-Abstracting abstract machines is founded on three ideas:
+Abstract machines are a versatile, clear and concise way to describe the semantics of programming languages.
+%
+They hit a sweet spot in terms of level of discourse, and viable implementation strategy.
+%
+First year graduate students learn programming language semantics with abstract machines.\footnote{Northeastern's CS7400, UMD's CMSC631, University of Utah's CS7520}
+%
+They also turn out to be fairly simple to repurpose into static analyses for the languages they implement, via the Abstracting Abstract Machines methodology~\citep{dvanhorn:VanHorn2010Abstracting}.
+
+AAM is founded on three ideas:
 \begin{enumerate}
-\item{recursive data structures are easily representable via indirection through a map at recursive points. For example, the tail of a list goes from being a list to an address of a list in a heap;}
-\item{a finite pool of addresses then means a finite state space;}
-\item{reused addresses mean the heap must use weak updates: $[a \mapsto v]\sqcup[a \mapsto v'] = [a \mapsto \set{v,v'}]$ and lookups make non-deterministic choices.}
+\item{concrete and abstract semantics ideally should use the same code, for correctness and testing purposes,}
+\item{the level of abstraction should be a tunable parameter,}
+\item{both of the above are acheivable with a slight change to the abstract machine's state representation.}
 \end{enumerate}
+
+The first two points are the philosophy of AAM: correctness through simplicity, reusability, and sanity checking with concrete semantics.
+%
+The final point is the machinery that we recount in this section.
 
 % \subsection{Notations and conventions}
 % \begin{itemize}
@@ -56,18 +68,32 @@ The case studies in this paper all build off the call-by-value untyped lambda ca
 \end{align*}
 The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and replugging this semantics provides does not reflect what an effective implementation looks like.
 %
-We start instead with an abstract machine that manages these steps with a special state representation: the CESK machine.
+We start instead with an abstract machine that manages these steps with a special state representation: the CESK machine.\footnote{CESK stands for control string (or code), environment, store, and continuation (but with a k to distinguish from the first c). The continuation is sometimes called the stack.}
 %
-The semantic spaces in \autoref{fig:cesk-spaces} have three points of recursion: subexpressions, closures and pushed continuation frames.
+The environment and store work together to represent ongoing substitutions, and the continuation represents where evaluation is with respect to decomposing and replugging a context.
 %
-The semantics for the CESK machine in \autoref{fig:cesk-semantics} shows the delayed substitution semantics that environments enable.
+The state space is in \autoref{fig:cesk-spaces}.
 %
-Function application delays the substitution of an argument by allocating an address for the argument in the store, and extending the environment to reference the allocated address.
+The standard CESK machine has a store that maps freshly allocated addresses to single values.
 %
-Variables dereference the environment to fulfill the delayed substitution semantics that the CESK machine implements.
+AAM slightly modifies the store to map arbitrarily allocated addresses (reuse allowed) to a set of values.
 %
-Function application performs an administrative step to search for the next redex.
+That way, if an address is reused then the previous tenant of the address is not forgotten, just merged as a \emph{possible} result when the address is dereferenced.
 %
+The semantics of this CESK machine is in \autoref{fig:cesk-semantics}.
+
+%
+Allocation is key for both precision and abstraction power.
+%
+Fresh allocation gives us the full lambda calculus -- everything is undecidable.
+%
+If the allocator has a finite codomain, and there are no recursive datatypes in a state's representation, then the state space is finite -- the machine is a finite state machine.
+%
+If the allocator freshly allocates addresses for the stack representation, but is finite for everything else, the semantics is indistinguishable from just using the recursive representation of the stack.
+%
+If we have just the stack as an unbounded data structure, then the machine has finitely many stack frames and finitely many other components of the state -- the machine is a pushdown system.
+%
+
 \begin{figure}\centering
   \begin{tabular}{rlrl}
     $\mstate \in \CESK$ &\multicolumn{2}{l}{\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mstore, \mkont}$} \\
@@ -79,7 +105,7 @@ Function application performs an administrative step to search for the next rede
     $\alloc$ &\hspace{-3mm}$: \CESK \to \Addr$ & &
   \end{tabular}
   \caption{CESK semantic spaces}
-\label{fig:cek-spaces}
+\label{fig:cesk-spaces}
 \end{figure}
 
 \begin{figure}
@@ -110,7 +136,8 @@ Function application performs an administrative step to search for the next rede
   \label{fig:cesk-semantics}
 \end{figure}
 
-In order to make $\stepto$ finite and therefore have a computable graph, the recursive spaces in this machine that the relation \emph{creates new values in} must be finitized.
+\paragraph{Removing recursion:}
+In order to make $\stepto$ finite and therefore have a computable graph, we must finitize the recursive spaces in which the machine \emph{creates new values}.
 %
 AAM dictates that finitization can be centralized to one place, address allocation, by redirecting values in recursive positions through the store.
 %
@@ -178,14 +205,16 @@ The semantics of this machine follow the weak update and non-deterministic looku
   \label{fig:ceskstart-semantics}
 \end{figure}
 
-If we run the $\CESKstart$ semantics to explore all possible states, we get a sound approximation of all paths that the $\CEK$ machine will explore.
+If we run the $\CESKstart$ semantics to explore all possible states, we get a sound approximation of all paths that the $\CESK$ machine will explore.
 %
-The paper will give a more focused view of the $\Kont$ component.
+This paper will give a more focused view of the $\Kont$ component.
 %
-Suppose a semantics that interacts with $\Kont$ via a stack discipline (only push and pop single frames at a time, \eg{} the above machine).
+We said that when just $\Kont$ is unbounded, we have a pushdown system.
 %
-If we were not to heap-allocate the tail of a continuation, the resulting machine has all finite components except an unbounded stack of finitely many stack frames.
+Pushdown systems cannot be naively \emph{run} to find all states and describe all paths the $\CESK$ machine can explore; the state space is infinite, therefore this strategy may not terminate.
 %
-This is exactly a pushdown system.
+The pushdown limitation is special because we can always recognize non-termination, stop, and describe the entire state space.
 %
-We can exactly represent the stack and still have a sound and terminating analysis.
+We show that a simple change in state representation can provide this functionality.
+%
+We regain the ability to just \emph{run} the semantics and get a finite object that describes all possible paths in the $\CESK$ machine, but with better precision than before.

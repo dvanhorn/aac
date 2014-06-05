@@ -9,7 +9,7 @@ In particular, memo table entries can end up mapping to multiple results, but no
 Note the memo table space:
 \begin{align*}
   \mmemo \in \Memo &= \Context \finto \wp(\Relevant) \\
-  \Relevant &::= \tpl{\mexpr,\maenv,\mstore,\mtime}
+  \Relevant &::= \tpl{\mexpr,\menv,\mstore}
 \end{align*}
 %
 There are a few ways to deal with multiple results:
@@ -48,11 +48,11 @@ If the semantics does n\todo{}
 Context-irrelevance is a property of the semantics \emph{without} continuation stores, so there is an additional invariant to that of \autoref{sec:pushdown} for the semantics with $\mktab$ and $\mmemo$: $\mmemo$ respects context irrelevance.
 \begin{mathpar}
   \inferrule{\dom(\mmemo) \subseteq \dom(\mktab) \\
-             \forall \mctx\equiv\tpl{\mexpr_c,\maenv_c,\mstore_c,\mtime_c} \in \dom(\mmemo),
-                     \tpl{\mexpr_r,\maenv_r,\mstore_r,\mtime_r} \in \mmemo(\mctx), \\
+             \forall \mctx\equiv\tpl{\mexpr_c,\menv_c,\mstore_c} \in \dom(\mmemo),
+                     \tpl{\mexpr_r,\menv_r,\mstore_r} \in \mmemo(\mctx), \\
                      \makont\in\mktab(\mctx),
                      \mkont\in\unroll{\mktab}{\makont}. \\
-              \exists\mtrace\equiv\tpl{\mexpr_c,\maenv_c,\mkont},\mstore_c,\mtime_c \stepto_{\CESKt}^* \tpl{\mexpr_r,\maenv_r,\mkont},\mstore_r,\mtime_r. \hastail(\mtrace,\mkont)}
+              \exists\mtrace\equiv\tpl{\mexpr_c,\menv_c,\mstore_c,\mkont} \stepto_{\CESKt}^* \tpl{\mexpr_r,\menv_r,\mstore_r,\mkont}. \hastail(\mtrace,\mkont)}
             {\inv_M(\mktab,\mmemo)}
 \end{mathpar}
 Inexact GC does \emph{not} respect context irrelevance for the same reasons it is not complete: some states are spurious, meaning some memo table entries will be spurious, and the expected path in the invariant will not exist.
@@ -67,44 +67,44 @@ where
 \begin{tabular}{rlrlrl}
   $I$ &
   \multicolumn{5}{l}{
-    \hspace{-3mm}$=\bigcup\limits_{s=(\mstate,\mstore,\mtime) \in
-      F}{\setbuild{(\tpl{s,s'}, \mktab',\mmemo')}{s,\mktab,\mmemo
-        \stepto s',\mktab',\mmemo'}}$}
+    \hspace{-3mm}$=\bigcup\limits_{\mstate \in
+      F}{\setbuild{(\tpl{\mstate,\mstate'}, \mktab',\mmemo')}{\mstate,\mktab,\mmemo
+        \stepto \mstate',\mktab',\mmemo'}}$}
 \\
    $R'$ &\hspace{-3mm}$= \pi_0 I$ & $\mktab'$ & \hspace{-3mm}$= \bigsqcup\pi_1 I$ & $\mmemo'$ & \hspace{-3mm}$= \bigsqcup\pi_2 I$ \\
    $\Delta\mktab$ &\hspace{-3mm}$= \mktab'\setminus\mktab$ & $\Delta\mmemo$ & \hspace{-3mm}$= \mmemo'\setminus\mmemo$ & & \\
    $F'$ &
    \multicolumn{5}{l}{
-     \hspace{-3mm}$= \pi_1 R' \cup \{{\tpl{\mexpr,\maenv,\makont},\mstore,\mtime} :
+     \hspace{-3mm}$= \pi_1 R' \cup \{{\tpl{\mexpr,\menv,\mstore,\makont}} :
      {\mctx \in \dom(\Delta\mktab)\cap\dom(\Delta\mmemo).}$}
    \\ &\multicolumn{5}{l}{\hspace{-3mm}$\phantom{= \pi_1 R' \cup \{} \makont \in \Delta\mktab(\mctx),
-       \tpl{\mexpr,\maenv,\mstore,\mtime} \in \Delta\mmemo(\mctx)\}$}
+       \tpl{\mexpr,\menv,\mstore} \in \Delta\mmemo(\mctx)\}$}
  \end{tabular}
 
  \begin{figure}
    \begin{center}
-     $\mastate,\mstore,\mtime,\mktab,\mmemo \stepto
-     \mastate',\mstore',\mtime',\mktab',\mmemo'$
+     $\mastate,\mktab,\mmemo \stepto
+     \mastate',\mktab',\mmemo'$
      \begin{tabular}{r|l}
        \hline\vspace{-3mm}\\
-       $\tpl{\sapp{\mexpri0}{\mexpri1},\maenv,\makont}$
+       $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\makont},\mktab,\mmemo$
        &
-       $\tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mctx}}$ if $\mctx \notin\dom(\mmemo)$ \\
-       & or \\
+       $\tpl{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mctx}},\mktab,\mmemo$ \\
+       & \quad if $\mctx \notin\dom(\mmemo)$, or \\
        &
-       $\tpl{\mexpr',\maenv',\makont}$ if $\tpl{\mexpr',\maenv',\mstore',\mtime'} \in \mmemo(\mctx)$ \\
-       where & $\mctx = \tpl{\sapp{\mexpri}{\mexpri1},\maenv,\mstore,\mtime}$ \\
+       $\tpl{\mexpr',\menv',\mstore,\makont},\mktab',\mmemo$ \\
+       & \quad if $\tpl{\mexpr',\menv',\mstore'} \in \mmemo(\mctx)$ \\
+       where & $\mctx = \tpl{\sapp{\mexpri}{\mexpri1},\menv,\mstore}$ \\
        & $\mktab' = \joinm{\mktab}{\mctx}{\makont}$
        \\
-       $\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\mctx}}$
+       $\tpl{\mval,\mstore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\mctx}},\mktab,\mmemo$
        &
-       $\tpl{\mexpr,\maenv'',\makont}$ if $\makont \in \mktab(\mctx)$ \\
-       where & $\maenv'' = \maenv'[\mvar\mapsto\maddr]$ \\
-       & $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$ \\
-       & $\mmemo' = \joinm{\mmemo}{\mctx}{\tpl{\mexpr,\maenv'',\mstore',\mtime'}}$
+       $\tpl{\mexpr,\menv',\mstore',\makont},\mktab,\mmemo'$ if $\makont \in \mktab(\mctx)$ \\
+       where & $\menv' = \extm{\menv}{\mvar}{\maddr}$ \\
+       & $\mstore' = \joinm{\mstore}{\maddr}{\mval}$ \\
+       & $\mmemo' = \joinm{\mmemo}{\mctx}{\tpl{\mexpr,\menv',\mstore'}}$
      \end{tabular}
    \end{center}
-   Where $\mtime' = \tick(\mastate,\mstore,\mtime)$, $\mstore' = \mstore$, $\mktab' =\mktab$ and $\mmemo' = \mmemo$ unless otherwise stated.
    \caption{Important memoization rules}
    \label{fig:memo}
  \end{figure}

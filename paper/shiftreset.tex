@@ -39,27 +39,29 @@ Composable continuations are indistinguishable from functions, so even though th
   \begin{tabular}{r|l}%{r|ll}
     \hline
 % Reset
-    $\ev{\sreset{\mexpr}, \menv, \mkont, \mmkont}$
+    $\ev{\sreset{\mexpr}, \menv, \mstore,\mkont, \mmkont}$
     &
-    $\ev{\mexpr, \menv, \epsilon, \mkapp{\mkont}{\mmkont}}$
+    $\ev{\mexpr, \menv, \mstore,\epsilon, \mkapp{\mkont}{\mmkont}}$
 %    & \textsc{[push prompt]}
     \\
 % Pop prompt
-    $\co{\epsilon, \mkapp{\mkont}{\mmkont}, \mval}$
+    $\co{\epsilon, \mkapp{\mkont}{\mmkont}, \mval,\mstore}$
     &
-    $\co{\mkont, \mmkont, \mval}$
+    $\co{\mkont, \mmkont, \mval,\mstore}$
 %    & \textsc{[pop prompt]}
     \\
 % Shift
-    $\ev{\sshift{\mvar}{\mexpr}, \menv, \mkont, \mmkont}$
+    $\ev{\sshift{\mvar}{\mexpr}, \menv, \mstore,\mkont, \mmkont}$
     &
-    $\ev{\mexpr, \extm{\menv}{\mvar}{\vcomp{\mkont}},\epsilon,\mmkont}$
+    $\ev{\mexpr, \extm{\menv}{\mvar}{\maddr},\mstore',\epsilon,\mmkont}$
+    \\
+    where & $\mstore' = \joinm{\mstore}{\maddr}{\vcomp{\mkont}}$
 %    & \textsc{[capture continuation]}
     \\
 % continuation call
-    $\co{\kcons{\kfn{\vcomp{\mkont'}}}{\mkont}, \mmkont, \mval}$
+    $\co{\kcons{\kfn{\vcomp{\mkont'}}}{\mkont}, \mmkont, \mval,\mstore}$
     &
-    $\co{\mkont', \mkapp{\mkont}{\mmkont}, \mval}$
+    $\co{\mkont', \mkapp{\mkont}{\mmkont}, \mval,\mstore}$
 %    & \textsc{[compose continuation]}
   \end{tabular}  
   \caption{Machine semantics for shift/reset}
@@ -83,15 +85,15 @@ Contexts for continuations are still at function application, but now contain th
 %
 Contexts for meta-continuations are in two places: manual prompt introduction via {\tt reset}, or via continuation invocation.
 %
-At continuation capture time, continuation contexts are approximated to remove $\mstore$ and $\mmktab$ components.
+At continuation capture time, continuation contexts are approximated to remove $\mastore$ and $\mmktab$ components.
 %
 The different context spaces are thus:
 \begin{align*}
-  \msctx \in \ExactContext &::= \tpl{\maval,\maval,\mstore,\mmktab,\mtime} \\
-  \mactx \in \sa{Context} &::= \tpl{\maval,\maval,\maddr,\mtime} \\
+  \msctx \in \ExactContext &::= \tpl{\maval,\maval,\mastore,\mmktab} \\
+  \mactx \in \sa{Context} &::= \tpl{\maval,\maval,\maddr} \\
   \mctx \in \Context &::= \mactx \alt \msctx \\
-  \mmctx \in \MContext &::= \tpl{\mexpr,\maenv,\mstore,\mmktab,\mtime}
-                       \alt \tpl{\mvkont, \mval, \mstore, \mmktab, \mtime} \\
+  \mmctx \in \MContext &::= \tpl{\mexpr,\menv,\mastore,\mmktab}
+                       \alt \tpl{\mvkont, \mval, \mastore, \mmktab} \\
 \end{align*}
 %
 
@@ -99,16 +101,15 @@ The different context spaces are thus:
 \begin{figure}
   \centering
   \begin{align*}
-    \mastate \in \sa{SR} &::= \ev{\mexpr,\maenv,\makont,\mamkont} \alt \co{\makont,\mamkont,\maval} \\
-    s \in \Prestate &::= \mastate,\mstore,\mmktab,\mtime \\
-    \State &::= s,\mktab_{\makont},\mktab_{\mamkont} \\
+    \mastate \in \sa{SR} &::= \ev{\mexpr,\menv,\mastore,\mmktab,\makont,\mamkont} \alt \co{\makont,\mamkont,\maval,\mastore,\mmktab} \\
+    \State &::= \mastate,\mktab_{\makont},\mktab_{\mamkont} \\
     \mmktab \in \MKTab &= \Addr \finto \wp(\Store) \\
     \makont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\mctx} \alt \mctx \\
     \mamkont \in \sa{MKont} &::= \epsilon \alt \mmctx \\
     \mvkont \in \VKont &::= \epsilon \alt \mactx \\
     \mktab_{\makont} \in \KStore &= \ExactContext \finto \wp(\sa{Kont}) \\
     \mktab_{\mamkont} \in \MKStore &= \MContext \finto \wp(\sa{Kont} \times \sa{MKont}) \\
-    \maval \in \sa{Storeable} &= \wp(\VKont + (\Value \times \sa{Env})) \\
+    \maval \in \sa{Value} &::= \mvkont \alt (\mlam,\menv) \\
   \end{align*}
   \caption{Shift/reset abstract semantic spaces}
   \label{fig:shiftreset-spaces}
@@ -120,8 +121,8 @@ The approximation and flattening happens in $\approximate$:
 \end{equation*}
 \begin{align*}
   \approximate(\mmktab,\maddr,\epsilon) &= \mmktab,\epsilon \\
-  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\mstore,\mmktab',\mtime}}) &= \joinm{\mmktab\sqcup\mmktab'}{\maddr}{\mstore},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr,\mtime}} \\
-  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddralt,\mtime}}) &= \joinm{\mmktab}{\maddr}{\mmktab(\maddralt)},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr,\mtime}}
+  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\mastore,\mmktab'}}) &= \joinm{\mmktab\sqcup\mmktab'}{\maddr}{\mastore},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr}} \\
+  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddralt}}) &= \joinm{\mmktab}{\maddr}{\mmktab(\maddralt)},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr}}
 \end{align*}
 The second case is where continuation closures get flattened together.
 %
@@ -131,37 +132,35 @@ Approximating the context and allocating the continuation in the store require t
 
 Each of the four rules of the original shift/reset machine has a corresponding rule that we explain piecemeal.
 %
-We will write $\mastate \kindastepto \mastate',\ldots$ optionally updating the other components instead of the full $\mastate,\mstore,\ldots \stepto_{\SRSChKKt} \ldots$ to lessen the notational noise.
-%
 We use the above $\approximate$ function in the rule for continuation capture, as modified here.
 %
-\begin{equation*}\ev{\sshift{\mvar}{\mexpr},\maenv,\makont,\mamkont} \kindastepto
-  \ev{\mexpr,\maenv',\epsilon,\mamkont},\mstore',\mmktab'
+\begin{equation*}\ev{\sshift{\mvar}{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont} \kindastepto
+  \ev{\mexpr,\menv',\mastore',\mmktab',\epsilon,\mamkont}
 \end{equation*}
 where
 \begin{align*}
-  (\maddr,\maddr') &= \alloc(\mctx) & \maenv' &= \extm{\maenv}{\mvar}{\maddr} \\
+  (\maddr,\maddr') &= \alloc(\mastate,\mktab_\makont,\mktab_\mamkont) & \menv' &= \extm{\menv}{\mvar}{\maddr} \\
   (\mvkont,\mmktab') &= \approximate(\mmktab,\maddr',\makont) &
-  \mstore' &= \joinm{\mstore}{\maddr}{\mvkont}
+  \mastore' &= \joinm{\mastore}{\maddr}{\mvkont}
 \end{align*}
 
 The rule for {\tt reset} stores the continuation and meta-continuation in $\mktab_{\mamkont}$:
 \begin{align*}
-\ev{\sreset{\mexpr},\maenv,\makont,\mamkont} &\kindastepto
-  \ev{\mexpr,\maenv,\epsilon,\mmctx},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont,\mamkont)} \\
-\text{where } \mmctx &= \tpl{\mexpr,\maenv,\mstore,\mmktab,\mtime}
+\ev{\sreset{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont} &\kindastepto
+  \ev{\mexpr,\menv,\mastore,\mmktab,\epsilon,\mmctx},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont,\mamkont)} \\
+\text{where } \mmctx &= \tpl{\mexpr,\menv,\mastore,\mmktab}
 \end{align*}
 
 The prompt-popping rule simply dereferences $\mktab_{\mamkont}$:
 \begin{align*}
-  \co{\epsilon,\mmctx,\maval} &\kindastepto \co{\makont,\mamkont,\maval} \text{ if } (\makont,\mamkont) \in \mktab_{\mamkont}(\mmctx)
+  \co{\epsilon,\mmctx,\maval,\mastore,\mmktab} &\kindastepto \co{\makont,\mamkont,\maval,\mastore,\mmktab} \text{ if } (\makont,\mamkont) \in \mktab_{\mamkont}(\mmctx)
 \end{align*}
 
 The continuation installation rule extends $\mktab_{\mamkont}$ at the different context:
 \begin{align*}
-  \co{\makont,\mamkont,\maval} &\kindastepto \co{\mvkont,\mmctx,\maval},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont',\mamkont)} \\ 
+  \co{\makont,\mamkont,\maval,\mastore,\mmktab} &\kindastepto \co{\mvkont,\mmctx,\maval,\mastore,\mmktab},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont',\mamkont)} \\ 
 \text{if } & (\appr{\mvkont},\makont') \in \pop(\mktab_{\makont},\mmktab, \makont) \\
-\text{where } \mmctx &= \mvkont,\maval,\mstore,\mmktab,\mtime
+\text{where } \mmctx &= \mvkont,\maval,\mastore,\mmktab
 \end{align*}
 Again we have a metafunction $\pop$, but this time to interpret approximated continuations:
 \begin{align*}
@@ -172,9 +171,9 @@ Again we have a metafunction $\pop$, but this time to interpret approximated con
    \popaux(\mctx, G) &= \bigcup\limits_{\makont \in G'}(\popaux(\makont, G\cup G')) \\
     \text{where } G' &= \bigcup\limits_{\msctx \in I(\mctx)}{\mktab_{\makont}(\msctx)} \setminus G \\
   I(\msctx) &= \set{\msctx} \\
-  I(\tpl{\maval_f,\maval_a,\maddr,\mtime}) &=
-  \setbuild{\tpl{\maval_f,\maval_a,\mstore,\mmktab',\mtime} \in \dom(\mktab_{\makont})}
-           {\mstore \in \mmktab(\maddr),
+  I(\tpl{\maval_f,\maval_a,\maddr}) &=
+  \setbuild{\tpl{\maval_f,\maval_a,\mastore,\mmktab'} \in \dom(\mktab_{\makont})}
+           {\mastore \in \mmktab(\maddr),
             \mmktab' \sqsubseteq \mmktab}
 \end{align*}
 Notice that since we flatten $\mmktab$s together, we need to compare for containment rather than for equality (in $I$).
@@ -183,24 +182,24 @@ We suppose a store-allocating timestamped version of the semantics in \autoref{f
 %
 We impose an order on values since stored continuations are more approximate in the analysis than in $\SRSt$:
 \begin{mathpar}
-  \inferrule{ }{\maval \sqsubseteq_{\mktab,\mmktab} \maval} \quad
+  \inferrule{ }{\mval \sqsubseteq_{\mktab,\mmktab} \mval} \quad
   \inferrule{\mkont \in \unroll{\mktab,\mmktab}{\mvkont}}
             {\vcomp{\mkont} \sqsubseteq_{\mktab,\mmktab} \mvkont} \quad
-  \inferrule{\forall \maval\in\mstore(\maddr).
-             \exists \maval'\in\mastore(\maddr).
-             \maval \sqsubseteq_{\mktab,\mmktab} \maval'}
+  \inferrule{\forall \mval\in\mstore(\maddr).
+             \exists \maval\in\mastore(\maddr).
+             \mval \sqsubseteq_{\mktab,\mmktab} \maval}
             {\mstore \sqsubseteq_{\mktab,\mmktab} \mastore} \\
   \inferrule{\mkont \sqsubseteq \unroll{\mktab_{\makont},\mmktab}{\makont} \\
              \mmkont \sqsubseteq \unrollC{\mktab_{\makont},\mktab_{\mamkont},\mmktab}{\mamkont} \\
              \mstore \sqsubseteq_{\mktab_{\makont},\mmktab} \mastore}
-            {\ev{\mexpr,\maenv,\mkont,\mmkont},\mstore,\mtime \sqsubseteq
-             \ev{\mexpr,\maenv,\makont,\mamkont},\mastore, \mmktab, \mtime, \mktab_{\makont}, \mktab_{\mamkont}} \\
-  \inferrule{\maval \sqsubseteq_{\mktab_{\makont},\mmktab} \maval' \\
+            {\ev{\mexpr,\menv,\mstore,\mkont,\mmkont} \sqsubseteq
+             \ev{\mexpr,\menv,\mastore, \mmktab,\makont,\mamkont}, \mktab_{\makont}, \mktab_{\mamkont}} \\
+  \inferrule{\mval \sqsubseteq_{\mktab_{\makont},\mmktab} \maval \\
              \mkont \sqsubseteq \unroll{\mktab_{\makont},\mmktab}{\makont} \\
              \mmkont \sqsubseteq \unrollC{\mktab_{\makont},\mktab_{\mamkont},\mmktab}{\mamkont} \\
              \mstore \sqsubseteq_{\mktab_{\makont},\mmktab} \mastore}
-            {\co{\mkont,\mmkont,\maval},\mstore,\mtime \sqsubseteq
-             \co{\makont,\mamkont,\maval'},\mastore, \mmktab, \mtime, \mktab_{\makont}, \mktab_{\mamkont}}
+            {\co{\mkont,\mmkont,\mval,\mstore} \sqsubseteq
+             \co{\makont,\mamkont,\maval,\mastore, \mmktab}, \mktab_{\makont}, \mktab_{\mamkont}}
 \end{mathpar}
 Unrolling differs from the previous sections because the values in frames can be approximate.
 %
@@ -209,10 +208,10 @@ Thus, instead of expecting the exact continuation to be in the unrolling, we hav
 \begin{figure}
   \centering
   \begin{mathpar}
-    \inferrule{ }{\appl{\mexpr,\maenv} \sqsubseteq_{\mktab,\mmktab}
-      \appl{\mexpr,\maenv}} \quad \inferrule{\maval
-      \sqsubseteq_{\mktab,\mmktab}{\maval'}}
-    {\appr{\maval} \sqsubseteq_{\mktab,\mmktab} \appr{\maval'}} \\
+    \inferrule{ }{\appl{\mexpr,\menv} \sqsubseteq_{\mktab,\mmktab}
+      \appl{\mexpr,\menv}} \quad \inferrule{\mval
+      \sqsubseteq_{\mktab,\mmktab}{\maval}}
+    {\appr{\mval} \sqsubseteq_{\mktab,\mmktab} \appr{\maval}} \\
     \inferrule{ }{\epsilon \sqsubseteq
       \unroll{\mktab,\mmktab}{\epsilon}} \quad
     \inferrule{\mkframe \sqsubseteq_{\mktab,\mmktab} \makframe \\
@@ -253,10 +252,10 @@ To substantiate our claim that fresh allocation leads to an exact semantics, we 
 \forall \mmctx\in\dom(\mktab_\mamkont). |\mktab_\mamkont(\mmctx)|=1 \\
 \forall \mctx\neq\mctx'. \compatible{\mctx}{\mctx'} \vee \pi_2(\mctx) \neq \pi_2(\mctx') \\
 \forall \mmctx\neq\mmctx'. \compatible{\mmctx}{\mmctx'} \vee \pi_2(\mmctx) \neq \pi_2(\mmctx') \\
-}{\inv_{\fresh}(\tpl{\mexpr,\maenv,\makont,\mamkont}, \mastore, \mmktab, \mtime, \mktab_{\makont}, \mktab_{\mamkont})}
+}{\inv_{\fresh}(\tpl{\mexpr,\menv, \mastore, \mmktab,\makont,\mamkont}, \mktab_{\makont}, \mktab_{\mamkont})}
  \\
-\inferrule{ }{\compatible{\tpl{\_,\maenv,\mastore,\_}}{\tpl{\_,\maenv,\mastore,\_}}} \quad
-\inferrule{ }{\compatible{\tpl{\_,\maenv,\mastore,\mmktab,\_}}{\tpl{\_,\maenv,\mastore,\mmktab,\_}}}
+\inferrule{ }{\compatible{\tpl{\_,\menv,\mastore,\_}}{\tpl{\_,\menv,\mastore,\_}}} \quad
+\inferrule{ }{\compatible{\tpl{\_,\menv,\mastore,\mmktab,\_}}{\tpl{\_,\menv,\mastore,\mmktab,\_}}}
 \end{mathpar}
 The $\wf$ and $\wfC$ propositions describe the well-founded order on the continuation stores, assuming the codomains contain only singleton sets.
 \begin{mathpar}
@@ -276,10 +275,10 @@ The $\wf$ and $\wfC$ propositions describe the well-founded order on the continu
 \end{mathpar}
 
 \begin{lemma}[Freshness invariant]
-  If $\alloc$ produces fresh addresses, $\inv_{\fresh}(\mastate,\mastore,\mmktab,\mtime,\mktab_\makont,\mktab_\mamkont)$ and
-$\mastate,\mastore,\mmktab,\mtime,\mktab_{\makont},\mktab_{\mamkont} \stepto
-\mastate',\mastore',\mmktab',\mtime',\mktab'_{\makont},\mktab'_{\mamkont}$ then
-$\inv_{\fresh}(\mastate',\mastore',\mmktab',\mtime',\mktab'_{\makont},\mktab'_{\mamkont})$.
+  If $\alloc$ produces fresh addresses, $\inv_{\fresh}(\mastate,\mktab_\makont,\mktab_\mamkont)$ and
+$\mastate,\mktab_{\makont},\mktab_{\mamkont} \stepto
+\mastate',\mktab'_{\makont},\mktab'_{\mamkont}$ then
+$\inv_{\fresh}(\mastate',\mktab'_{\makont},\mktab'_{\mamkont})$.
 \end{lemma}
 \begin{theorem}[Complete for fresh allocation]
   If $\alloc$ produces fresh addresses then the resulting semantics is complete with respect to states satisfying the invariant.
