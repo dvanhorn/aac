@@ -1,4 +1,6 @@
-What happens when we apply the techniques of the previous sections to a semantics that treats continuations as first-class?
+In \autoref{sec:pushdown} we showed how to get a pushdown abstraction by separating continuations from the heap that stores values.
+%
+This separation breaks down when continuations themselves become values via first-class control operators.
 %
 The glaring issue is that continuations become ``storeable'' and relevant to the execution of functions.
 %
@@ -10,8 +12,6 @@ We apply the AAM methodology to cut out the recursion; whenever a continuation i
 %%
 
 %%
-Where should these addresses be mapped?
-%
 We introduce a new environment, $\mmktab$, that maps these addresses to the stores they represent.
 %
 The stores that contain addresses in $\mmktab$ are then \emph{open}, and must be paired with $\mmktab$ to be \emph{closed}.
@@ -23,9 +23,16 @@ Therefore, we give up some precision to regain termination by \emph{flattening} 
 Fresh allocation still maintains the concrete semantics, but we necessarily lose some ability to distinguish contexts in the abstract.
 %%
 
-\subsection{Case study: shift and reset}
+\subsection{Case study of first-class control: shift and reset}
 %%
-Our concrete test subject is the abstract machine for shift and reset, adapted from \citet{ianjohnson:Biernacki2006274} in the ``{\bf ev}al, {\bf co}ntinue'' style in \autoref{fig:shift-reset}.
+We choose to study {\tt shift} and {\tt reset} because delimited continuations have proven useful for implementing web servers~\citep{plt-webserver}, providing processes isolation in operating systems~\citep{ianjohnson:Kiselyov2007Delimited}, representing computational effects~\citep{ianjohnson:Filinski1994Representing}, modularly implementing error-correcting parsers~\citep{ianjohnson:DBLP:conf/icfp/ShiversT11}, and finally undelimited continuations are \emph{pass\'e} for good reason~\citep{ianjohnson:kiselyov:against-callcc}.
+%
+Even with all their uses, however, their semantics can yield control-flow possibilities that surprise their users.
+%
+A \emph{precise} static analysis that illuminates their behavior is then a valuable tool.
+%
+
+Our concrete test subject is the abstract machine for shift and reset adapted from \citet{ianjohnson:Biernacki2006274} in the ``{\bf ev}al, {\bf co}ntinue'' style in \autoref{fig:shift-reset}.
 %
 The figure elides the rules for standard function calls.
 %
@@ -89,11 +96,11 @@ At continuation capture time, continuation contexts are approximated to remove $
 %
 The different context spaces are thus:
 \begin{align*}
-  \msctx \in \ExactContext &::= \tpl{\maval,\maval,\mastore,\mmktab} \\
+  \msctx \in \ExactContext &::= \tpl{\mexpr,\menv,\mastore,\mmktab} \\
   \mactx \in \sa{Context} &::= \tpl{\maval,\maval,\maddr} \\
   \mctx \in \Context &::= \mactx \alt \msctx \\
   \mmctx \in \MContext &::= \tpl{\mexpr,\menv,\mastore,\mmktab}
-                       \alt \tpl{\mvkont, \mval, \mastore, \mmktab} \\
+                       \alt \tpl{\mvkont, \maval, \mastore, \mmktab} \\
 \end{align*}
 %
 
@@ -132,6 +139,8 @@ Approximating the context and allocating the continuation in the store require t
 
 Each of the four rules of the original shift/reset machine has a corresponding rule that we explain piecemeal.
 %
+We will use $\kindastepto$ for steps that do not modify the continuation stores for notational brevity.
+%
 We use the above $\approximate$ function in the rule for continuation capture, as modified here.
 %
 \begin{equation*}\ev{\sshift{\mvar}{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont} \kindastepto
@@ -146,9 +155,10 @@ where
 
 The rule for {\tt reset} stores the continuation and meta-continuation in $\mktab_{\mamkont}$:
 \begin{align*}
-\ev{\sreset{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont} &\kindastepto
-  \ev{\mexpr,\menv,\mastore,\mmktab,\epsilon,\mmctx},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont,\mamkont)} \\
-\text{where } \mmctx &= \tpl{\mexpr,\menv,\mastore,\mmktab}
+\ev{\sreset{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont &\stepto
+  \ev{\mexpr,\menv,\mastore,\mmktab,\epsilon,\mmctx},\mktab_\makont,\mktab_\mamkont' \\
+  \text{where } \mmctx &= \tpl{\mexpr,\menv,\mastore,\mmktab} \\
+                \mktab_\mamkont &= \joinm{\mktab_{\mamkont}}{\mmctx}{(\makont,\mamkont)}
 \end{align*}
 
 The prompt-popping rule simply dereferences $\mktab_{\mamkont}$:
@@ -158,9 +168,10 @@ The prompt-popping rule simply dereferences $\mktab_{\mamkont}$:
 
 The continuation installation rule extends $\mktab_{\mamkont}$ at the different context:
 \begin{align*}
-  \co{\makont,\mamkont,\maval,\mastore,\mmktab} &\kindastepto \co{\mvkont,\mmctx,\maval,\mastore,\mmktab},\joinm{\mktab_{\mamkont}}{\mmctx}{(\makont',\mamkont)} \\ 
+  \co{\makont,\mamkont,\maval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont &\stepto \co{\mvkont,\mmctx,\maval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont' \\ 
 \text{if } & (\appr{\mvkont},\makont') \in \pop(\mktab_{\makont},\mmktab, \makont) \\
-\text{where } \mmctx &= \mvkont,\maval,\mastore,\mmktab
+\text{where } \mmctx &= \mvkont,\maval,\mastore,\mmktab \\
+              \mktab_\mamkont &= \joinm{\mktab_{\mamkont}}{\mmctx}{(\makont',\mamkont)}
 \end{align*}
 Again we have a metafunction $\pop$, but this time to interpret approximated continuations:
 \begin{align*}
@@ -177,6 +188,52 @@ Again we have a metafunction $\pop$, but this time to interpret approximated con
             \mmktab' \sqsubseteq \mmktab}
 \end{align*}
 Notice that since we flatten $\mmktab$s together, we need to compare for containment rather than for equality (in $I$).
+
+\paragraph{Comparison to CPS transform to remove {\tt shift} and {\tt reset}:}{
+We lose precision if we use a CPS transform to compile away {\tt shift} and {\tt reset} forms, because variables are treated less precisely than continuations.
+%
+%In pushdown analysis, we track function return points with entire calling contexts rather than the $k$-CFA way of allocating the continuation in the heap at some lower-precision address, like a variable.
+%
+%In our summarizing analysis of delimited composable control, we get added precision for {\tt reset}, {\tt shift}, and continuation invocation points.
+%
+Consider the following program and its CPS transform for comparison:
+% \begin{lstlisting}[mathescape]
+% (let* ([id ($\lambda$ (x) x)]
+%        [f ($\lambda$ (y) (shift k (k (k y))))]
+%        [g ($\lambda$ (z) (reset (id (f z))))])
+%   (<= (g 0) (g 1)))
+% \end{lstlisting}
+\begin{small}
+\begin{SCodeFlow}\begin{RktBlk}\begin{SingleColumn}\RktPn{(}\RktSym{let*}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktPn{[}\RktSym{id}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{x}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{x}\RktPn{)}\RktPn{]}
+
+\mbox{\hphantom{\Scribtexttt{xxxxxxx}}}\RktPn{[}\RktSym{f}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{y}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{shift}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{k}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{k}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{k}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{y}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{]}
+
+\mbox{\hphantom{\Scribtexttt{xxxxxxx}}}\RktPn{[}\RktSym{g}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{z}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{reset}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{id}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{f}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{z}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{]}\RktPn{)}
+
+\mbox{\hphantom{\Scribtexttt{xx}}}\RktPn{(}\RktSym{$\le$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{g}\mbox{\hphantom{\Scribtexttt{x}}}\RktVal{0}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{g}\mbox{\hphantom{\Scribtexttt{x}}}\RktVal{1}\RktPn{)}\RktPn{)}\RktPn{)}\end{SingleColumn}\end{RktBlk}\end{SCodeFlow}
+
+% \begin{lstlisting}[mathescape]
+% (let* ([id ($\lambda$ (x k) (k x))]
+%        [f ($\lambda$ (y j) (j (j y)))]
+%        [g ($\lambda$ (z h) (h (f z ($\lambda$ (fv) (id fv ($\lambda$ (i) i))))))])
+%   (g 0 ($\lambda$ (g0v) (g 1 ($\lambda$ (g1v) (<= g0v g1v))))))
+% \end{lstlisting}
+\begin{SCodeFlow}\begin{RktBlk}\begin{SingleColumn}\RktPn{(}\RktSym{let*}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktPn{[}\RktSym{id}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{x}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{k}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{k}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{x}\RktPn{)}\RktPn{)}\RktPn{]}
+
+\mbox{\hphantom{\Scribtexttt{xxxxxxx}}}\RktPn{[}\RktSym{f}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{y}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{j}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{j}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{j}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{y}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{]}
+
+\mbox{\hphantom{\Scribtexttt{xxxxxxx}}}\RktPn{[}\RktSym{g}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{z}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{h}\RktPn{)}
+\\\mbox{\hphantom{\Scribtexttt{xxxxxxxxxxx}}}\RktPn{(}\RktSym{h}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{f}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{z}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{fv}\RktPn{)}
+\\\mbox{\hphantom{\Scribtexttt{xxxxxxxxxxxxxxxxxxxx}}}\RktPn{(}\RktSym{id}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{fv}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{i}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{i}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{]}\RktPn{)}
+
+\mbox{\hphantom{\Scribtexttt{xx}}}\RktPn{(}\RktSym{g}\mbox{\hphantom{\Scribtexttt{x}}}\RktVal{0}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{g0v}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{g}\mbox{\hphantom{\Scribtexttt{x}}}\RktVal{1}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\lambda$}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{g1v}\RktPn{)}\mbox{\hphantom{\Scribtexttt{x}}}\RktPn{(}\RktSym{$\le$}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{g0v}\mbox{\hphantom{\Scribtexttt{x}}}\RktSym{g1v}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\RktPn{)}\end{SingleColumn}\end{RktBlk}\end{SCodeFlow}
+\end{small}
+The $\CESKKstart$ machine with a monovariant allocation strategy will predict the CPS'd version returns true or false.
+%
+In analysis literature, ``monovariant'' means variables get one address, namely themselves.
+%
+Our specialized analysis for delimited control will predict the non-CPS'd version returns true.}
+
 \subsection{Correctness}
 We suppose a store-allocating timestamped version of the semantics in \autoref{fig:shift-reset}, called $\SRSt$.
 %
@@ -254,8 +311,7 @@ To substantiate our claim that fresh allocation leads to an exact semantics, we 
 \forall \mmctx\neq\mmctx'. \compatible{\mmctx}{\mmctx'} \vee \pi_2(\mmctx) \neq \pi_2(\mmctx') \\
 }{\inv_{\fresh}(\tpl{\mexpr,\menv, \mastore, \mmktab,\makont,\mamkont}, \mktab_{\makont}, \mktab_{\mamkont})}
  \\
-\inferrule{ }{\compatible{\tpl{\_,\menv,\mastore,\_}}{\tpl{\_,\menv,\mastore,\_}}} \quad
-\inferrule{ }{\compatible{\tpl{\_,\menv,\mastore,\mmktab,\_}}{\tpl{\_,\menv,\mastore,\mmktab,\_}}}
+\inferrule{ }{\compatible{\tpl{\_,\menv,\mastore,\mmktab}}{\tpl{\_,\menv,\mastore,\mmktab}}}
 \end{mathpar}
 The $\wf$ and $\wfC$ propositions describe the well-founded order on the continuation stores, assuming the codomains contain only singleton sets.
 \begin{mathpar}

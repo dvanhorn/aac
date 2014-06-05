@@ -46,8 +46,8 @@ It is possible for metafunctions' rewrite rules to themselves use metafunctions,
 %
 Without this precaution, the host language will exceed its stack limits when an infinite path is explored, rather than bail out.
 
-\subsection{Pushdown GC}
-Garbage collection, for example, needs to crawl the stack for live addresses.
+\subsection{Case study for stack traversal: GC}
+Garbage collection is an example of a language feature that needs to crawl the stack, specifically to find live addresses.
 %
 We are interested in garbage collection because it can give massive precision boosts to analyses~\citep{dvanhorn:Might:2006:GammaCFA,dvanhorn:Earl2012Introspective}.
 %
@@ -187,7 +187,7 @@ Our statement of completeness then will assume both semantics perform garbage co
   and finally $\mstate'.\mstore|_{\live(\mstate')} \sqsubseteq \mstore''|_{\widehat{live}(\mastate',\mktab')}$
 \end{theorem}
 The proofs are straightforward, and use the usual lemmas for GC, such as idempotence of $\Gamma$ and $\touches \subseteq \reaches$.
-\subsection{Analyzing security features: the CM machine}
+\subsection{Case study analyzing security features: the CM machine}
 The CM machine provides a model of access control: a dynamic branch of execution is given permission to use some resource if a continuation mark for that permission is set to ``grant.''
 %
 There are three new forms we add to the lambda calculus to model this feature: {\tt grant}, {\tt frame}, and {\tt test}.
