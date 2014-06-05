@@ -1,1 +1,39 @@
-\todo{DVH}
+Program analysis aims to produce a sound a computable approximation of
+a program's behavior.  Traditionally, such approximations come in the
+form of finite state machines.  The states of such a machine abstract
+a set of real ``concrete'' program states, and the set of possible
+machine traces is approximated by the set of abstract traces.
+However, finite state abstractions are inherently a poor approximation
+mechanism for langauges with procedure calls since the nested matching
+of calls and returns cannot be accounted for precisely with a finite
+state machine.
+
+This observation set of the investigation of ``pushdown'' program
+analyses that traded finite state machines for more powerful pushdown
+systems as the underlying
+abstraction~\cite{first-order,oo,pushdown-stuff}.  Such analyses can
+more precisely capture program behavior since the run-time stack of a
+program can be modelled by the pushdown system's stack, thereby
+properly matching calls with returns in the abstract semantics.  While
+such techniques have been widely used for first-order, procedural
+languages, they have only recently been adopted to the setting of
+higher-order functional languages~\cite{usual,suspects}.
+%
+These technical breakthroughs, though laudable, are complicated and
+fragile.  Applying the technique to more realistic language features
+is not straightforward, which ultimately limits the applicability of
+pushdown analysis for higher-order langauges.
+
+In this paper, we show that pushdown analyses can be derived
+systematically from abstract machines semantics.  Such a construction
+enables pushdown analyses to scale uniformly to realistic language
+features.  We demonstrate the approach by applying the technique to a
+call-by-value functional language (\S\ref{baz}).  We then show how
+the approach scales to langauge features such as garbage collection
+(\S\ref{foo}), stack inspection (\S\ref{bar}), and first-class
+control operators in the form of shift and reset (\S\ref{blah}).
+%
+These case studies show that the approach is robust in the presence of
+features that need to inspect or alter the run-time stack, which
+previously have required significant technical
+innovations~\cite{callcc,introspective}.
