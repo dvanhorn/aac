@@ -1,3 +1,12 @@
+Since we just showed how to produce a pushdown system from an abstract machine, some readers may be concerned that we have lost the ability to reason about the stack as a whole.
+%
+This is not the case.
+%
+The semantics may still refer to $\mktab$ to make judgments about the possible stacks that can be realized at each state.
+%
+The key is to interpret the functions making these judgments again with the AAM methodology.
+
+%
 Some semantic features allow a language to inspect some arbitrarily deep part of the stack, or compute a property of the whole stack before continuing.
 %
 Java's access control security features are an example of the first form of inspection, and garbage collection is an example of the second.
@@ -18,12 +27,12 @@ The finite restriction on the state space carries over to metafunction inputs, s
 Specifically, a metafunction call can be seen as an initial state, $s$, in a reduction system for which we can compute all terminal states:
 \begin{align*}
   \terminal &: \forall A. (\text{relation } A)^* \times A \to \wp(A) \\
-  \terminal(\overline{R},s) &= \terminalaux(\set{s},\set{s},\emptyset) \\[2pt]
+  \terminal(\mathit{Rs},s) &= \terminalaux(\set{s},\set{s},\emptyset) \\[2pt]
   \text{where } \terminalaux(S, \emptyset, T) &= T \\
    \terminalaux(S, F \uplus \set{s}, T) &= \terminalaux(S\cup I, F \cup (I \setminus S), T') \\
-   & \text{where } (I',T') = \trystep(\overline{R}) \\
+   & \text{where } (I',T') = \trystep(\mathit{Rs}) \\
    \trystep(\epsilon) &= (\emptyset,T\cup\set{s}) \\
-   \trystep(\stepto:\overline{R}) &= I\deceq\emptyset \to \trystep(\overline{R}), (I, T) \\
+   \trystep(\stepto:\mathit{Rs}) &= I\deceq\emptyset \to \trystep(\mathit{Rs}), (I, T) \\
     & \text{where } I = \setbuild{s'}{s \stepto s'}
 \end{align*}
 
@@ -40,6 +49,8 @@ Without this precaution, the host language will exceed its stack limits when an 
 \subsection{Pushdown GC}
 Garbage collection, for example, needs to crawl the stack for live addresses.
 %
+We are interested in garbage collection because it can give massive precision boosts to analyses~\citep{dvanhorn:Might:2006:GammaCFA,dvanhorn:Earl2012Introspective}.
+%
 The following function will produce the set of live addresses in the stack:
 
 \begin{align*}
@@ -55,7 +66,7 @@ When interpreted via AAM, the continuation is indirected through $\mktab$ and le
 %
 Thus this is more properly understood as
 \begin{align*}
-  \kontlive(\mktab,\makont) &= \terminal(\overline{\stepto},\kontliveaux(\mktab,\makont,\emptyset)) \\[2pt]
+  \kontlive(\mktab,\makont) &= \terminal(\set{\stepto_i}_{i=0}^1, \kontliveaux(\mktab,\makont,\emptyset)) \\[2pt]
   \kontliveaux(\mktab,\epsilon,L) &\stepto_0 L \\
   \kontliveaux(\mktab,\kcons{\mkframe}{\mctx}, L) &\stepto_1 \kontliveaux(\mktab,\makont, L\cup\touches(\mkframe)) \text{ if } \makont \in \mktab(\mctx)
 \end{align*}
@@ -70,18 +81,18 @@ In the general idea of relevance versus irrelevance, the continuation's live add
 %
 A state is ``collected'' only if live addresses remain in the domain of $\mstore$.
 %
-We say a value $\maval \in \mstore(\maddr)$ is live if $\maddr$ is live.
+We say a value $\mval \in \mstore(\maddr)$ is live if $\maddr$ is live.
 %
 If a value is live, any addresses it touches are live; this is captured by the computation in $\reaches$:
 %
 \begin{align*}
   \reaches(\mathit{root},\mstore) &=
  \setbuild{\maddralt}{\maddr \in \mathit{root}, \maddr \leadsto_\mstore^* \maddralt} \\
-&  \infer{\maval \in \mstore(\maddr) \\ \maddralt \in \touches(\maval)}{\maddr \leadsto_\mstore \maddralt}
+&  \infer{\mval \in \mstore(\maddr) \\ \maddralt \in \touches(\mval)}{\maddr \leadsto_\mstore \maddralt}
 \end{align*}
 So the two collection methods are as follows.
 %
-Exact GC produces different collected states based on the possible stacks' live addresses:\footnote{It is possible and more efficient to build the stack's live addresses piecemeal as an additional component of each state, precluding the need for $\kontlive$. Each stack in $\mktab$ would also store the live addresses to restore on return.}
+Exact GC produces different collected states based on the possible stacks' live addresses:\footnote{It is possible and more efficient to build the stack's live addresses piecemeal as an additional component of each state, precluding the need for $\kontlive$. Each stack in $\mktab$ would also store the live addresses to restore on pop.}
 \begin{align*}
   \Gamma^*(\mastate,\mktab) &=
     \setbuild{\mastate\set{\mstore:=\mastate.\mstore|_L}}{L \in \live^*(\mastate,\mktab)} \\
@@ -126,7 +137,7 @@ Mismatches in the GC application for the different semantics lead to mismatches 
 %
 
 %
-The state space compaction that continuation stores gives us makes ensuring GC times match up for the completeness proposition tedious.
+The state space compaction that continuation stores give us makes ensuring GC times match up for the completeness proposition tedious.
 %
 Our statement of completeness then will assume both semantics perform garbage collection on every step.
 %
@@ -255,7 +266,7 @@ The {\tt test} rules are now
 \end{align*}
 where the a new $\widehat{\OK}$ function uses $\terminal$ and rewrite rules:
 \begin{align*}
-  \widehat{\OK}(\mktab,\mperm,\makont) &= \terminal(\overline{\stepto},\widehat{\OK}^*(\mktab,\mperm,\makont)) \\[2pt]
+  \widehat{\OK}(\mktab,\mperm,\makont) &= \terminal(\set{\stepto_i}_{i=0}^2,\widehat{\OK}^*(\mktab,\mperm,\makont)) \\[2pt]
   \widehat{\OK}^*(\mktab,\emptyset,\makont) &\stepto_0 \mathit{True} \\
   \widehat{\OK}^*(\mktab,\mperm,\epsilon^\mpermmap) &\stepto_1 \passp(\mperm,\mpermmap) \\
   \widehat{\OK}^*(\mktab,\mperm,\kconsm{\mkframe}{\mpermmap}{\mctx}) &\stepto_2 b \text{ where }\\ &\phantom{\stepto_2} b \in \setbuild{\passp(\mperm,\mpermmap) \textbf{ and } b}{

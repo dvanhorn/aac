@@ -1,4 +1,4 @@
-Abstract machines are a versatile, clear and concise way to describe the semantics of programming languages.
+Abstract machines are a versatile, clear and concise way to describe the semantics of even those most ``dynamic'' programming languages, like Javascript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
 %
 They hit a sweet spot in terms of level of discourse, and viable implementation strategy.
 %
@@ -154,6 +154,8 @@ So then conses of frames in $\Kont$ instead allocate an address, update the heap
 To help an $\alloc : \State \to \Addr$ function choose its addresses, the state space can be extended with an arbitrary pointed space that can be updated each step.
 %
 The original AAM paper calls this pointed space and update function $(\Time,\mtime_0)$ and $\tick$ respectively.
+%
+The point, $\mtime_0$, is for the initial state's timestamp.
 %
 Later work on widening~\citep{ianjohnson:DBLP:conf/vmcai/HardekopfWCK14} suggests less arbitrary constructions, and to think of $\Time$ as a space of abstract traces, though the ``abstraction'' need not be sound~\citep{dvanhorn:Might2009Posteriori}.
 %

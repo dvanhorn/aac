@@ -4,15 +4,19 @@ The key idea is that if the address is ``precise enough,'' then every path that 
 %
 
 %
-What constitutes ``precise enough?'' 
+What constitutes ``precise enough''?
 %
 For the $\CESKstart$ machine, every function evaluates the same way, regardless of the stack.
 %
-We should then represent the stack addresses as the state that allocates it, without the rest of the stack.
+We should then represent the stack addresses as the components of a function call.
 %
-We store stack addresses in a different table because execution is disregards the rest of the stack.
+The one place in the $\CESKstart$ machine that continuations are allocated is at $\sapp{\mexpri0}{\mexpri1}$ evaluation.
 %
-We will call this table $\mktab$, because it looks like a stack.
+The expression itself, the environment, the store and the timestamp are necessary components for evaluating $\sapp{\mexpri0}{\mexpri1}$, so then we just represent the stack address as those four things.
+%
+The stack is not relevant for its evaluation, so we do not want to store the stack addresses in the same store -- that would also lead to a recursive heap structure.
+%
+We will call this new table $\mktab$, because it looks like a stack.
 %
 
 %
@@ -159,17 +163,19 @@ The unrolling proposition is the following
 We cover three optimizations that may be employed to accelerate the fixed-point computation.
 \begin{enumerate}
 \item{Observe that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.}
-\item{Continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.}
+\item{\label{item:chunk}Continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.}
 \item{Since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.}
 \end{enumerate}
 %
 This last optimization will be covered in more detail in \autoref{sec:memo}.
+%
+From here on, this paper will not explicitly mention timestamps.
 
-Flow analyses commonly split control-flow graphs at function call boundaries to enable the combination of intra- and inter-procedural analyses.
+A secondary motivation for the representation change in \ref{item:chunk} is that flow analyses commonly split control-flow graphs at function call boundaries to enable the combination of intra- and inter-procedural analyses.
 %
 In an abstract machines, this split looks like installing a continuation prompt at function calls.
 %
-We borrow a representation from literature on delimited continuations to split the continuation into two components: the continuation and meta-continuation.
+We borrow a representation from literature on delimited continuations~\citep{ianjohnson:Biernacki2006274} to split the continuation into two components: the continuation and meta-continuation.
 %
 Our delimiters are special since each continuation ``chunk'' until the next prompt has bounded length.
 %
@@ -197,7 +203,7 @@ We have a choice of whether to introduce an administrative step to dereference $
 %
 Suppose we choose the second because the resulting semantics has a 1-to-1 correspondence with the previous semantics.
 %
-A first try might land us here:
+A first attempt might land us here:
 \begin{align*}
   \pop(\kcons{\mkframe}{\mlkont},\makont,\mktab) &= \set{(\mkframe,\mlkont,\makont)} \\
   \pop(\epsilon,\mctx,\mktab) &= \setbuild{(\mkframe,\mlkont,\makont)}{(\kcons{\mkframe}{\mlkont}, \makont) \in \mktab(\mctx)}
