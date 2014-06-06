@@ -5,6 +5,8 @@ They hit a sweet spot in terms of level of discourse, and viable implementation 
 First year graduate students learn programming language semantics with abstract machines.\footnote{Northeastern's CS7400, UMD's CMSC631, University of Utah's CS7520}
 %
 They also turn out to be fairly simple to repurpose into static analyses for the languages they implement, via the Abstracting Abstract Machines methodology~\citep{dvanhorn:VanHorn2010Abstracting}.
+%
+The basic idea is that abstract machines implement a language's \emph{concrete} semantics, so we transform them slightly so that they also implement a language's \emph{abstract} semantics (thus ``abstracting'' abstract machines).
 
 AAM is founded on three ideas:
 \begin{enumerate}
@@ -59,16 +61,18 @@ The final point is the machinery that we recount in this section.
 
 \subsection{The $\CESKstart$ machine}
 
-The case studies in this paper all build off the call-by-value untyped lambda calculus, whose semantics we recount as
+The case studies in this paper all build off the call-by-value untyped lambda calculus, whose semantics we recall in small-step reduction semantics style~\citep{dvanhorn:Felleisen2009Semantics}:
 \begin{align*}
   E[\sapp{\slam{\mvar}{\mexpr}}{\mval}] \stepto_\beta E[[\mval/\mvar]\mexpr] \\
 \text{where } E \in \mathit{EvaluationContext} &::= [] \alt \sapp{E}{\mexpr} \alt \sapp{\mval}{E} \\
               \mexpr \in Expr &::= \svar\mvar \alt \sapp{\mexpr}{\mexpr} \alt \mval \\
               \mval \in \Value &::= \slam{\mvar}{\mexpr}
 \end{align*}
-The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and re-plugging this semantics provides does not reflect what an effective implementation looks like.
+Although concise and well-structured for mathematical proofs, this semantics does not reflect what an effective implementation looks like.
 %
-We start instead with an abstract machine that manages these steps with a special state representation: the CESK machine.\footnote{CESK stands for control string (or code), environment, store, and continuation (but with a k to distinguish from the first c). The continuation is sometimes called the stack.}
+The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and re-plugging are better understood as a process that a machine goes through to perform a step.
+%
+We thus start with an abstract machine that manages these steps with a special state representation: the CESK machine.\footnote{CESK stands for control string (or code), environment, store, and continuation (but with a k to distinguish from the first c). The continuation is sometimes called the stack.}
 %
 The environment and store work together to represent ongoing substitutions, and the continuation represents where evaluation is with respect to decomposing and re-plugging a context.
 %
@@ -76,11 +80,11 @@ The state space is in \autoref{fig:cesk-spaces}.
 %
 The standard CESK machine has a store that maps freshly allocated addresses to single values.
 %
-AAM slightly modifies the store to map arbitrarily allocated addresses (reuse allowed) to a set of values.
+An address $\maddr$ is ``fresh'' if $\maddr \notin \dom(\mstore)$, but this is just a specification, not an implementation.
 %
-That way, if an address is reused then the previous tenant of the address is not forgotten, just merged as a \emph{possible} result when the address is dereferenced.
+Concretely, there is an allocation function $\alloc : \CESK \to \Addr$ that will produce an address for the machine to use.
 %
-The semantics of this CESK machine is in \autoref{fig:cesk-semantics}.
+We use a slightly non-standard CESK machine that allows $\alloc$ to produce arbitrary addresses instead of just fresh ones.
 
 %
 Allocation is key for both precision and abstraction power.
@@ -93,6 +97,20 @@ If the allocator freshly allocates addresses for the stack representation, but i
 %
 If we have just the stack as an unbounded data structure, then the machine has finitely many stack frames and finitely many other components of the state -- the machine is a pushdown system.
 %
+
+AAM slightly modifies the store to map arbitrarily allocated addresses (reuse allowed) to a set of values.
+%
+That way, if an address is reused then the previous tenant of the address is not forgotten, just merged as a \emph{possible} result when the address is dereferenced.
+%
+The semantics of this CESK machine is shown in \autoref{fig:cesk-semantics}.
+%
+The only differences from the standard presentation are in the use of $\in$ instead of $=$ to make lookups non-deterministic, and weak updates with $\sqcup$ instead of strong updates to allow sound reuse of addresses:
+%
+\begin{align*}
+  \joinm{\mstore}{\maddr}{\mval} &= \extm{\mstore}{\maddr}{\mstore(\maddr)\sqcup\mval} \\
+  \mval\sqcup\mval' &= \set{\mval,\mval'} \\
+  \set{\mval,\ldots}\sqcup\mval' &= \set{\mval,\ldots,\mval'} \\
+\end{align*}
 
 \begin{figure}\centering
   \begin{tabular}{rlrl}
