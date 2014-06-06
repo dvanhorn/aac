@@ -42,7 +42,7 @@ Composable continuations are indistinguishable from functions, so even though th
 
 \begin{figure}
   \centering
-  $\mstate \stepto \mstate'$ \\
+  $\mstate \stepto_\SR \mstate'$ \\
   \begin{tabular}{r|l}%{r|ll}
     \hline
 % Reset
@@ -235,9 +235,7 @@ In analysis literature, ``monovariant'' means variables get one address, namely 
 Our specialized analysis for delimited control will predict the non-CPS'd version returns true.}
 
 \subsection{Correctness}
-We suppose a store-allocating timestamped version of the semantics in \autoref{fig:shift-reset}, called $\SRSt$.
-%
-We impose an order on values since stored continuations are more approximate in the analysis than in $\SRSt$:
+We impose an order on values since stored continuations are more approximate in the analysis than in $\SR$:
 \begin{mathpar}
   \inferrule{ }{\mval \sqsubseteq_{\mktab,\mmktab} \mval} \quad
   \inferrule{\mkont \in \unroll{\mktab,\mmktab}{\mvkont}}
@@ -297,29 +295,36 @@ Thus, instead of expecting the exact continuation to be in the unrolling, we hav
 \label{fig:cont-order}
 \end{figure}
 \begin{theorem}[Soundness]
-  If $\somestate \stepto_{\SRSt} \nextstate$, and $\somestate \sqsubseteq \someotherstate$ then there is $\nextotherstate$ such that $\someotherstate \stepto_{\SRSChKKt} \nextotherstate$ and
+  If $\somestate \stepto_{\SR} \nextstate$, and $\somestate \sqsubseteq \someotherstate$ then there is $\nextotherstate$ such that $\someotherstate \stepto_{\SRSChKKt} \nextotherstate$ and
 $\nextstate \sqsubseteq \nextotherstate$.
 \end{theorem}
 
 To substantiate our claim that fresh allocation leads to an exact semantics, we need to show an invariant on our continuation stores: no circular references, all mappings are to singleton sets, and all contexts have unique stores unless all components of the context are the same except for the expression.
 \begin{mathpar}
   \inferrule{\wf(\mktab_\makont) \\ \wfC(\mktab_\makont,\mktab_\mamkont) \\
-\forall \mctx\in\dom(\mktab_\makont). |\mktab_\makont(\mctx)|=1
-\\
+\forall \maddr\in\dom(\mastore). |\mastore(\maddr)|=1 \\
+\forall \maddr\in\dom(\mmktab). |\mmktab(\maddr)|=1 \\
+\forall \mctx\in\dom(\mktab_\makont). |\mktab_\makont(\mctx)|=1 \\
 \forall \mmctx\in\dom(\mktab_\mamkont). |\mktab_\mamkont(\mmctx)|=1 \\
-\forall \mctx\neq\mctx'. \compatible{\mctx}{\mctx'} \vee \pi_2(\mctx) \neq \pi_2(\mctx') \\
-\forall \mmctx\neq\mmctx'. \compatible{\mmctx}{\mmctx'} \vee \pi_2(\mmctx) \neq \pi_2(\mmctx') \\
+\\
+\forall \mctx\neq\mctx'\in\dom(\mktab_\makont). \compatible{\mctx}{\mctx'} \vee \pi_2(\mctx) \neq \pi_2(\mctx') \\
+\forall \mmctx\neq\mmctx'\in\dom(\mktab_\mamkont). \compatible{\mmctx}{\mmctx'} \vee \pi_2(\mmctx) \neq \pi_2(\mmctx') \\
 }{\inv_{\fresh}(\tpl{\mexpr,\menv, \mastore, \mmktab,\makont,\mamkont}, \mktab_{\makont}, \mktab_{\mamkont})}
  \\
 \inferrule{ }{\compatible{\tpl{\_,\menv,\mastore,\mmktab}}{\tpl{\_,\menv,\mastore,\mmktab}}}
 \end{mathpar}
 The $\wf$ and $\wfC$ propositions describe the well-founded order on the continuation stores, assuming the codomains contain only singleton sets.
+%
+We want the well-foundedness condition so that the continuation unrolling never doubles back on itself to make arbitrarily large continuations that don't match the original semantics.
 \begin{mathpar}
   \inferrule{ }{\wf(\bot)} \quad
-  \inferrule{\makont \sqsubseteq \mktab_{\makont}|_{\overline{\mctx}}}
+  \inferrule{\wf(\mktab_{\makont}|_{\overline{\mctx}}) \\
+             \makont \sqsubseteq \mktab_{\makont}|_{\overline{\mctx}}}
             {\wf(\extm{\mktab_{\makont}}{\mctx}{\set{\makont}})} \\
-  \inferrule{ }{\wfC(\bot)} \quad \inferrule{(\makont,\mamkont) \sqsubseteq \mktab_{\makont},\mktab_{\mamkont}|_{\overline{\mmctx}}}
-                                            {\wfC(\mktab_{\makont},\extm{\mktab_{\mamkont}}{\mmctx}{\set{(\makont,\mamkont)}})} \\
+  \inferrule{\wf(\mktab_\makont)}{\wfC(\mktab_\makont,\bot)} \quad
+  \inferrule{\wfC(\mktab_\makont,\mktab_{\mamkont}|_{\overline{\mmctx}}) \\
+             (\makont,\mamkont) \sqsubseteq \mktab_{\makont},\mktab_{\mamkont}|_{\overline{\mmctx}}}
+            {\wfC(\mktab_{\makont},\extm{\mktab_{\mamkont}}{\mmctx}{\set{(\makont,\mamkont)}})} \\
 \inferrule{ }{\epsilon \sqsubseteq \mktab_{\makont}} \quad
 \inferrule{\mctx \in \dom(\mktab_\makont)}
           {\kcons{\mkframe}{\mctx} \sqsubseteq \mktab_{\makont}} \\

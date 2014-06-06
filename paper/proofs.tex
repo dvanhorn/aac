@@ -81,8 +81,8 @@
       By $\IsTrace$ assumption, $\mstate \stepto \mstate'$, so we proceed by cases.
       \begin{byCases}
         \case{\tpl{\svar\mvar,\maenv,\mkont},\mstore,\mtime \stepto
-              \tpl{\mval,\maenv',\mkont},\mstore,\tick(\mstate,\mstore,\mtime)}{
-              where $(\mval,\maenv') \in \mstore(\maenv(\mvar))$. \\
+              \tpl{\mval,\mkont},\mstore,\tick(\mstate,\mstore,\mtime)}{
+              where $\mval \in \mstore(\maenv(\mvar))$. \\
               Let $\mkont_r$ be the witness from \autoref{lem:htk-rtk} for $\mkont$.
               The reduction is still valid with $\mkont_r$, and by IH the trace up to $\mtrace\mstate$ has a valid replacement, so the goal holds.}
 
@@ -91,15 +91,15 @@
                \mstore,\tick(\mstate,\mstore,\mtime)}{
                ...}
 
-        \case{\tpl{\mval,\maenv,\kcons{\appl{\mexpr,\maenv'}}{\mkont}},\mstore,\mtime \stepto
-              \tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mkont}},\mstore,\tick(\mstate,\mstore,\mtime)}{
+        \case{\tpl{\mval,\kcons{\appl{\mexpr,\maenv}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv,\kcons{\appr{\mval}}{\mkont}},\mstore,\tick(\mstate,\mstore,\mtime)}{
               ...}
 
-        \case{\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\mkont}},\mstore,\mtime \stepto
-              \tpl{\mexpr,\maenv'',\mkont},\mstore',\tick(\mstate,\mstore,\mtime)}{
+        \case{\tpl{\mval,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv',\mkont},\mstore',\tick(\mstate,\mstore,\mtime)}{
               where $\maddr = \alloc(\mstate,\mstore,\mtime)$,
-                    $\maenv'' = \extm{\maenv'}{\mvar}{\maddr}$,
-                    $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$. \\
+                    $\maenv' = \extm{\maenv}{\mvar}{\maddr}$,
+                    $\mstore' = \joinm{\mstore}{\maddr}{\mval}$. \\
 
               ...}
       \end{byCases}
@@ -133,23 +133,23 @@
 \begin{proof}
       \begin{byCases}
         \case{\tpl{\svar\mvar,\maenv,\mkont},\mstore,\mtime \stepto
-              \tpl{\mval,\maenv',\mkont},\mstore,\tick(\mstate,\mstore,\mtime)}{
-              where $(\mval,\maenv') \in \mstore(\maenv(\mvar))$.}
+              \tpl{\mval,\mkont},\mstore,\tick(\mstate,\mstore,\mtime)}{
+              where $\mval \in \mstore(\maenv(\mvar))$.}
 
         \case{\tpl{\sapp{\mexpri0}{\mexpri1}, \maenv,\mkont},\mstore,\mtime \stepto
           \tpl{\mexpri0,\maenv,\kcons{\appl{\mexpri1,\maenv}}{\mkont}},
                \mstore,\tick(\mstate,\mstore,\mtime)}{
                ...}
 
-        \case{\tpl{\mval,\maenv,\kcons{\appl{\mexpr,\maenv'}}{\mkont}},\mstore,\mtime \stepto
-              \tpl{\mexpr,\maenv',\kcons{\appr{\mval,\maenv}}{\mkont}},\mstore,\tick(\mstate,\mstore,\mtime)}{
+        \case{\tpl{\mval,\kcons{\appl{\mexpr,\maenv}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv,\kcons{\appr{\mval}}{\mkont}},\mstore,\tick(\mstate,\mstore,\mtime)}{
               ...}
 
-        \case{\tpl{\mval,\maenv,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv'}}{\mkont}},\mstore,\mtime \stepto
-              \tpl{\mexpr,\maenv'',\mkont},\mstore',\tick(\mstate,\mstore,\mtime)}{
+        \case{\tpl{\mval,\kcons{\appr{\slam{\mvar}{\mexpr},\maenv}}{\mkont}},\mstore,\mtime \stepto
+              \tpl{\mexpr,\maenv',\mkont},\mstore',\tick(\mstate,\mstore,\mtime)}{
               where $\maddr = \alloc(\mstate,\mstore,\mtime)$,
-                    $\maenv'' = \extm{\maenv'}{\mvar}{\maddr}$,
-                    $\mstore' = \joinm{\mstore}{\maddr}{(\mval,\maenv)}$. \\
+                    $\maenv' = \extm{\maenv}{\mvar}{\maddr}$,
+                    $\mstore' = \joinm{\mstore}{\maddr}{\mval}$. \\
 
               ...}
       \end{byCases}
@@ -228,28 +228,118 @@
 \section{Proofs for section 5}
 
 \begin{theorem}[Soundness]
-  If $\mstate,\mstore,\mtime \stepto_{\SRSt} \mstate',\mstore',\mtime'$, and $\mstate,\mstore,\mtime$ $\sqsubseteq$ $\mastate,\mastore,\mmktab,\mtime,\mktab_{\makont},\mktab_{\mamkont}$ then there are $\mastate',\mastore',\mmktab',\mktab_{\makont}',\mktab_{\mamkont}'$ such that $\mastate,\mastore,\mmktab,\mtime,\mktab_{\makont},\mktab_{\mamkont} \stepto \mastate',\mastore',\mmktab',\mtime,\mktab_{\makont}',\mktab_{\mamkont}'$ and
-$\mstate',\mstore',\mtime'$ $\sqsubseteq$ $\mastate',\mastore',\mmktab',\mtime',\mktab_{\makont}',\mktab_{\mamkont}'$.
+  If $\mstate \stepto_{\SR} \mstate'$, and $\mstate$ $\sqsubseteq$ $\mastate,\mktab_{\makont},\mktab_{\mamkont}$ then there are $\mastate',\mktab_{\makont}',\mktab_{\mamkont}'$ such that $\mastate,\mktab_{\makont},\mktab_{\mamkont} \stepto \mastate',\mktab_{\makont}',\mktab_{\mamkont}'$ and
+$\mstate'$ $\sqsubseteq$ $\mastate',\mktab_{\makont}',\mktab_{\mamkont}'$.
 \end{theorem}
 \begin{proof}
   \todo{Ian}
 \end{proof}
 
 \begin{lemma}[Freshness invariant]
-  If $\alloc$ produces fresh addresses, $\inv_{\mathit{fresh}}(\mastate,\mstore,\mmktab,\mtime,\mktab_\makont,\mktab_\mamkont)$ and
-$\mastate,\mstore,\mmktab,\mtime,\mktab_\makont,\mktab_\mamkont \stepto
-\mastate',\mstore',\mmktab',\mtime',\mktab'_\makont,\mktab'_\mamkont$ then
-$\inv_{\mathit{fresh}}(\mastate',\mstore',\mmktab',\mtime',\mktab'_\makont,\mktab'_\mamkont)$.
+  If $\alloc$ produces fresh addresses,
+  $\inv_{\mathit{fresh}}(\mastate,\mktab_\makont,\mktab_\mamkont)$ and
+$\mastate,\mktab_\makont,\mktab_\mamkont \stepto
+\mastate',\mktab'_\makont,\mktab'_\mamkont$ then
+$\inv_{\mathit{fresh}}(\mastate',\mktab'_\makont,\mktab'_\mamkont)$.
 \end{lemma}
+\begin{proof}
+  By cases on the reduction:
+  \begin{byCases}    
+    \case{\ev{\svar\mvar,\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont
+          \stepto
+          \co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont}{
+          where $\mval \in \mastate(\menv(\mvar))$.
+          By cases on $\mstate.\mstore(\menv(\mvar)) \sqsubseteq \mastore(\menv(\mvar))$.
+          Holds by premises and definition of $\stepto_\SR$.}
+
+    \case{\ev{\sapp{\mexpri0}{\mexpri1},\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont
+          \stepto
+          \ev{\mexpri0,\menv,\mastore,\mmktab,\mctx,\mamkont},\mktab_\makont',\mktab_\mamkont}{
+          where $\mctx = \tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mastore,\mmktab}$, $\mktab_\makont'=\joinm{\mktab_\makont}{\mctx}{\makont}$.
+          ...}
+
+\case{\co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\menv,\mastore,\mmktab,\kcons{\appr{\mval}}{\mctx},\mamkont},\mktab_\makont,\mktab_\mamkont}{
+      where $(\appl{\mexpr,\menv},\mctx) \in \pop(\mktab_\makont,\mmktab,\makont)$.
+      ...}
+    
+\case{\co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\extm{\menv}{\mvar}{\maddr},\mastore',\mmktab,\makont',\mamkont},\mktab_\makont,\mktab_\mamkont}{
+      where $(\appr{\slam{\mvar}{\mexpr},\menv},\makont') \in \pop(\mktab_\makont,\mmktab,\makont)$,
+      $\maddr = \alloc(\mastore,\mktab_\makont,\mktab_\mamkont)$,
+      $\mstore' = \joinm{\mstore}{\maddr}{\mval}$.
+      ...}
+    \case{\ev{\sreset{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\menv,\mastore,\mmktab,\makont,\mmctx},\mktab_\makont,\mktab_\mamkont'}{
+      where $\mmctx = \tpl{\mexpr,\menv,\mastore,\mmktab}$, $\mktab_\mamkont' = \joinm{\mktab_\mamkont'}{\mmctx}{(\makont,\mamkont)}$
+    ...}
+
+\case{\ev{\sshift{\mvar}{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\extm{\menv}{\mvar}{\maddr},\mastore',\mmktab',\epsilon,\mamkont},\mktab_\makont,\mktab_\mamkont}{
+      where $(\maddr,\maddr') = \alloc(\mastate,\mktab_\makont,\mktab_\mamkont)$, $(\mvkont,\mmktab') = \approximate(\mmktab,\maddr',\makont)$, $\mastore' = \joinm{\mastore}{\maddr}{\mvkont}$.
+      ...}
+
+\case{\co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont \stepto
+      \co{\makont',\mmctx,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont'}{
+      where $(\appr{\mvkont},\makont') \in \pop(\mktab_\makont,\mmktab,\makont)$, $\mmctx = \tpl{\mvkont,\mval,\mastore,\mmktab}$, $\mktab_\mamkont' = \joinm{\mktab_\mamkont}{\mmctx}{(\makont,\mamkont)}$.
+      ...}
+  \end{byCases}
+\end{proof}
+
 \begin{theorem}[Complete for fresh allocation]
-  If $\alloc$ produces fresh addresses then the resulting semantics is complete with respect to states satisfying the invariant.
+  If $\alloc$ produces fresh addresses, $\inv_{\mathit{fresh}}(\mastate,\mktab_\makont,\mktab_\mamkont)$, $\mastate,\mktab_\makont,\mktab_\mamkont \stepto \mastate',\mktab_\makont',\mktab'_\mamkont$ and
+  $\mstate\sqsubseteq \mastate,\mktab_\makont,\mktab_\mamkont$ and $\dom(\mstate.\mstore) = \dom(\mastate.\mastore)$ then there is a $\mstate'$ such that
+  $\mstate \stepto_\SR \mstate'$ and $\mstate' \sqsubseteq\mastate',\mktab_\makont',\mktab'_\mamkont$ and $\dom(\mstate'.\mstore) = \dom(\mastate'.\mastore)$.
 \end{theorem}
+\begin{proof}
+  By cases on the step
+  \begin{byCases}
+    \case{\ev{\svar\mvar,\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont
+          \stepto
+          \co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont}{
+          where $\maval \in \mastate(\menv(\mvar))$.
+          Since $\mstate.\mstore \sqsubseteq \mastore$ and the domains are equal, there is only one value $\maval$ could be by the invariant, and that must be the one that all $\mval \in \mstate.\mstore(\menv(\mvar))$ are less than.
+          The goal thus holds by definition of $\sqsubseteq$ and $\stepto_\SR$.}
+
+    \case{\ev{\sapp{\mexpri0}{\mexpri1},\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont
+          \stepto
+          \ev{\mexpri0,\menv,\mastore,\mmktab,\mctx,\mamkont},\mktab_\makont',\mktab_\mamkont}{
+          where $\mctx = \tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mastore,\mmktab}$, $\mktab_\makont'=\joinm{\mktab_\makont}{\mctx}{\makont}$.
+          ...}
+
+\case{\co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\menv,\mastore,\mmktab,\kcons{\appr{\mval}}{\mctx},\mamkont},\mktab_\makont,\mktab_\mamkont}{
+      where $(\appl{\mexpr,\menv},\mctx) \in \pop(\mktab_\makont,\mmktab,\makont)$.
+      ...}
+    
+\case{\co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\extm{\menv}{\mvar}{\maddr},\mastore',\mmktab,\makont',\mamkont},\mktab_\makont,\mktab_\mamkont}{
+      where $(\appr{\slam{\mvar}{\mexpr},\menv},\makont') \in \pop(\mktab_\makont,\mmktab,\makont)$,
+      $\maddr = \alloc(\mastore,\mktab_\makont,\mktab_\mamkont)$,
+      $\mstore' = \joinm{\mstore}{\maddr}{\mval}$.
+      ...}
+    \case{\ev{\sreset{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\menv,\mastore,\mmktab,\makont,\mmctx},\mktab_\makont,\mktab_\mamkont'}{
+      where $\mmctx = \tpl{\mexpr,\menv,\mastore,\mmktab}$, $\mktab_\mamkont' = \joinm{\mktab_\mamkont'}{\mmctx}{(\makont,\mamkont)}$
+    ...}
+
+\case{\ev{\sshift{\mvar}{\mexpr},\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont \stepto
+      \ev{\mexpr,\extm{\menv}{\mvar}{\maddr},\mastore',\mmktab',\epsilon,\mamkont},\mktab_\makont,\mktab_\mamkont}{
+      where $(\maddr,\maddr') = \alloc(\mastate,\mktab_\makont,\mktab_\mamkont)$, $(\mvkont,\mmktab') = \approximate(\mmktab,\maddr',\makont)$, $\mastore' = \joinm{\mastore}{\maddr}{\mvkont}$.
+      ...}
+
+\case{\co{\makont,\mamkont,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont \stepto
+      \co{\makont',\mmctx,\mval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont'}{
+      where $(\appr{\mvkont},\makont') \in \pop(\mktab_\makont,\mmktab,\makont)$, $\mmctx = \tpl{\mvkont,\mval,\mastore,\mmktab}$, $\mktab_\mamkont' = \joinm{\mktab_\mamkont}{\mmctx}{(\makont,\mamkont)}$.
+      ...}
+  \end{byCases}
+\end{proof}
 
 \section{Proofs for section 6}
 \begin{lemma}
-  If $\inv(\mstate,\mstore,\mtime,\mktab,\mmemo)$, $\inv_M(\mktab,\mmemo)$ and
-  $\mstate,\mstore,\mtime,\mktab,\mmemo \stepto_{\CESKKMstart} \mstate',\mstore',\mtime',\mktab',\mmemo'$
-  then $\inv(\mstate',\mstore',\mtime',\mktab',\mmemo')$ and $\inv_M(\mktab,\mmemo)$.
+  If $\inv(\mstate,\mktab,\mmemo)$, $\inv_M(\mktab,\mmemo)$ and
+  $\mstate,\mktab,\mmemo \stepto_{\CESKKMstart} \mstate',\mktab',\mmemo'$
+  then $\inv(\mstate',\mktab',\mmemo')$ and $\inv_M(\mktab,\mmemo)$.
 \end{lemma}
 
 \todo{Some lemma that combines table invariants for ${\mathcal F}$.}
