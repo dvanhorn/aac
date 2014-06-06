@@ -42,7 +42,9 @@ It builds the set of terminal terms, $T$, by exploring the frontier (or worklist
 %
 If a rule does not match a given term, the intermediate set, $I$ will be empty, and $\terminalaux$ will continue trying the following rules until it finds a match.
 %
-It is possible for metafunctions' rewrite rules to themselves use metafunctions, but the \emph{seen} set for $\terminal$ must be dynamically bound\footnote{This is a reference to dynamic scope as opposed to lexical scope.} -- it cannot restart at $\emptyset$ upon reentry.
+
+%
+Note that it is possible for metafunctions' rewrite rules to themselves use metafunctions, but the \emph{seen} set for $\terminal$ must be dynamically bound\footnote{This is a reference to dynamic scope as opposed to lexical scope.} -- it cannot restart at $\emptyset$ upon reentry.
 %
 Without this precaution, the host language will exceed its stack limits when an infinite path is explored, rather than bail out.
 

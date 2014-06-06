@@ -1,4 +1,23 @@
-Context irrelevance means if we have seen the results of a computation before from a different context, we can reuse them.
+All the semantics of previous sections have a performance weakness that many analyses share: unnecessary propagation.
+%
+Consider two portions of a program that do not affect one another's behavior.
+%
+Both can change the store, and the semantics will be unaware that the changes will not interfere with the other's execution.
+%
+The more possible stores there are in execution, the more possible contexts in which a function will be evaluated.
+%
+Multiple independent portions of a program may be reused with the same arguments and store contents they depend on, but changes to irrelevant parts of the store lead to redundant computation.
+%
+The idea of skipping from a change past several otherwise unchanged states to uses of the change is called ``sparseness'' in the literature~\citep{ianjohnson:Reif1977Symbolic,ianjohnson:Wegman1991Constant,ianjohnson:DBLP:conf/pldi/OhHLLY12}.
+%
+
+%
+Memoization is a specialized instance of sparseness; the base stack may change, but the evaluation of the function does not, so given an already computed result we can jump straight to the answer.
+%
+We use the vocabulary of ``relevance'' and ``irrelevance'' so that future work can adopt the ideas of sparseness to reuse contexts in more ways.
+%
+
+Recall the context irrelevance lemma that if we have seen the results of a computation before from a different context, we can reuse them.
 %
 The semantic counterpart to this idea is a memo table that we extend when popping and appeal to when about to push.
 %
@@ -43,7 +62,11 @@ A second concern for using memo tables is soundness.
 %
 Without the completeness property of the semantics, memoized results in, \eg{}, an inexactly GC'd machine, can have dangling addresses since the possible stacks may have grown to include addresses that were previously garbage.
 %
-If the semantics does n\todo{}
+These addresses would not be garbage at first, since they must be mapped in the store for the contexts to coincide, but during the function evaluation the addresses can become garbage.
+%
+If they are supposed to then be live, and are used (presumably they are reallocated post-collection), the analysis will miss paths it must explore for soundness.
+%
+
 %
 Context-irrelevance is a property of the semantics \emph{without} continuation stores, so there is an additional invariant to that of \autoref{sec:pushdown} for the semantics with $\mktab$ and $\mmemo$: $\mmemo$ respects context irrelevance.
 \begin{mathpar}
