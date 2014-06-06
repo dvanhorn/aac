@@ -145,10 +145,10 @@ Our statement of completeness then will assume both semantics perform garbage co
 %
 
 \begin{lemma}[Correctness of $\kontlive$]
-  For all $\mktab,\mkont,\makont$,
+  For all $\mktab,\mkont,\makont,L$,
   \begin{itemize}
-  \item{\textbf{Soundness:} if $\mkont \in \unroll{\mktab}{\makont}$ then $\kontlive(\mkont) \in \kontlive(\mktab,\mkont)$}
-  \item{\textbf{Completeness:} for all $L \in \kontlive(\mktab,\makont)$ there is a $\mkont \in \unroll{\mktab}{\makont}$ such that $L = \kontlive(\mkont)$.}
+  \item{\textbf{Soundness:} if $\mkont \in \unroll{\mktab}{\makont}$ then $\kontliveaux(\mkont,L) \in \terminal(\set{\stepto_i}_{i=0}^1,\kontliveaux(\mktab,\makont,L))$}
+  \item{\textbf{Completeness:} for all $L' \in \kontliveaux(\mktab,\makont,L)$ there is a $\mkont \in \unroll{\mktab}{\makont}$ such that $L' = \kontliveaux(\mkont,L)$.}
   \end{itemize}
 \end{lemma}
 \begin{proof}

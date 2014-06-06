@@ -301,7 +301,7 @@ Thus, instead of expecting the exact continuation to be in the unrolling, we hav
 $\nextstate \sqsubseteq \nextotherstate$.
 \end{theorem}
 
-To substantiate our claim that fresh allocation leads to an exact semantics, we need to show an invariant on our continuation stores: no circular references, all mappings are to singleton sets, and all contexts have unique stores unless all components of the context are the same except for the expression and timestamp.
+To substantiate our claim that fresh allocation leads to an exact semantics, we need to show an invariant on our continuation stores: no circular references, all mappings are to singleton sets, and all contexts have unique stores unless all components of the context are the same except for the expression.
 \begin{mathpar}
   \inferrule{\wf(\mktab_\makont) \\ \wfC(\mktab_\makont,\mktab_\mamkont) \\
 \forall \mctx\in\dom(\mktab_\makont). |\mktab_\makont(\mctx)|=1

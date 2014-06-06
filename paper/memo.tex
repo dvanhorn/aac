@@ -115,9 +115,9 @@ where
        $\tpl{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mctx}},\mktab,\mmemo$ \\
        & \quad if $\mctx \notin\dom(\mmemo)$, or \\
        &
-       $\tpl{\mexpr',\menv',\mstore,\makont},\mktab',\mmemo$ \\
+       $\tpl{\mexpr',\menv',\mstore',\makont},\mktab',\mmemo$ \\
        & \quad if $\tpl{\mexpr',\menv',\mstore'} \in \mmemo(\mctx)$ \\
-       where & $\mctx = \tpl{\sapp{\mexpri}{\mexpri1},\menv,\mstore}$ \\
+       where & $\mctx = \tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore}$ \\
        & $\mktab' = \joinm{\mktab}{\mctx}{\makont}$
        \\
        $\tpl{\mval,\mstore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\mctx}},\mktab,\mmemo$

@@ -191,11 +191,11 @@ Instead of ``continuation'' and ``meta-continuation'' then, we will use terminol
     $\mastate \in \sa{CESIK}$ &\hspace{-3mm}$= \tpl{\mexpr,\menv,\mstore,\mlkont,\makont}$& $\mlkont \in \LKont$ &\hspace{-3mm}$= \Frame^*$ \\
     & & $\makont \in \Kont$ &\hspace{-3mm}$::= \epsilon \alt \mctx$
   \end{tabular}
-  \caption{$\CESIKKstart$ semantic spaces}
+  \caption{$\CESIKKstar$ semantic spaces}
   \label{fig:pushdown-spaces}
 \end{figure}
 
-The resulting shuffling of the semantics to accommodate this new representation is in \autoref{fig:cesikkstart-semantics}.
+The resulting shuffling of the semantics to accommodate this new representation is in \autoref{fig:cesikkstar-semantics}.
 %
 The extension to $\mktab$ happens in a different rule -- function entry -- so the shape of the context changes to hold the function, argument, and store.
 %
@@ -258,8 +258,8 @@ However, when adding the administrative state, the ``seen'' check requires searc
     & $\mctx = (\tpl{\slam{\mvar}{\mexpr},\menv},\mval,\mstore)$ \\
     & $\mktab' = \joinm{\mktab}{\mctx}{(\mlkont,\makont)}$
   \end{tabular} \\
-  \caption{$\CESIKKstart$ semantics}
-  \label{fig:cesikkstart-semantics}
+  \caption{$\CESIKKstar$ semantics}
+  \label{fig:cesikkstar-semantics}
 \end{figure}
 
 \begin{align*}
