@@ -273,7 +273,7 @@ where the a new $\widehat{\OK}$ function uses $\terminal$ and rewrite rules:
           \makont \in \mktab(\mctx),
           \\&\phantom{\stepto_2 b \in \{}b \in \widehat{\OK}(\mktab,\mperm\setminus\mpermmap^{-1}(\Grant),\makont))}
 \end{align*}
-This definition works fine with the reentrant $\terminal$ function with a dynamically bound \emph{seen} set, but otherwise needs to be rewritten to accumulate the boolean result as a parameter of $\widehat{OK}^*$.
+This definition works fine with the reentrant $\terminal$ function with a dynamically bound \emph{seen} set, but otherwise needs to be rewritten to accumulate the Boolean result as a parameter of $\widehat{OK}^*$.
 %
 We use the accumulator version in the proof for simplicity.
 
@@ -288,3 +288,5 @@ With this lemma in hand, the correctness proof is almost identical to the core p
 \begin{theorem}[Correctness]
   The abstract semantics is sound and complete in the same sense as \autoref{thm:pushdown-correct}.
 \end{theorem}
+%  LocalWords:  pushdown AAM metafunctions metafunction indirected GC
+%  LocalWords:  dereferencing idempotence unforgeable

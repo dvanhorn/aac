@@ -80,9 +80,9 @@ Composable continuations are indistinguishable from functions, so even though th
 %
 The machine in \autoref{fig:shift-reset} is transformed now to have three new tables: one for continuations, one as discussed in the section beginning to close stored continuations, and one for meta-continuations.
 %
-The first is like previous sections, albeit continuations may now have the approximate form that is storable.
+The first is like previous sections, albeit continuations may now have the approximate form that is storeable.
 %
-The meta-continuation table is much like the continuation table of previous sections because they are not storable.
+The meta-continuation table is much like the continuation table of previous sections because they are not storeable.
 %
 Meta-continuations do not have simple syntactic strategies for bounding their size, so we choose to bound them to size 0.
 %
@@ -339,3 +339,8 @@ $\inv_{\fresh}(\mastate',\mktab'_{\makont},\mktab'_{\mamkont})$.
 \begin{theorem}[Complete for fresh allocation]
   If $\alloc$ produces fresh addresses then the resulting semantics is complete with respect to states satisfying the invariant.
 \end{theorem}
+
+%  LocalWords:  pushdown storeable codomain AAM ianjohnson Kiselyov
+%  LocalWords:  modularly parsers undelimited Biernacki ev al ntinue
+%  LocalWords:  Composable dereferences metafunction timestamped
+%  LocalWords:  timestamp codomains

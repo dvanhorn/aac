@@ -1,4 +1,4 @@
-Abstract machines are a versatile, clear and concise way to describe the semantics of even those most ``dynamic'' programming languages, like Javascript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
+Abstract machines are a versatile, clear and concise way to describe the semantics of even those most ``dynamic'' programming languages, like JavaScript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
 %
 They hit a sweet spot in terms of level of discourse, and viable implementation strategy.
 %
@@ -10,7 +10,7 @@ AAM is founded on three ideas:
 \begin{enumerate}
 \item{concrete and abstract semantics ideally should use the same code, for correctness and testing purposes,}
 \item{the level of abstraction should be a tunable parameter,}
-\item{both of the above are acheivable with a slight change to the abstract machine's state representation.}
+\item{both of the above are achievable with a slight change to the abstract machine's state representation.}
 \end{enumerate}
 
 The first two points are the philosophy of AAM: correctness through simplicity, reusability, and sanity checking with concrete semantics.
@@ -66,11 +66,11 @@ The case studies in this paper all build off the call-by-value untyped lambda ca
               \mexpr \in Expr &::= \svar\mvar \alt \sapp{\mexpr}{\mexpr} \alt \mval \\
               \mval \in \Value &::= \slam{\mvar}{\mexpr}
 \end{align*}
-The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and replugging this semantics provides does not reflect what an effective implementation looks like.
+The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and re-plugging this semantics provides does not reflect what an effective implementation looks like.
 %
 We start instead with an abstract machine that manages these steps with a special state representation: the CESK machine.\footnote{CESK stands for control string (or code), environment, store, and continuation (but with a k to distinguish from the first c). The continuation is sometimes called the stack.}
 %
-The environment and store work together to represent ongoing substitutions, and the continuation represents where evaluation is with respect to decomposing and replugging a context.
+The environment and store work together to represent ongoing substitutions, and the continuation represents where evaluation is with respect to decomposing and re-plugging a context.
 %
 The state space is in \autoref{fig:cesk-spaces}.
 %

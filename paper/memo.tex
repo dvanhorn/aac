@@ -27,7 +27,7 @@ We will only discuss the final approach.
 %
 The same result can be achieved with a one-state-at-a-time frontier semantics, but we believe this is cleaner and more parallelizable.
 %
-Its second subpoint we will call the ``push/pop rendezvous.''
+Its second sub-point we will call the ``push/pop rendezvous.''
 %
 The rendezvous is necessary because there may be no later push or pop steps that would regularly appeal to either (then extended) table at the same context.
 %
@@ -119,3 +119,5 @@ The $\pop$ function would need to also update $\mmemo$ if it dereferences throug
 Same property is the same as in \autoref{thm:global-pushdown}, where $\reify$ ignores the $\mktab$ component.
 \end{theorem}
 The proof appeals to the invariant on $\mmemo$ whose proof involves an additional argument for the short-circuiting step that reconstructs the path from a memoized result using both context irrelevance and the table invariants.
+%  LocalWords:  parallelizable pushdown automata summarization
+%  LocalWords:  memoization memoized dereferences
