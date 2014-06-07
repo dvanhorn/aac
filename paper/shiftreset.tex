@@ -25,7 +25,7 @@ Fresh allocation still maintains the concrete semantics, but we necessarily lose
 
 \subsection{Case study of first-class control: shift and reset}
 %%
-We choose to study {\tt shift} and {\tt reset} because delimited continuations have proven useful for implementing web servers~\citep{plt-webserver}, providing processes isolation in operating systems~\citep{ianjohnson:Kiselyov2007Delimited}, representing computational effects~\citep{ianjohnson:Filinski1994Representing}, modularly implementing error-correcting parsers~\citep{ianjohnson:DBLP:conf/icfp/ShiversT11}, and finally undelimited continuations are \emph{pass\'e} for good reason~\citep{ianjohnson:kiselyov:against-callcc}.
+We choose to study {\tt shift} and {\tt reset} because delimited continuations have proven useful for implementing web servers~\citep{dvanhorn:Queinnec2004Continuations,jay-communication}, providing processes isolation in operating systems~\citep{ianjohnson:Kiselyov2007Delimited}, representing computational effects~\citep{ianjohnson:Filinski1994Representing}, modularly implementing error-correcting parsers~\citep{ianjohnson:DBLP:conf/icfp/ShiversT11}, and finally undelimited continuations are \emph{pass\'e} for good reason~\citep{ianjohnson:kiselyov:against-callcc}.
 %
 Even with all their uses, however, their semantics can yield control-flow possibilities that surprise their users.
 %
