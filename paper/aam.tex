@@ -61,7 +61,8 @@ The final point is the machinery that we recount in this section.
 
 \subsection{The $\CESKstart$ machine}
 
-The case studies in this paper all build off the call-by-value untyped lambda calculus, whose semantics we recall in small-step reduction semantics style~\citep{dvanhorn:Felleisen2009Semantics}:
+The case studies in this paper have full implementations in PLT redex~\citep{dvanhorn:Felleisen2009Semantics} available online.\footnote{\url{http://github.com/dvanhorn/aac}}
+They all build off the call-by-value untyped lambda calculus, whose semantics we recall in small-step reduction semantics style:
 \begin{align*}
   E[\sapp{\slam{\mvar}{\mexpr}}{\mval}] \stepto_\beta E[[\mval/\mvar]\mexpr] \\
 \text{where } E \in \mathit{EvaluationContext} &::= [] \alt \sapp{E}{\mexpr} \alt \sapp{\mval}{E} \\
@@ -161,7 +162,7 @@ AAM dictates that finitization can be centralized to one place, address allocati
 %
 Expressions, though recursive, do not need this step because they are only destructed.
 %
-The $\Expr$ space is finite for each program, the size of which is the number of subexpressions.
+The $\Expr$ space is finite for each program, the size of which is the number of subexpressions in the program.
 %
 
 %

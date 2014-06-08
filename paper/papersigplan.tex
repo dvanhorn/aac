@@ -2,6 +2,7 @@
 
 \pagestyle{plain}
 \usepackage{balance,pfsteps}
+\usepackage{aliascnt}
 \usepackage{amsmath,stmaryrd,natbib,listings,graphicx,amsthm,amssymb,mathpartir,mnsymbol}
 \usepackage[usenames,dvipsnames]{color}
 
@@ -13,8 +14,12 @@
 \input{local-macros}
 \input{preamble}
 
-\newtheorem{theorem}{Theorem}
-\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}  
+ 
+\newaliascnt{lemma}{theorem}  
+\newtheorem{lemma}[lemma]{Lemma}  
+\aliascntresetthe{lemma}  
+\providecommand*{\lemmaautorefname}{Lemma}
 
 \title{Abstracting Abstract Control}
 \authorinfo{J. Ian Johnson}{Northeastern University}{ianj@ccs.neu.edu}

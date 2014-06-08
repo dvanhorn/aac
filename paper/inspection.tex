@@ -22,29 +22,41 @@ Recursive metafunctions can be thought of as out-of-band reduction relations tha
 %
 Interpreted via AAM, non-deterministic metafunction evaluation leads to a set of possible results.
 %
+The in-order aspect is an implementation detail that eases the definition of a single relation, so we will discuss single relations henceforth.
+
 The finite restriction on the state space carries over to metafunction inputs, so we can always detect infinite loops and bail out of that execution path.
 %
 Specifically, a metafunction call can be seen as an initial state, $s$, in a reduction system for which we can compute all terminal states:
 \begin{align*}
-  \terminal &: \forall A. (\text{relation } A)^* \times A \to \wp(A) \\
-  \terminal(\mathit{Rs},s) &= \terminalaux(\set{s},\set{s},\emptyset) \\[2pt]
+  \terminal &: \forall A. \text{relation } A \times A \to \wp(A) \\
+  \terminal(\stepto,s) &= \terminalaux(\emptyset,\set{s},\emptyset) \\[2pt]
   \text{where } \terminalaux(S, \emptyset, T) &= T \\
-   \terminalaux(S, F \uplus \set{s}, T) &= \terminalaux(S\cup I, F \cup (I \setminus S), T') \\
-   & \text{where } (I',T') = \trystep(\mathit{Rs}) \\
-   \trystep(\epsilon) &= (\emptyset,T\cup\set{s}) \\
-   \trystep(\stepto:\mathit{Rs}) &= I\deceq\emptyset \to \trystep(\mathit{Rs}), (I, T) \\
-    & \text{where } I = \setbuild{s'}{s \stepto s'}
+   \terminalaux(S, F, T) &= \terminalaux(S\cup F, F', T\cup T') \\
+   & \text{where } T' = \bigcup\limits_{s \in F}{\post(s) \deceq\emptyset \to \set{s},\emptyset} \\
+             &\phantom{\text{where }} F' = \bigcup\limits_{s\in F}{\post(s)} \setminus S \\
+                   \post(s) &= \setbuild{s'}{s \stepto s'}
 \end{align*}
 
 This definition is a typical worklist algorithm.
 %
 It builds the set of terminal terms, $T$, by exploring the frontier (or worklist), $F$, and only adding terms to the frontier that have not been seen, as represented by $S$.
 %
-If a rule does not match a given term, the intermediate set, $I$ will be empty, and $\terminalaux$ will continue trying the following rules until it finds a match.
+If $s$ has no more steps, $I$ will be empty, meaning $s$ should be added to the terminal set $T$.
 %
+We prove a correctness condition that allows us to reason equationally with $\terminal$ later on:
+\begin{lemma}[$\terminalaux$ correct]\label{lem:term-correct}
+  Fix $\stepto$. Constrain arbitrary $S, F,T$ such that $T \sqsubseteq S$ and $\forall s\in T, \post(s) = \emptyset$, $F \cap S = \emptyset$, and for all $s \in S$, $\post(s) \subseteq S \cup F$.
+  \begin{itemize}
+  \item{\textbf{Soundness:} for all $s \in S \cup F$, if $s \stepto^* s_t$ and $\post(s_t) = \emptyset$ then $s_t \in \terminalaux(S,F,T)$.}
+  \item{\textbf{Completeness:} for all $s \in \terminalaux(S,F,T)$ there is an $s_0 \in S \cup F$ such that $s_0 \stepto^* s$ and $\post(s) = \emptyset$.}
+  \end{itemize}
+\end{lemma}
+\begin{proof}
+  By induction on $\terminalaux$'s recursion scheme.
+\end{proof}
 
 %
-Note that it is possible for metafunctions' rewrite rules to themselves use metafunctions, but the \emph{seen} set for $\terminal$ must be dynamically bound\footnote{This is a reference to dynamic scope as opposed to lexical scope.} -- it cannot restart at $\emptyset$ upon reentry.
+Note that it is possible for metafunctions' rewrite rules to themselves use metafunctions, but the \emph{seen} set ($S$) for $\terminal$ must be dynamically bound\footnote{This is a reference to dynamic scope as opposed to lexical scope.} -- it cannot restart at $\emptyset$ upon reentry.
 %
 Without this precaution, the host language will exceed its stack limits when an infinite path is explored, rather than bail out.
 
@@ -68,9 +80,9 @@ When interpreted via AAM, the continuation is indirected through $\mktab$ and le
 %
 Thus this is more properly understood as
 \begin{align*}
-  \kontlive(\mktab,\makont) &= \terminal(\set{\stepto_i}_{i=0}^1, \kontliveaux(\mktab,\makont,\emptyset)) \\[2pt]
-  \kontliveaux(\mktab,\epsilon,L) &\stepto_0 L \\
-  \kontliveaux(\mktab,\kcons{\mkframe}{\mctx}, L) &\stepto_1 \kontliveaux(\mktab,\makont, L\cup\touches(\mkframe)) \text{ if } \makont \in \mktab(\mctx)
+  \kontlive(\mktab,\makont) &= \terminal(\stepto, \kontliveaux(\mktab,\makont,\emptyset)) \\[2pt]
+  \kontliveaux(\mktab,\epsilon,L) &\stepto L \\
+  \kontliveaux(\mktab,\kcons{\mkframe}{\mctx}, L) &\stepto \kontliveaux(\mktab,\makont, L\cup\touches(\mkframe)) \text{ if } \makont \in \mktab(\mctx)
 \end{align*}
 %
 
@@ -147,12 +159,12 @@ Our statement of completeness then will assume both semantics perform garbage co
 \begin{lemma}[Correctness of $\kontlive$]
   For all $\mktab,\mkont,\makont,L$,
   \begin{itemize}
-  \item{\textbf{Soundness:} if $\mkont \in \unroll{\mktab}{\makont}$ then $\kontliveaux(\mkont,L) \in \terminal(\set{\stepto_i}_{i=0}^1,\kontliveaux(\mktab,\makont,L))$}
+  \item{\textbf{Soundness:} if $\mkont \in \unroll{\mktab}{\makont}$ then $\kontliveaux(\mkont,L) \in \terminal(\stepto,\kontliveaux(\mktab,\makont,L))$}
   \item{\textbf{Completeness:} for all $L' \in \kontliveaux(\mktab,\makont,L)$ there is a $\mkont \in \unroll{\mktab}{\makont}$ such that $L' = \kontliveaux(\mkont,L)$.}
   \end{itemize}
 \end{lemma}
 \begin{proof}
-  Soundness follows by induction on the unrolling. Completeness follows by \todo{Ian}.
+  Soundness follows by induction on the unrolling. Completeness follows by induction on the trace from completeness in \autoref{lem:term-correct}.
 \end{proof}
 \begin{theorem}[Correctness of $\Gamma^*\CESKKstart$]
   For all expressions $\mexpr_0$,
@@ -268,12 +280,12 @@ The {\tt test} rules are now
 \end{align*}
 where the a new $\widehat{\OK}$ function uses $\terminal$ and rewrite rules:
 \begin{align*}
-  \widehat{\OK}(\mktab,\mperm,\makont) &= \terminal(\set{\stepto_i}_{i=0}^2,\widehat{\OK}^*(\mktab,\mperm,\makont)) \\[2pt]
-  \widehat{\OK}^*(\mktab,\emptyset,\makont) &\stepto_0 \mathit{True} \\
-  \widehat{\OK}^*(\mktab,\mperm,\epsilon^\mpermmap) &\stepto_1 \passp(\mperm,\mpermmap) \\
-  \widehat{\OK}^*(\mktab,\mperm,\kconsm{\mkframe}{\mpermmap}{\mctx}) &\stepto_2 b \text{ where }\\ &\phantom{\stepto_2} b \in \setbuild{\passp(\mperm,\mpermmap) \textbf{ and } b}{
+  \widehat{\OK}(\mktab,\mperm,\makont) &= \terminal(\stepto,\widehat{\OK}^*(\mktab,\mperm,\makont)) \\[2pt]
+  \widehat{\OK}^*(\mktab,\emptyset,\makont) &\stepto \mathit{True} \\
+  \widehat{\OK}^*(\mktab,\mperm,\epsilon^\mpermmap) &\stepto \passp(\mperm,\mpermmap) \\
+  \widehat{\OK}^*(\mktab,\mperm,\kconsm{\mkframe}{\mpermmap}{\mctx}) &\stepto b \text{ where }\\ &\phantom{\stepto} b \in \setbuild{\passp(\mperm,\mpermmap) \textbf{ and } b}{
           \makont \in \mktab(\mctx),
-          \\&\phantom{\stepto_2 b \in \{}b \in \widehat{\OK}(\mktab,\mperm\setminus\mpermmap^{-1}(\Grant),\makont))}
+          \\&\phantom{\stepto b \in \{}b \in \widehat{\OK}(\mktab,\mperm\setminus\mpermmap^{-1}(\Grant),\makont))}
 \end{align*}
 This definition works fine with the reentrant $\terminal$ function with a dynamically bound \emph{seen} set, but otherwise needs to be rewritten to accumulate the Boolean result as a parameter of $\widehat{OK}^*$.
 %

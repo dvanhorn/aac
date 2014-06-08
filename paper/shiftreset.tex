@@ -97,7 +97,7 @@ At continuation capture time, continuation contexts are approximated to remove $
 The different context spaces are thus:
 \begin{align*}
   \msctx \in \ExactContext &::= \tpl{\mexpr,\menv,\mastore,\mmktab} \\
-  \mactx \in \sa{Context} &::= \tpl{\maval,\maval,\maddr} \\
+  \mactx \in \sa{Context} &::= \tpl{\mexpr,\menv,\maddr} \\
   \mctx \in \Context &::= \mactx \alt \msctx \\
   \mmctx \in \MContext &::= \tpl{\mexpr,\menv,\mastore,\mmktab}
                        \alt \tpl{\mvkont, \maval, \mastore, \mmktab} \\
@@ -107,17 +107,15 @@ The different context spaces are thus:
 
 \begin{figure}
   \centering
-  \begin{align*}
-    \mastate \in \sa{SR} &::= \ev{\mexpr,\menv,\mastore,\mmktab,\makont,\mamkont} \alt \co{\makont,\mamkont,\maval,\mastore,\mmktab} \\
-    \State &::= \mastate,\mktab_{\makont},\mktab_{\mamkont} \\
-    \mmktab \in \MKTab &= \Addr \finto \wp(\Store) \\
-    \makont \in \sa{Kont} &::= \epsilon \alt \kcons{\mkframe}{\mctx} \alt \mctx \\
-    \mamkont \in \sa{MKont} &::= \epsilon \alt \mmctx \\
-    \mvkont \in \VKont &::= \epsilon \alt \mactx \\
-    \mktab_{\makont} \in \KStore &= \ExactContext \finto \wp(\sa{Kont}) \\
-    \mktab_{\mamkont} \in \MKStore &= \MContext \finto \wp(\sa{Kont} \times \sa{MKont}) \\
-    \maval \in \sa{Value} &::= \mvkont \alt (\mlam,\menv) \\
-  \end{align*}
+  \begin{tabular}{rlrl}
+    $\mastate \in \sa{SR}$ &\multicolumn{3}{l}{\hspace{-3mm}$::= \ev{\mexpr,\menv,\mastore,\mmktab,\makont,\mamkont} \alt \co{\makont,\mamkont,\maval,\mastore,\mmktab}$} \\
+    $\State$ & \multicolumn{3}{l}{\hspace{-3mm}$::= \mastate,\mktab_{\makont},\mktab_{\mamkont}$} \\
+    $\mmktab \in \MKTab$ &\multicolumn{3}{l}{\hspace{-3mm}$= \Addr \finto \wp(\Store)$} \\
+    $\mktab_{\makont} \in \KStore$ &\multicolumn{3}{l}{\hspace{-3mm}$= \ExactContext \finto \wp(\sa{Kont})$} \\
+    $\mktab_{\mamkont} \in \MKStore$ &\multicolumn{3}{l}{\hspace{-3mm}$= \MContext \finto \wp(\sa{Kont} \times \sa{MKont})$} \\
+    $\makont \in \sa{Kont}$ &\hspace{-3mm}$::= \epsilon \alt \kcons{\mkframe}{\mctx} \alt \mctx$ & $\mvkont \in \VKont$ &\hspace{-3mm}$::= \epsilon \alt \mactx$ \\
+    $\mamkont \in \sa{MKont}$ &\hspace{-3mm}$::= \epsilon \alt \mmctx$ & $\maval \in \sa{Value}$ &\hspace{-3mm}$::= \mvkont \alt (\mlam,\menv)$
+  \end{tabular}
   \caption{Shift/reset abstract semantic spaces}
   \label{fig:shiftreset-spaces}
 \end{figure}
@@ -128,12 +126,13 @@ The approximation and flattening happens in $\approximate$:
 \end{equation*}
 \begin{align*}
   \approximate(\mmktab,\maddr,\epsilon) &= \mmktab,\epsilon \\
-  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\mastore,\mmktab'}}) &= \joinm{\mmktab\sqcup\mmktab'}{\maddr}{\mastore},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr}} \\
-  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddralt}}) &= \joinm{\mmktab}{\maddr}{\mmktab(\maddralt)},\kcons{\mkframe}{\tpl{\maval_f,\maval_a,\maddr}}
+  \approximate(\mmktab,\maddr,\kcons{\mkframe}{\mctx}) &= \mmktab',\kcons{\mkframe}{\mactx} \text{ where } (\mmktab',\mactx) = \approximate(\mmktab,\maddr,\mctx) \\
+  \approximate(\mmktab,\maddr,\tpl{\mexpr,\menv,\mastore,\mmktab'}) &= \joinm{\mmktab\sqcup\mmktab'}{\maddr}{\mastore},\kcons{\mkframe}{\tpl{\mexpr,\menv,\maddr}} \\
+  \approximate(\mmktab,\maddr,\tpl{\mexpr,\menv,\maddralt}) &= \joinm{\mmktab}{\maddr}{\mmktab(\maddralt)},\kcons{\mkframe}{\tpl{\mexpr,\menv,\maddr}}
 \end{align*}
-The second case is where continuation closures get flattened together.
+The third case is where continuation closures get flattened together.
 %
-The third case is when an already approximate continuation is approximated: the approximation is inherited.
+The fourth case is when an already approximate continuation is approximated: the approximation is inherited.
 %
 Approximating the context and allocating the continuation in the store require two addresses, so we relax the specification of $\alloc$ to allow multiple address allocations in this case.
 
@@ -149,7 +148,7 @@ We use the above $\approximate$ function in the rule for continuation capture, a
 where
 \begin{align*}
   (\maddr,\maddr') &= \alloc(\mastate,\mktab_\makont,\mktab_\mamkont) & \menv' &= \extm{\menv}{\mvar}{\maddr} \\
-  (\mvkont,\mmktab') &= \approximate(\mmktab,\maddr',\makont) &
+  (\mmktab',\mvkont) &= \approximate(\mmktab,\maddr',\makont) &
   \mastore' &= \joinm{\mastore}{\maddr}{\mvkont}
 \end{align*}
 
@@ -170,7 +169,7 @@ The continuation installation rule extends $\mktab_{\mamkont}$ at the different 
 \begin{align*}
   \co{\makont,\mamkont,\maval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont &\stepto \co{\mvkont,\mmctx,\maval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont' \\ 
 \text{if } & (\appr{\mvkont},\makont') \in \pop(\mktab_{\makont},\mmktab, \makont) \\
-\text{where } \mmctx &= \mvkont,\maval,\mastore,\mmktab \\
+\text{where } \mmctx &= \tpl{\mvkont,\maval,\mastore,\mmktab} \\
               \mktab_\mamkont &= \joinm{\mktab_{\mamkont}}{\mmctx}{(\makont',\mamkont)}
 \end{align*}
 Again we have a metafunction $\pop$, but this time to interpret approximated continuations:
@@ -182,12 +181,14 @@ Again we have a metafunction $\pop$, but this time to interpret approximated con
    \popaux(\mctx, G) &= \bigcup\limits_{\makont \in G'}(\popaux(\makont, G\cup G')) \\
     \text{where } G' &= \bigcup\limits_{\msctx \in I(\mctx)}{\mktab_{\makont}(\msctx)} \setminus G \\
   I(\msctx) &= \set{\msctx} \\
-  I(\tpl{\maval_f,\maval_a,\maddr}) &=
-  \setbuild{\tpl{\maval_f,\maval_a,\mastore,\mmktab'} \in \dom(\mktab_{\makont})}
+  I(\tpl{\mexpr,\menv,\maddr}) &=
+  \setbuild{\tpl{\mexpr,\menv,\mastore,\mmktab'} \in \dom(\mktab_{\makont})}
            {\mastore \in \mmktab(\maddr),
             \mmktab' \sqsubseteq \mmktab}
 \end{align*}
 Notice that since we flatten $\mmktab$s together, we need to compare for containment rather than for equality (in $I$).
+%
+A variant of this semantics with GC is available in the PLT redex models.
 
 \paragraph{Comparison to CPS transform to remove {\tt shift} and {\tt reset}:}{
 We lose precision if we use a CPS transform to compile away {\tt shift} and {\tt reset} forms, because variables are treated less precisely than continuations.
@@ -238,7 +239,7 @@ Our specialized analysis for delimited control will predict the non-CPS'd versio
 We impose an order on values since stored continuations are more approximate in the analysis than in $\SR$:
 \begin{mathpar}
   \inferrule{ }{\mval \sqsubseteq_{\mktab,\mmktab} \mval} \quad
-  \inferrule{\mkont \in \unroll{\mktab,\mmktab}{\mvkont}}
+  \inferrule{\mkont \sqsubseteq \unroll{\mktab,\mmktab}{\mvkont}}
             {\vcomp{\mkont} \sqsubseteq_{\mktab,\mmktab} \mvkont} \quad
   \inferrule{\forall \mval\in\mstore(\maddr).
              \exists \maval\in\mastore(\maddr).
@@ -299,40 +300,60 @@ Thus, instead of expecting the exact continuation to be in the unrolling, we hav
 $\nextstate \sqsubseteq \nextotherstate$.
 \end{theorem}
 
-To substantiate our claim that fresh allocation leads to an exact semantics, we need to show an invariant on our continuation stores: no circular references, all mappings are to singleton sets, and all contexts have unique stores unless all components of the context are the same except for the expression.
-\begin{mathpar}
-  \inferrule{\wf(\mktab_\makont) \\ \wfC(\mktab_\makont,\mktab_\mamkont) \\
-\forall \maddr\in\dom(\mastore). |\mastore(\maddr)|=1 \\
-\forall \maddr\in\dom(\mmktab). |\mmktab(\maddr)|=1 \\
-\forall \mctx\in\dom(\mktab_\makont). |\mktab_\makont(\mctx)|=1 \\
-\forall \mmctx\in\dom(\mktab_\mamkont). |\mktab_\mamkont(\mmctx)|=1 \\
-\\
-\forall \mctx\neq\mctx'\in\dom(\mktab_\makont). \compatible{\mctx}{\mctx'} \vee \pi_2(\mctx) \neq \pi_2(\mctx') \\
-\forall \mmctx\neq\mmctx'\in\dom(\mktab_\mamkont). \compatible{\mmctx}{\mmctx'} \vee \pi_2(\mmctx) \neq \pi_2(\mmctx') \\
-}{\inv_{\fresh}(\tpl{\mexpr,\menv, \mastore, \mmktab,\makont,\mamkont}, \mktab_{\makont}, \mktab_{\mamkont})}
- \\
-\inferrule{ }{\compatible{\tpl{\_,\menv,\mastore,\mmktab}}{\tpl{\_,\menv,\mastore,\mmktab}}}
-\end{mathpar}
-The $\wf$ and $\wfC$ propositions describe the well-founded order on the continuation stores, assuming the codomains contain only singleton sets.
+\paragraph{Freshness implies completeness}
+The high level proof idea is that fresh allocation separates evaluation into a sequence of bounded length paths that have the same store, but the store only grows and distinguishes contexts such that each continuation and metacontinuation have a unique unrolling.
 %
-We want the well-foundedness condition so that the continuation unrolling never doubles back on itself to make arbitrarily large continuations that don't match the original semantics.
+It is an open question whether the addition of garbage collection preserves completeness.
+%
+Each context with the same store will have different expressions in them since expressions can only get smaller until a function call, at which point the store grows.
+%
+This forms an order on contexts: smaller store means smaller context, and same store but smaller expression (indeed a subexpression) means a smaller context.
+%
+Every entry in each enviroment ($\mastore,\mmktab,\mktab_\makont,\mktab_\mamkont$) will map to a unique element, and the continuation stores will have no circular references (the context in the tail of a continuation is strictly smaller than the context that maps to the continuation).
+%
+There can only be one context that $I$ maps to for approximate contexts because of the property of stores in contexts.
+
+We distill these intuitions into an invariant about states that we will then use to prove completeness.
+%
 \begin{mathpar}
-  \inferrule{ }{\wf(\bot)} \quad
-  \inferrule{\wf(\mktab_{\makont}|_{\overline{\mctx}}) \\
-             \makont \sqsubseteq \mktab_{\makont}|_{\overline{\mctx}}}
-            {\wf(\extm{\mktab_{\makont}}{\mctx}{\set{\makont}})} \\
-  \inferrule{\wf(\mktab_\makont)}{\wfC(\mktab_\makont,\bot)} \quad
-  \inferrule{\wfC(\mktab_\makont,\mktab_{\mamkont}|_{\overline{\mmctx}}) \\
-             (\makont,\mamkont) \sqsubseteq \mktab_{\makont},\mktab_{\mamkont}|_{\overline{\mmctx}}}
-            {\wfC(\mktab_{\makont},\extm{\mktab_{\mamkont}}{\mmctx}{\set{(\makont,\mamkont)}})} \\
-\inferrule{ }{\epsilon \sqsubseteq \mktab_{\makont}} \quad
-\inferrule{\mctx \in \dom(\mktab_\makont)}
-          {\kcons{\mkframe}{\mctx} \sqsubseteq \mktab_{\makont}} \\
-\inferrule{\makont \sqsubseteq \mktab_\makont}
-          {(\makont,\epsilon) \sqsubseteq \mktab_\makont,\mktab_{\mamkont}} \quad
-\inferrule{\makont \sqsubseteq \mktab_\makont \\
-           \mmctx \in \dom(\mktab_\mamkont)}
-          {(\makont,\mmctx) \sqsubseteq \mktab_\makont,\mktab_\mamkont}
+  \inferrule{\forall \maddr\in\dom(\mastore).\exists \maval. \mastore(\maddr)=\set{\maval}\wedge\maval\preceq_\mmktab\mktab_\makont \\
+    \forall \maddr\in\dom(\mmktab).\exists\mastore'.\mmktab(\maddr) =\set{\mastore'}\wedge\mastore'\in\pi_3(\dom(\mktab_\makont)) \\
+    \forall \msctx\in\dom(\mktab_\makont).\exists\makont. \mktab_\makont(\msctx) = \set{\makont}\wedge \makont \sqsubset_\mmktab^{\mktab_\makont} \msctx\\
+    \forall \mmctx\in\dom(\mktab_\mamkont).\exists\mamkont.\mktab_\mamkont(\mmctx) = \set{\mamkont}\wedge \mamkont \sqsubset \mmctx \\
+}{\inv^*(\mastore, \mmktab, \mktab_{\makont}, \mktab_{\mamkont})}
+ \\
+\inferrule{\inv^*(\mastore,\mmktab,\mktab_\makont,\mktab_\mamkont) \\
+           \tpl{\mexpr,\menv,\mastore,\mmktab} \sqsubset \dom(\mktab_\makont) \cup \dom(\mktab_\mamkont) \\
+           (\exists \tpl{\mexpr_c,\menv,\mastore,\mmktab} \in \dom(\mktab_\makont)) \implies \mexpr \in \mathit{subexpressions}(\mexpr_c) \\
+           \makont \preceq_\mmktab \mktab_\makont \\
+           \mamkont \preceq \mktab_\mamkont}
+          {\inv_\fresh(\ev{\mexpr,\menv,\mastore,\mmktab,\makont,\mamkont},\mktab_\makont,\mktab_\mamkont)} \\
+\inferrule{\inv^*(\mastore,\mmktab,\mktab_\makont,\mktab_\mamkont) \\
+           \maval \preceq_\mmktab \mktab_\makont \\
+           \makont \preceq_\mmktab \mktab_\makont \\
+           \mamkont \preceq \mktab_\mamkont}
+          {\inv_\fresh(\co{\makont,\mamkont,\maval,\mastore,\mmktab},\mktab_\makont,\mktab_\mamkont)}
+\end{mathpar}
+Where the order $\preceq$ states that any contexts in the (meta-)continuation are mapped in the given table.
+\begin{mathpar}
+  \inferrule{ }{(\mlam,\menv) \preceq_\mmktab \mktab_\makont} \quad
+  \inferrule{ }{\epsilon \preceq_\mmktab \mktab_\makont} \quad
+  \inferrule{ }{\epsilon \preceq \mktab_\mamkont} \quad
+  \inferrule{\msctx \in \dom(\mktab_\makont)}{\msctx\preceq_\mmktab \mktab_\makont} \quad
+  \inferrule{\mmctx \in \dom(\mktab_\mamkont)}{\mmctx \preceq \mktab_\mamkont}\\
+  \inferrule{\exists\mastore.\mmktab(\maddr)=\set{\mastore} \\
+             \exists!\mmktab'.\tpl{\mexpr,\menv,\mastore,\mmktab'} \in\dom(\mktab_\makont)\wedge\mmktab' \sqsubseteq \mmktab
+           }
+            {\tpl{\mexpr,\menv,\maddr} \preceq_\mmktab \mktab_\makont}
+\end{mathpar}
+And the order $\sqsubset$ states that the contexts in the (meta-)continuation are strictly smaller than the given context.
+\begin{mathpar}
+  \inferrule{ }{\epsilon \sqsubset_\mmktab^{\mktab_{\makont}}} \quad \inferrule{ }{\epsilon \sqsubset \mmctx} \quad \inferrule{\mctx \sqsubset_\mmktab^{\mktab_\makont} \msctx}{\kcons{\mkframe}{\mctx} \sqsubset_\mmktab^{\mktab_\makont} \msctx} \\
+  \inferrule{\mexpr' \in \mathit{subexpressions}(\mexpr)}{\tpl{\mexpr',\menv,\mastore,\mmktab} \sqsubset_\mmktab^{\mktab_\makont} \tpl{\mexpr,\menv,\mastore,\mmktab}} \quad
+  \inferrule{\mexpr' \in \mathit{subexpressions}(\mexpr)}{\tpl{\mexpr',\menv,\mastore,\mmktab} \sqsubset \tpl{\mexpr,\menv,\mastore,\mmktab}} \\
+  \inferrule{\dom(\mastore) \sqsubset \dom(\mastore')}{\tpl{\_,\_,\mastore,\_} \sqsubset_\mmktab^{\mktab_\makont} \tpl{\_,\_,\mastore',\_}} \quad
+  \inferrule{\dom(\mastore) \sqsubset \dom(\mastore')}{\tpl{\_,\_,\mastore,\_} \sqsubset \tpl{\_,\_,\mastore',\_}} \\
+  \inferrule{\forall \msctx' \in I(\mktab_\makont,\mmktab,\mactx) \\ \msctx' \sqsubset_\mmktab^{\mktab_\mkont} \msctx}{\mactx \sqsubset_\mmktab^{\mktab_\makont} \msctx}
 \end{mathpar}
 
 \begin{lemma}[Freshness invariant]
@@ -341,9 +362,15 @@ $\mastate,\mktab_{\makont},\mktab_{\mamkont} \stepto
 \mastate',\mktab'_{\makont},\mktab'_{\mamkont}$ then
 $\inv_{\fresh}(\mastate',\mktab'_{\makont},\mktab'_{\mamkont})$.
 \end{lemma}
+\begin{proof}
+  By case analysis on the step.
+\end{proof}
 \begin{theorem}[Complete for fresh allocation]
   If $\alloc$ produces fresh addresses then the resulting semantics is complete with respect to states satisfying the invariant.
 \end{theorem}
+\begin{proof}[Proof sketch]
+  By case analysis and use of the invariant to exploit the fact the unrollings are unique and the singleton codomains pigeon-hole the possible steps to only concrete ones.
+\end{proof}
 
 %  LocalWords:  pushdown storeable codomain AAM ianjohnson Kiselyov
 %  LocalWords:  modularly parsers undelimited Biernacki ev al ntinue
