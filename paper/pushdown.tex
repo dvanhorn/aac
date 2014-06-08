@@ -296,7 +296,7 @@ The reification simply realizes all possible complete continuations that a state
   \tpl{\tpl{\mexpr,\menv,\mstore,\makont},
       \tpl{\mexpr',\menv',\mstore',\makont'}} \in R \\
   \mkont \in \tails{\mktab}{\makont}}
-  {\tpl{\mexpr,\menv,\mstore,\append{\makont}{\mkont}} \stepto_{\reify(S,F,R,\mktab)}
+  {\tpl{\mexpr,\menv,\mstore,\append{\makont}{\mkont}} \stepto_{\reify(S,R,F,\mktab)}
    \tpl{\mexpr',\menv',\mstore'\append{\makont'}{\mkont}}}
   % \reify(S,F,R,\mktab) &= \setbuild{}
   % {\\ &\phantom{= \{}

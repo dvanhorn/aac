@@ -1,33 +1,4 @@
-\paragraph{Pushdown models and memoization}
-The idea of relating pushdown automata with memoization is not new.
-%
-In 1971, Stephen Cook~\citep{DBLP:conf/ifip/Cook71} devised a transformation to simulate 2-way (on a fixed input) \emph{deterministic} pushdown automata in time linear in the size of the input, that uses the same ``context irrelevance'' idea to skip from state $q$ seen before to a corresponding first state that produced a smaller stack than $q$ was seen with.
-%
-Such a state is an instance of what are called \emph{terminator} states.
-%
-A \emph{terminator} state is simply a state that performs a pop operation.
-%
-Six years later, Neil D. Jones~\citep{Jones:1977:NLT} simplified the transformation instead to \emph{interpret} a stack machine program to work \emph{on-the-fly} still on a deterministic machine, but with the same idea of using memo tables to remember corresponding terminator states.
-%
-Thirty-six years after that, at David Schmidt's Festschrift, Robert Gl\"uck extended the technique to two-way \emph{non-deterministic} pushdown automata, and showed that the technique can be used to recognize context-free languages in the standard ${\mathcal O}(n^3)$ time~\citep{DBLP:journals/corr/Gluck13}.
-%
-Gl\"uck's technique (as yet, correctness unproven) uses the meta-language's stack with a deeply recursive interpretation function to preclude the use of a frontier and something akin to $\mktab$\footnote{See \texttt{gluck.rkt} in supplementary materials for \autoref{fig:real-impl} in Gl\"uck's style}.
-%
-By exploring the state space \emph{depth-first}, the interpreter can find all the different terminators a state can reach one-by-one by destructively updating the memo table with the ``latest'' terminator found.
-%
-The trade-offs with this technique are that it does not obviously scale to first-class control, and the search can overflow the stack when interpreting moderate-sized programs.
-%
-We have not performed an extensive evaluation to test the latter point, however.
-%
-A minor disadvantage is that it is also not a fair evaluation strategy when allocation is unbounded.
-%
-The technique can nevertheless be a viable alternative for languages with simple control-flow mechanisms.
-%
-It has close similarities to ``Big-CFA2'' in Vardoulakis' dissertation~\citep{vardoulakis-diss12}.
 %%
-
-%%
-\paragraph{CFA2, PDCFA and AAM}
 The immediately related work is that of PDCFA \citep{dvanhorn:Earl2010Pushdown, dvanhorn:Earl2012Introspective}, CFA2~\citep{ianjohnson:vardoulakis-lmcs11, ianjohnson:Vardoulakis2011Pushdown}, and AAM~\citep{dvanhorn:VanHorn2010Abstracting}.
 %
 The stack frames in CFA2 that boost precision are an orthogonal feature that fit into our model as an \emph{irrelevant} component along with the stack, which we did not cover in detail due to space constraints.
@@ -36,21 +7,42 @@ The version of CFA2 that handles \rackett{call/cc} does not handle composable co
 %
 Our semantics adapts to \rackett{call/cc} by removing the meta-continuation operations, and thus this work supersedes theirs; the machinery is in fact a strict generalization.
 %
-The extended version of PDCFA that inspects the stack to do garbage collection~\citep{dvanhorn:Earl2012Introspective} also fits into our model;
-the addresses that the stack keeps alive can be accumulated by ``reading through'' the continuation table, building up the set of addresses in each portion of the stack that we come across.
+The extended version of PDCFA that inspects the stack to do garbage collection~\citep{dvanhorn:Earl2012Introspective} also fits into our model (\autoref{sec:gc}'s $\hat\Gamma$).
 %
 
-Additional work was done to improve the performance of the AAM approach in \citet{ianjohnson:oaam:icfp2013} that can almost entirely be imported for the work in this paper.
+We did additional work to improve the performance of the AAM approach in \citet{ianjohnson:oaam:icfp2013} that can almost entirely be imported for the work in this paper.
 %
 The technique that does not apply is ``store counting'' for lean representation of the store component of states when there is a global abstract store, an assumption that does not hold for garbage collection.
 %
-Their implementation\footnote{\url{http://github.com/dvanhorn/oaam}} has pushdown modules that use the ideas in this paper.
+The implementation\footnote{\url{http://github.com/dvanhorn/oaam}} has pushdown modules that use the ideas in this paper.
 
 %%
 \paragraph{Stack inspection}
 Stack inspecting flow analyses also exist, but operate on pre-constructed regular control-flow graphs~\citep{ianjohnson:bartoletti2004stack}, so the CFGs cannot be trimmed due to the extra information at construction time, leading to less precision.
 %
 Backward analyses for stack inspection also exist, with the same prerequisite~\citep{ianjohnson:DBLP:journals/sigplan/Chang06}.
+%%
+
+\paragraph{Pushdown models and memoization}
+The idea of relating pushdown automata with memoization is not new.
+%
+In 1971, Stephen Cook~\citep{DBLP:conf/ifip/Cook71} devised a transformation to simulate 2-way (on a fixed input) \emph{deterministic} pushdown automata in time linear in the size of the input, that uses the same ``context irrelevance'' idea to skip from state $q$ seen before to a corresponding first state that pops the stack below where $q$ started (called a \emph{terminator} state).
+%
+Six years later, Neil D. Jones~\citep{Jones:1977:NLT} simplified the transformation instead to \emph{interpret} a stack machine program to work \emph{on-the-fly} still on a deterministic machine, but with the same idea of using memo tables to remember corresponding terminator states.
+%
+Thirty-six years after that, at David Schmidt's Festschrift, Robert Gl\"uck extended the technique to 2-way \emph{non-deterministic} pushdown automata, and showed that the technique can be used to recognize context-free languages in the standard ${\mathcal O}(n^3)$ time~\citep{DBLP:journals/corr/Gluck13}.
+%
+Gl\"uck's technique (as yet, correctness unproven) uses the meta-language's stack with a deeply recursive interpretation function to preclude the use of a frontier and something akin to $\mktab$\footnote{See \texttt{gluck.rkt} in supplementary materials for \autoref{fig:real-impl} in Gl\"uck's style}.
+%
+By exploring the state space \emph{depth-first}, the interpreter can find all the different terminators a state can reach one-by-one by destructively updating the memo table with the ``latest'' terminator found.
+%
+The trade-offs with this technique are that it does not obviously scale to first-class control, and the search can overflow the stack when interpreting moderate-sized programs.
+%
+A minor disadvantage is that it is also not a fair evaluation strategy when allocation is unbounded.
+%
+The technique can nevertheless be a viable alternative for languages with simple control-flow mechanisms.
+%
+It has close similarities to ``Big-CFA2'' in Vardoulakis' dissertation~\citep{vardoulakis-diss12}.
 %%
 
 %%

@@ -17,7 +17,7 @@ Memoization is a specialized instance of sparseness; the base stack may change, 
 We use the vocabulary of ``relevance'' and ``irrelevance'' so that future work can adopt the ideas of sparseness to reuse contexts in more ways.
 %
 
-Recall the context irrelevance lemma that if we have seen the results of a computation before from a different context, we can reuse them.
+Recall the \hyperref[lem:irrelevance]{context irrelevance lemma} that if we have seen the results of a computation before from a different context, we can reuse them.
 %
 The semantic counterpart to this idea is a memo table that we extend when popping and appeal to when about to push.
 %
@@ -82,28 +82,6 @@ Inexact GC does \emph{not} respect context irrelevance for the same reasons it i
 %
 The reason we use unrolled continuations instead of simply $\epsilon$ for this (balanced) path is precisely for stack inspection reasons.
 
-\begin{equation*}
-  {\mathcal F}_{\mexpr}(S,R,F,\mktab,\mmemo) = (S \cup F, R \cup R', F'\setminus S, \mktab', \mmemo')
-\end{equation*}
-where
-
-\begin{tabular}{rlrlrl}
-  $I$ &
-  \multicolumn{5}{l}{
-    \hspace{-3mm}$=\bigcup\limits_{\mstate \in
-      F}{\setbuild{(\tpl{\mstate,\mstate'}, \mktab',\mmemo')}{\mstate,\mktab,\mmemo
-        \stepto \mstate',\mktab',\mmemo'}}$}
-\\
-   $R'$ &\hspace{-3mm}$= \pi_0 I$ & $\mktab'$ & \hspace{-3mm}$= \bigsqcup\pi_1 I$ & $\mmemo'$ & \hspace{-3mm}$= \bigsqcup\pi_2 I$ \\
-   $\Delta\mktab$ &\hspace{-3mm}$= \mktab'\setminus\mktab$ & $\Delta\mmemo$ & \hspace{-3mm}$= \mmemo'\setminus\mmemo$ & & \\
-   $F'$ &
-   \multicolumn{5}{l}{
-     \hspace{-3mm}$= \pi_1 R' \cup \{{\tpl{\mexpr,\menv,\mstore,\makont}} :
-     {\mctx \in \dom(\Delta\mktab)\cap\dom(\Delta\mmemo).}$}
-   \\ &\multicolumn{5}{l}{\hspace{-3mm}$\phantom{= \pi_1 R' \cup \{} \makont \in \Delta\mktab(\mctx),
-       \tpl{\mexpr,\menv,\mstore} \in \Delta\mmemo(\mctx)\}$}
- \end{tabular}
-
  \begin{figure}
    \begin{center}
      $\mastate,\mktab,\mmemo \stepto
@@ -138,8 +116,30 @@ The technique looks more like memoization with a $\CESIKKstart$ machine, since t
 %
 The $\pop$ function would need to also update $\mmemo$ if it dereferences through a context, but otherwise the semantics are updated \emph{mutatis mutandis}.
 
+\begin{equation*}
+  {\mathcal F}_{\mexpr}(S,R,F,\mktab,\mmemo) = (S \cup F, R \cup R', F'\setminus S, \mktab', \mmemo')
+\end{equation*}
+where
+
+\begin{tabular}{rlrlrl}
+  $I$ &
+  \multicolumn{5}{l}{
+    \hspace{-3mm}$=\bigcup\limits_{\mstate \in
+      F}{\setbuild{(\tpl{\mstate,\mstate'}, \mktab',\mmemo')}{\mstate,\mktab,\mmemo
+        \stepto \mstate',\mktab',\mmemo'}}$}
+\\
+   $R'$ &\hspace{-3mm}$= \pi_0 I$ & $\mktab'$ & \hspace{-3mm}$= \bigsqcup\pi_1 I$ & $\mmemo'$ & \hspace{-3mm}$= \bigsqcup\pi_2 I$ \\
+   $\Delta\mktab$ &\hspace{-3mm}$= \mktab'\setminus\mktab$ & $\Delta\mmemo$ & \hspace{-3mm}$= \mmemo'\setminus\mmemo$ & & \\
+   $F'$ &
+   \multicolumn{5}{l}{
+     \hspace{-3mm}$= \pi_1 R' \cup \{{\tpl{\mexpr,\menv,\mstore,\makont}} :
+     {\mctx \in \dom(\Delta\mktab)\cap\dom(\Delta\mmemo).}$}
+   \\ &\multicolumn{5}{l}{\hspace{-3mm}$\phantom{= \pi_1 R' \cup \{} \makont \in \Delta\mktab(\mctx),
+       \tpl{\mexpr,\menv,\mstore} \in \Delta\mmemo(\mctx)\}$}
+ \end{tabular}
+
 \begin{theorem}[Correctness]
-Same property is the same as in \autoref{thm:global-pushdown}, where $\reify$ ignores the $\mktab$ component.
+Same property is the same as in \autoref{thm:global-pushdown}, where $\reify$ ignores the $\mmemo$ component.
 \end{theorem}
 The proof appeals to the invariant on $\mmemo$ whose proof involves an additional argument for the short-circuiting step that reconstructs the path from a memoized result using both context irrelevance and the table invariants.
 %  LocalWords:  parallelizable pushdown automata summarization

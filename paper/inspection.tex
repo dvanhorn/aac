@@ -60,7 +60,7 @@ Note that it is possible for metafunctions' rewrite rules to themselves use meta
 %
 Without this precaution, the host language will exceed its stack limits when an infinite path is explored, rather than bail out.
 
-\subsection{Case study for stack traversal: GC}
+\subsection{Case study for stack traversal: GC}\label{sec:gc}
 Garbage collection is an example of a language feature that needs to crawl the stack, specifically to find live addresses.
 %
 We are interested in garbage collection because it can give massive precision boosts to analyses~\citep{dvanhorn:Might:2006:GammaCFA,dvanhorn:Earl2012Introspective}.
