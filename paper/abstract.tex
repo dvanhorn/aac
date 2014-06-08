@@ -1,9 +1,21 @@
-Pushdown analysis improves upon finite-state analysis in precision and performance by not exploring spurious paths caused by improperly matched calls and returns.
+The strengths of dynamic languages are also their weaknesses: these languages' flexibility makes them unpredictable -- statically, that is.
 %
-Prior literature on pushdown higher-order flow analysis depends on complicated machinery that is difficult to understand, extend, and prove correct.
+Static analyses for dynamic languages are few, far between, and seldom sound.
 %
-The machinery has no concrete counterpart---there is little to no operational intuition as to why it works.
+The reasons why range from there being too much unknown before run-time to make useful predictions, to such reusable code that standard data- and control-flow analyses are too imprecise to tease about their different uses, to features that are just too hard to model in traditional analytical frameworks.
 %
-We show that these pushdown analyses have a similar core that can be explained with well-known techniques such as memoization and Abstracting Abstract Machines (AAM).
+We propose an analysis construction method that aims to ameliorate the second two of these hurdles.
 %
-We use this interpretation to derive novel pushdown analyses for delimited, composable first-class control operators \texttt{shift} and \texttt{reset}.
+
+%
+Dynamic languages are sometimes referred to as ``interpreted languages'' because some of their features are either too difficult to compile ahead of time, or the features' runtime support resembles the interpreter pattern.
+%
+The Abstracting Abstract Machines (AAM) method of analysis construction needs little more than a language's interpreter to make a sound approximation of its behavior.
+%
+AAM thus stands as the simplest road to making analyses for dynamic languages.
+%
+We improve its precision to better serve dynamic languages by targeting a stronger computational model: pushdown systems.
+%
+We then show that the techniques scale to precise modeling of delimited, composable first-class control operators, {\tt shift} and {\tt reset}.
+%
+All of this we do without touching automata theory.
