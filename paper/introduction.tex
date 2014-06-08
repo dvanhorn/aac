@@ -1,39 +1,52 @@
-Program analysis aims to produce a sound a computable approximation of
-a program's behavior.  Traditionally, such approximations come in the
-form of finite state machines.  The states of such a machine abstract
-a set of real ``concrete'' program states, and the set of possible
-machine traces is approximated by the set of abstract traces.
-However, finite state abstractions are inherently a poor approximation
-mechanism for langauges with procedure calls since the nested matching
-of calls and returns cannot be accounted for precisely with a finite
-state machine.
-
-This observation set of the investigation of ``pushdown'' program
-analyses that traded finite state machines for more powerful pushdown
-systems as the underlying
-abstraction~\cite{first-order,oo,pushdown-stuff}.  Such analyses can
-more precisely capture program behavior since the run-time stack of a
-program can be modelled by the pushdown system's stack, thereby
-properly matching calls with returns in the abstract semantics.  While
-such techniques have been widely used for first-order, procedural
-languages, they have only recently been adopted to the setting of
-higher-order functional languages~\cite{usual,suspects}.
+Good static analyses use a combination of abstraction techniques, economical data structures, and a lot of engineering~\citep{ianjohnson:CousotEtAl-TASE07,ianjohnson:DBLP:journals/ipl/YiCKK07}.
 %
-These technical breakthroughs, though laudable, are complicated and
-fragile.  Applying the technique to more realistic language features
-is not straightforward, which ultimately limits the applicability of
-pushdown analysis for higher-order langauges.
-
-In this paper, we show that pushdown analyses can be derived
-systematically from abstract machines semantics.  Such a construction
-enables pushdown analyses to scale uniformly to realistic language
-features.  We demonstrate the approach by applying the technique to a
-call-by-value functional language (\S\ref{baz}).  We then show how
-the approach scales to langauge features such as garbage collection
-(\S\ref{foo}), stack inspection (\S\ref{bar}), and first-class
-control operators in the form of shift and reset (\S\ref{blah}).
+The cited exemplary works shine out from an innumerable amount of works that have attacked the problems with statically analyzing languages like C.
 %
-These case studies show that the approach is robust in the presence of
-features that need to inspect or alter the run-time stack, which
-previously have required significant technical
-innovations~\cite{callcc,introspective}.
+Dynamic languages do not yet have such gems.
+%
+The problem space is different, bigger, and full of new challenges.
+%
+The age-old technique of pushing abstract values around a graph to get an analysis shows its age -- old.
+%
+The first problem we must solve is, ``what graph?'' as control-flow is now part of the problem domain.
+%
+Second, features like stack inspection and first-class continuations are not easily shoe-horned into a CFG representation of a program's behavior.
+%
+We need a new approach before heavily investing in engineering effort.
+
+%
+Dynamic languages are sometimes referred to as ``interpreted languages'' by non-PL experts.
+%
+Rather than scoff at a mistaken notion, we can learn from our constituents; perhaps they use this terminology because some dynamic features are either too difficult to compile ahead of time, or the runtime support resembles the interpreter pattern.
+%
+Either way, interpreters, not graphs, may be the key to correctly analyzing dynamic languages.
+%
+
+%
+Luckily, there is an alternative to the old CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters (they are interderivable in several instances~\citep{ianjohnson:DBLP:conf/icfp/Danvy08}).
+%
+This alternative is called Abstracting Abstract Machines (AAM), a powerfully simple idea that is generally applicable to even the most dynamic of languages, \eg{}, JavaScript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
+%
+In the original work~\citep{dvanhorn:VanHorn2010Abstracting}, AAM showed that $k$-CFA is a specific instance of the framework, albeit all effective instantiations of AAM are finite state approximations.
+%
+When precision is your only weapon against dynamism, this is unacceptable.
+%
+Finite state techniques cannot precisely match the call and return points of method and function applications.
+%
+This opens a flood gate to imprecision flowing everywhere through analyses' predictions.
+%
+
+%
+We extend the AAM technique to computably handle infinite state state spaces by adapting pushdown abstraction methods to abstract machines.
+%
+The unbounded stack of pushdown systems is the mechanism to precisely match calls and returns.
+%
+We appeal to operational intuitions rather than automata theory to justify the approach.
+%
+The intention is that even novices with some experience implementing interpreters will be able to design analyses for their languages.
+%
+With simple but powerful tools in a large audience's toolbelt, we hope our foundational work will help the community work towards gems like Astr\'ee~\citep{ianjohnson:CousotEtAl-TASE07}.
+%
+The large problem domain of analyzing dynamic languages needs an army to tackle it.
+%
+We believe that AAM can feed that army.

@@ -57,7 +57,9 @@ Backward analyses for stack inspection also exist, with the same prerequisite~\c
 \paragraph{Analysis of pushdown automata}
 Pushdown models have existed in the first-order static analysis literature~\citep[Chapter 7]{local:muchnick:jones:flow-analysis:1981}\citep{ianjohnson:reps:pushdown:1995}, and the first-order model checking literature \citep{ianjohnson:bouajiani:esparza:pushdown:1997}, for some time.
 %
-The important difference when we move higher-order is that the model construction to feed these methods is an additional problem---the one we solve here.
+These methods already assume a pushdown model as input, and constructing a model from a first-order program is trivial.
+%
+In the setting of higher-order functions and first-class control, model construction is an additional problem -- the one we solve here.
 %
 Additionally, the algorithms employed in these works expect a complete description of the model up front, rather than work with a modified \texttt{step} function (also called \texttt{post}), such as in ``on-the-fly'' model-checking algorithms for finite state systems~\citep{DBLP:conf/tacas/SchwoonE05}.
 %%
