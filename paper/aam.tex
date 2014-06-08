@@ -1,4 +1,4 @@
-Abstract machines are a versatile, clear and concise way to describe the semantics programming languages.
+Abstract machines are a versatile, clear and concise way to describe the semantics of programming languages.
 %
 They hit a sweet spot in terms of level of discourse, and viable implementation strategy.
 %
@@ -63,12 +63,13 @@ The final point is the machinery that we recount in this section.
 
 The case studies in this paper have full implementations in PLT redex~\citep{dvanhorn:Felleisen2009Semantics} available online.\footnote{\url{http://github.com/dvanhorn/aac}}
 They all build off the call-by-value untyped lambda calculus, whose semantics we recall in small-step reduction semantics style:
-\begin{align*}
-  E[\sapp{\slam{\mvar}{\mexpr}}{\mval}] \stepto_\beta E[[\mval/\mvar]\mexpr] \\
-\text{where } E \in \mathit{EvaluationContext} &::= [] \alt \sapp{E}{\mexpr} \alt \sapp{\mval}{E} \\
-              \mexpr \in Expr &::= \svar\mvar \alt \sapp{\mexpr}{\mexpr} \alt \mval \\
-              \mval \in \Value &::= \slam{\mvar}{\mexpr}
-\end{align*}
+\begin{center}
+  \begin{tabular}{rlrl}
+    \multicolumn{4}{c}{$E[\sapp{\slam{\mvar}{\mexpr}}{\mval}] \stepto_\beta E[[\mval/\mvar]\mexpr]$} \\[2pt]
+    \multicolumn{1}{l}{where} & \multicolumn{2}{r}{$E \in \mathit{EvaluationContext}$} &\hspace{-3mm}$::= [] \alt \sapp{E}{\mexpr} \alt \sapp{\mval}{E}$ \\[2pt]
+    $\mexpr \in Expr$ &\hspace{-3mm}$::= \svar\mvar \alt \sapp{\mexpr}{\mexpr} \alt \mval$ & $\mval \in \Value$ &\hspace{-3mm}$::= \slam{\mvar}{\mexpr}$
+  \end{tabular}
+\end{center}
 Although concise and well-structured for mathematical proofs, this semantics does not reflect what an effective implementation looks like.
 %
 The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and re-plugging are better understood as a process that a machine goes through to perform a step.

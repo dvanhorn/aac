@@ -17,21 +17,25 @@ We need a new approach before heavily investing in engineering effort.
 %
 Dynamic languages are sometimes referred to as ``interpreted languages'' by non-PL experts.
 %
-Rather than scoff at a mistaken notion, we can learn from our constituents; perhaps they use this terminology because some dynamic features are either too difficult to compile ahead of time, or the runtime support resembles the interpreter pattern.
+An expert would say the reality is that languages' semantics are not married to their implementation strategy; C can be interpreted, for example, but is known as a ``compiled language.''
 %
-Either way, interpreters, not graphs, may be the key to correctly analyzing dynamic languages.
+Choosing an intellectual high-ground to dismiss popular terminology is socially and intellectually damaging.
+%
+The expert's ``reality'' is intangible platonism, when the honest real-world reality is that many, if not all, ``interpreted languages'' are implemented wholly or in part with interpreters.
+%
+Interpreters may be the key to correctly analyzing dynamic languages.
 %
 
 %
 Luckily, there is an alternative to the old CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters (they are interderivable in several instances~\citep{ianjohnson:DBLP:conf/icfp/Danvy08}).
 %
-This alternative is called Abstracting Abstract Machines (AAM), a powerfully simple idea that is generally applicable to even the most dynamic of languages, \eg{}, JavaScript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
+This alternative is called Abstracting Abstract Machines (AAM)~\citep{dvanhorn:VanHorn2012Systematic}, a powerfully simple idea that is generally applicable to even the most dynamic of languages, \eg{}, JavaScript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
 %
-In the original work~\citep{dvanhorn:VanHorn2010Abstracting}, AAM showed that $k$-CFA is a specific instance of the framework, albeit all effective instantiations of AAM are finite state approximations.
+A downside is that all effective instantiations of AAM are finite state approximations.
 %
 When precision is your only weapon against dynamism, this is unacceptable.
 %
-Finite state techniques cannot precisely match the call and return points of method and function applications.
+Finite state techniques cannot precisely predict where a method or function call will return.
 %
 This opens a flood gate to imprecision flowing everywhere through analyses' predictions.
 %
@@ -45,8 +49,6 @@ We appeal to operational intuitions rather than automata theory to justify the a
 %
 The intention is that even novices with some experience implementing interpreters will be able to design analyses for their languages.
 %
-With simple but powerful tools in a large audience's toolbelt, we hope our foundational work will help the community work towards gems like Astr\'ee~\citep{ianjohnson:CousotEtAl-TASE07}.
+With simple but powerful tools in a large audience's toolbelt, we hope this work will help the community work towards technical feats like Astr\'ee~\citep{ianjohnson:CousotEtAl-TASE07}.
 %
-The large problem domain of analyzing dynamic languages needs an army to tackle it.
-%
-We believe that AAM can feed that army.
+The large problem domain of analyzing dynamic languages needs an army to tackle it, and we believe that AAM can feed that army.
