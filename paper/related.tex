@@ -32,7 +32,7 @@ Six years later, Neil D. Jones~\citep{Jones:1977:NLT} simplified the transformat
 %
 Thirty-six years after that, at David Schmidt's Festschrift, Robert Gl\"uck extended the technique to 2-way \emph{non-deterministic} pushdown automata, and showed that the technique can be used to recognize context-free languages in the standard ${\mathcal O}(n^3)$ time~\citep{DBLP:journals/corr/Gluck13}.
 %
-Gl\"uck's technique (as yet, correctness unproven) uses the meta-language's stack with a deeply recursive interpretation function to preclude the use of a frontier and something akin to $\mktab$\footnote{See \texttt{gluck.rkt} in supplementary materials for \autoref{fig:real-impl} in Gl\"uck's style}.
+Gl\"uck's technique (as yet, correctness unproven) uses the meta-language's stack with a deeply recursive interpretation function to preclude the use of a frontier and something akin to $\mktab$\footnote{See \texttt{gluck.rkt} in online materials for Gl\"uck's style}.
 %
 By exploring the state space \emph{depth-first}, the interpreter can find all the different terminators a state can reach one-by-one by destructively updating the memo table with the ``latest'' terminator found.
 %
