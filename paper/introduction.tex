@@ -1,35 +1,27 @@
 Good static analyses use a combination of abstraction techniques, economical data structures, and a lot of engineering~\citep{ianjohnson:CousotEtAl-TASE07,ianjohnson:DBLP:journals/ipl/YiCKK07}.
 %
-The cited exemplary works shine out from an innumerable amount of works that have attacked the problems with statically analyzing languages like C.
+The cited exemplary works stand out from a vast amount of work attacking the problem of statically analyzing languages like C.
 %
 Dynamic languages do not yet have such gems.
 %
 The problem space is different, bigger, and full of new challenges.
 %
-The age-old technique of pushing abstract values around a graph to get an analysis shows its age -- old.
+The traditional technique of pushing abstract values around a graph to get an analysis will not work.
 %
 The first problem we must solve is, ``what graph?'' as control-flow is now part of the problem domain.
 %
 Second, features like stack inspection and first-class continuations are not easily shoe-horned into a CFG representation of a program's behavior.
 %
-We need a new approach before heavily investing in engineering effort.
+We need a new approach. % before heavily investing in engineering effort.
 
 %
-Dynamic languages are sometimes referred to as ``interpreted languages'' by non-PL experts.
+Luckily, there is an alternative to the CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters (they are interderivable in several instances~\citep{ianjohnson:DBLP:conf/icfp/Danvy08}).
 %
-An expert would say the reality is that languages' semantics are not married to their implementation strategy; C can be interpreted, for example, but is known as a ``compiled language.''
-%
-Choosing an intellectual high-ground to dismiss popular terminology is socially and intellectually damaging.
-%
-The expert's ``reality'' is intangible platonism, when the honest real-world reality is that many, if not all, ``interpreted languages'' are implemented wholly or in part with interpreters.
-%
-Interpreters may be the key to correctly analyzing dynamic languages.
-%
-
-%
-Luckily, there is an alternative to the old CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters (they are interderivable in several instances~\citep{ianjohnson:DBLP:conf/icfp/Danvy08}).
-%
-This alternative is called Abstracting Abstract Machines (AAM)~\citep{dvanhorn:VanHorn2012Systematic}, a powerfully simple idea that is generally applicable to even the most dynamic of languages, \eg{}, JavaScript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
+This alternative, called abstracting abstract machines
+(AAM)~\citep{dvanhorn:VanHorn2012Systematic}, is a simple
+idea that is generally applicable to even the most dynamic of
+languages, \eg{},
+JavaScript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
 %
 A downside is that all effective instantiations of AAM are finite state approximations.
 %
@@ -45,9 +37,26 @@ We extend the AAM technique to computably handle infinite state state spaces by 
 %
 The unbounded stack of pushdown systems is the mechanism to precisely match calls and returns.
 %
-We appeal to operational intuitions rather than automata theory to justify the approach.
+We demonstrate the essence of our pushdown analysis construction by
+first applying the AAM technique to a call-by-value functional
+language (\S\ref{sec:aam}) and then revising the derivation to
+incorporate an exacting representation of the control stack
+(\S\ref{sec:pushdown}).  We then show how the approach scales to
+stack-reflecting language features such as garbage collection and
+stack inspection (\S\ref{sec:inspection}), and stack-reifying features
+in the form of first-class delimited control operators (\S\ref{sec:delim}).
 %
-The intention is that even novices with some experience implementing interpreters will be able to design analyses for their languages.
+These case studies show that the approach is robust in the presence of
+features that need to inspect or alter the run-time stack, which
+previously have required significant technical
+innovations~\cite{ianjohnson:Vardoulakis2011Pushdown,ianjohnson:DBLP:journals/jfp/JohnsonSEMH14}.
+
+Our approach appeals to operational intuitions rather than automata theory to justify the approach.
+%
+The intention is that the only prerequisite to designing a pushdown
+analysis for a dynamic language is some experience implementing
+interpreters; expertise in automata theory or abstract domains is
+unneeded.
 %
 With simple but powerful tools in a large audience's toolbelt, we hope this work will help the community work towards technical feats like Astr\'ee~\citep{ianjohnson:CousotEtAl-TASE07}.
 %

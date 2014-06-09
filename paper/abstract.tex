@@ -1,21 +1,51 @@
-The strengths of dynamic languages are also their weaknesses: these languages' flexibility makes them unpredictable -- statically, that is.
+The strength of a dynamic language is also its weakness: run-time
+flexibility comes at the cost of compile-time predictability.
 %
-Static analyses for dynamic languages are few, far between, and seldom sound.
+Many of the hallmarks of dynamic languages such as closures,
+continuations, various forms of reflection, and a lack of static types
+make many programmers rejoice, while compiler writers, tool
+developers, and verification engineers lament.
 %
-The reasons why range from there being too much unknown before run-time to make useful predictions, to such reusable code that standard data- and control-flow analyses are too imprecise to tease about their different uses, to features that are just too hard to model in traditional analytical frameworks.
+The dynamism of these features simply confounds statically reasoning
+about programs that use them.
 %
-We propose an analysis construction method that aims to ameliorate the second two of these hurdles.
-%
+Consequently, static analyses for dynamic languages are few, far
+between, and seldom sound.
 
+The ``abstracting abstract machines'' (AAM) approach to constructing
+static analyses has recently been proposed as a method to ameliorate
+the difficulty of designing analyses for such language features.
 %
-Dynamic languages are sometimes referred to as ``interpreted languages'' because some of their features are either too difficult to compile ahead of time, or the features' runtime support resembles the interpreter pattern.
+The approach, so called because it derives a function for the sound
+and computable approximation of program behavior starting from the
+abstract machine semantics of a language, provides a viable approach
+to dynamic language analysis since all that is required is a machine
+description of the interpreter.
+
+
+The AAM recipe as originally described produces finite state
+abstractions: the behavior of a program is approximated as a finite
+state machine.
 %
-The Abstracting Abstract Machines (AAM) method of analysis construction needs little more than a language's interpreter to make a sound approximation of its behavior.
+Such a model is inherently imprecise with it comes to reasoning about
+the control stack of the interpreter: a finite state machine cannot
+faithfully represent a stack.
 %
-AAM thus stands as the simplest road to making analyses for dynamic languages.
+Recent advances have shown that higher-order programs can be
+approximated with pushdown systems.
 %
-We improve its precision to better serve dynamic languages by targeting a stronger computational model: pushdown systems.
+However, such models, founded in automata theory, either breakdown or
+require significant engineering in the face of dynamic language
+features that inspect or modify the control stack.
+
+In this paper, we tackle the problem of bringing pushdown flow
+analysis to the domain of dynamic language features.  We revise the
+abstracting abstract machines technique to target the stronger
+computational model of pushdown systems.
 %
-We then show that the techniques scale to precise modeling of delimited, composable first-class control operators, {\tt shift} and {\tt reset}.
+In place of automata theory, we use only abstract machines and
+memoization.
 %
-All of this we do without touching automata theory.
+As case studies, we show the technique applies to a language with
+closures, garbage collection, stack-inspection, and first-class
+composable continuations.
