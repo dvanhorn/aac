@@ -235,6 +235,7 @@ In analysis literature, ``monovariant'' means variables get one address, namely 
 %
 Our specialized analysis for delimited control will predict the non-CPS'd version returns true.}
 
+\iftr{
 \subsection{Correctness}
 We impose an order on values since stored continuations are more approximate in the analysis than in $\SR$:
 \begin{mathpar}
@@ -371,7 +372,7 @@ $\inv_{\fresh}(\mastate',\mktab'_{\makont},\mktab'_{\mamkont})$.
 \begin{proof}[Proof sketch]
   By case analysis and use of the invariant to exploit the fact the unrollings are unique and the singleton codomains pigeon-hole the possible steps to only concrete ones.
 \end{proof}
-
+}
 %  LocalWords:  pushdown storeable codomain AAM ianjohnson Kiselyov
 %  LocalWords:  modularly parsers undelimited Biernacki ev al ntinue
 %  LocalWords:  Composable dereferences metafunction timestamped

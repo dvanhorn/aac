@@ -37,13 +37,15 @@ The resulting state space is updated here:
 
 The semantics is modified slightly in \autoref{fig:ceskkstart-semantics} to use $\mktab$ instead of $\mstore$ for continuation allocation and lookup.
 %
-Given finite allocation, contexts are drawn from a finite space, but are still precise enough to describe an unbounded stack.
+Given finite allocation, contexts are drawn from a finite space, but are still precise enough to describe an unbounded stack: they hold all the relevant components to find which stacks are possible.
 %
 The computed $\stepto$ relation thus represents the full description of a pushdown system of reachable states (and the set of paths).
 %
 Of course this semantics does not always define a pushdown system since $\alloc$ can have an unbounded codomain.
 %
 The correctness claim is therefore a correspondence between the same machine but with an unbounded stack, no $\mktab$, and $\alloc, \tick$ functions that behave the same disregarding the different representations (a reasonable assumption).
+%
+\ifntr{See the extended paper for details.}
 
 \begin{figure}
   \centering
@@ -77,6 +79,7 @@ The correctness claim is therefore a correspondence between the same machine but
   \label{fig:ceskkstart-semantics}
 \end{figure}
 
+\iftr{
 \subsection{Correctness}
 
 The high level argument for correctness exploits properties of both machines.
@@ -157,7 +160,7 @@ The unrolling proposition is the following
        $\mkont' \in \unroll{\mktab}{\mastate'.\makont}$.}
   \end{itemize}
 \end{theorem}
-
+}
 \subsection{Engineered semantics for efficiency}\label{sec:eng-frontier}
 %%
 We cover three optimizations that may be employed to accelerate the fixed-point computation.
@@ -173,7 +176,7 @@ From here on, this paper will not explicitly mention timestamps.
 
 A secondary motivation for the representation change in \ref{item:chunk} is that flow analyses commonly split control-flow graphs at function call boundaries to enable the combination of intra- and inter-procedural analyses.
 %
-In an abstract machines, this split looks like installing a continuation prompt at function calls.
+In an abstract machine, this split looks like installing a continuation prompt at function calls.
 %
 We borrow a representation from literature on delimited continuations~\citep{ianjohnson:Biernacki2006274} to split the continuation into two components: the continuation and meta-continuation.
 %
@@ -271,6 +274,7 @@ For a program $\mexpr$, we will say $(\emptyset,\emptyset,\set{\tpl{\mexpr,\bot,
 %
 The ``analysis'' then is then the pair of the $R$ and $\mktab$ components of $\lfp({\mathcal F}_{\mexpr})$.
 
+\iftr{
 \paragraph{Correctness} The correctness argument for this semantics is not about single steps but instead about the entire relation that ${\mathcal F}$ computes.
 %
 The argument is that the $R$ and $\mktab$ components of the system represent a slice of the unbounded relation $\stepto_{\CESK}$ (restricted to reachable states).
@@ -325,6 +329,7 @@ The additional judgment about tails is a variant of $\mathit{unroll}$ in order t
 \begin{proof}
   By induction on $n$.
 \end{proof}
+}
 %  LocalWords:  CESK lookup pushdown codomain optimizations chunked
 %  LocalWords:  lookups memoize timestamps rlrl reify unfoldings
 %  LocalWords:  Kleene's reified reification

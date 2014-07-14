@@ -18,15 +18,18 @@ Access control can be modeled with continuation marks, so we demonstrate with th
 %%
 Semantics that inspect the stack do so with metafunction calls that recur down the stack.
 %
-Recursive metafunctions can be thought of as out-of-band reduction relations that match rules in order until one fires, repeatedly until a return value is produced.
+Recursive metafunctions have a semantics as well, hence fair game for AAM.
+%
+And, they should always terminate (otherwise the semantics is hosed).
+%
+We can think of a simple pattern-matching recursive function as a set of rewrite rules that apply repeatedly until it reaches a result.
 %
 Interpreted via AAM, non-deterministic metafunction evaluation leads to a set of possible results.
 %
-The in-order aspect is an implementation detail that eases the definition of a single relation, so we will discuss single relations henceforth.
 
-The finite restriction on the state space carries over to metafunction inputs, so we can always detect infinite loops and bail out of that execution path.
+The finite restriction on the state space carries over to metafunction inputs, so we can always detect infinite loops that abstraction may have introduced and bail out of that execution path.
 %
-Specifically, a metafunction call can be seen as an initial state, $s$, in a reduction system for which we can compute all terminal states:
+Specifically, a metafunction call can be seen as an initial state, $s$, that will evaluate through the metafunction's rewrite rules $\stepto$ to compute all terminal states (outputs):
 \begin{align*}
   \terminal &: \forall A. \text{relation } A \times A \to \wp(A) \\
   \terminal(\stepto,s) &= \terminalaux(\emptyset,\set{s},\emptyset) \\[2pt]
@@ -41,8 +44,8 @@ This definition is a typical worklist algorithm.
 %
 It builds the set of terminal terms, $T$, by exploring the frontier (or worklist), $F$, and only adding terms to the frontier that have not been seen, as represented by $S$.
 %
-If $s$ has no more steps, $I$ will be empty, meaning $s$ should be added to the terminal set $T$.
-%
+If $s$ has no more steps, $\post(s)$ will be empty, meaning $s$ should be added to the terminal set $T$.%
+\iftr{
 We prove a correctness condition that allows us to reason equationally with $\terminal$ later on:
 \begin{lemma}[$\terminalaux$ correct]\label{lem:term-correct}
   Fix $\stepto$. Constrain arbitrary $S, F,T$ such that $T \sqsubseteq S$ and $\forall s\in T, \post(s) = \emptyset$, $F \cap S = \emptyset$, and for all $s \in S$, $\post(s) \subseteq S \cup F$.
@@ -54,7 +57,7 @@ We prove a correctness condition that allows us to reason equationally with $\te
 \begin{proof}
   By induction on $\terminalaux$'s recursion scheme.
 \end{proof}
-
+}
 %
 Note that it is possible for metafunctions' rewrite rules to themselves use metafunctions, but the \emph{seen} set ($S$) for $\terminal$ must be dynamically bound\footnote{This is a reference to dynamic scope as opposed to lexical scope.} -- it cannot restart at $\emptyset$ upon reentry.
 %
@@ -88,7 +91,7 @@ Thus this is more properly understood as
 
 A garbage collecting semantics can choose to collect the heap with respect to each live set (call this $\Gamma^*$), or, soundly, collect with respect to their union (call this $\hat\Gamma$).\footnote{The garbage collecting version of PDCFA~\citep{ianjohnson:DBLP:journals/jfp/JohnsonSEMH14} evaluates the $\hat\Gamma$ strategy.}
 %
-On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hopes that the state space will be smaller.
+On the one hand we could have tighter collections but more possible states, and on the other hand we can leave some precision behind in the hope that the state space will be smaller.
 %
 In the general idea of relevance versus irrelevance, the continuation's live addresses are relevant to execution, but are already implicitly represented in contexts because they must be mapped in the store's domain.
 
@@ -150,6 +153,7 @@ However, garbage stands in the way of completeness.
 Mismatches in the GC application for the different semantics lead to mismatches in resulting state spaces, not just up to garbage in stores, but in spurious paths from dereferencing a reallocated address that was not first collected.
 %
 
+\iftr{
 %
 The state space compaction that continuation stores give us makes ensuring GC times match up for the completeness proposition tedious.
 %
@@ -201,6 +205,7 @@ Our statement of completeness then will assume both semantics perform garbage co
   and finally $\mstate'.\mstore|_{\live(\mstate')} \sqsubseteq \mstore''|_{\widehat{live}(\mastate',\mktab')}$
 \end{theorem}
 The proofs are straightforward, and use the usual lemmas for GC, such as idempotence of $\Gamma$ and $\touches \subseteq \reaches$.
+}
 \subsection{Case study analyzing security features: the CM machine}
 The CM machine provides a model of access control: a dynamic branch of execution is given permission to use some resource if a continuation mark for that permission is set to ``grant.''
 %
@@ -289,6 +294,8 @@ where the a new $\widehat{\OK}$ function uses $\terminal$ and rewrite rules:
 \end{align*}
 This definition works fine with the reentrant $\terminal$ function with a dynamically bound \emph{seen} set, but otherwise needs to be rewritten to accumulate the Boolean result as a parameter of $\widehat{OK}^*$.
 %
+
+\iftr{
 We use the accumulator version in the proof for simplicity.
 
 \begin{lemma}[Correctness of $\widehat{\OK}$]
@@ -302,5 +309,6 @@ With this lemma in hand, the correctness proof is almost identical to the core p
 \begin{theorem}[Correctness]
   The abstract semantics is sound and complete in the same sense as \autoref{thm:pushdown-correct}.
 \end{theorem}
+}
 %  LocalWords:  pushdown AAM metafunctions metafunction indirected GC
 %  LocalWords:  dereferencing idempotence unforgeable

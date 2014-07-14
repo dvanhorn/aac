@@ -60,7 +60,7 @@ The final point is the machinery that we recount in this section.
 % For example, we may write $\tpl{\menv(\mexpr), \mkont}$ for an element of $\Expr \times \Env \times \Kont$ instead of ``$\tpl{\mval,\menv',\mkont}$ where $(\mval,\menv') = \menv(\mvar)$.''}
 % \end{itemize}
 
-\subsection{The $\CESKstart$ machine}
+\subsection{The $\CESKstart$ machine \emph{schema}}
 
 The case studies in this paper have full implementations in PLT redex~\citep{dvanhorn:Felleisen2009Semantics} available online.\footnote{\url{http://github.com/dvanhorn/aac}}
 They all build off the call-by-value untyped lambda calculus, whose semantics we recall in small-step reduction semantics style:
@@ -104,6 +104,10 @@ If we have just the stack as an unbounded data structure, then the machine has f
 AAM slightly modifies the store to map arbitrarily allocated addresses (reuse allowed) to a set of values.
 %
 That way, if an address is reused then the previous tenant of the address is not forgotten, just merged as a \emph{possible} result when the address is dereferenced.
+%
+The allocation function is a \emph{parameter}; the ``machine'' AAM produces is really a machine \emph{schema}, since we can vary the allocator to produce both and anything in between a concrete and abstract semantics.
+%
+That said, we will still refer to the refactored semantics as machines going forward.
 %
 The semantics of this CESK machine is shown in \autoref{fig:cesk-semantics}.
 %

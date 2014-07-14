@@ -67,7 +67,7 @@ These addresses would not be garbage at first, since they must be mapped in the 
 If they are supposed to then be live, and are used (presumably they are reallocated post-collection), the analysis will miss paths it must explore for soundness.
 %
 
-%
+\iftr{
 Context-irrelevance is a property of the semantics \emph{without} continuation stores, so there is an additional invariant to that of \autoref{sec:pushdown} for the semantics with $\mktab$ and $\mmemo$: $\mmemo$ respects context irrelevance.
 \begin{mathpar}
   \inferrule{\dom(\mmemo) \subseteq \dom(\mktab) \\
@@ -81,6 +81,7 @@ Context-irrelevance is a property of the semantics \emph{without} continuation s
 Inexact GC does \emph{not} respect context irrelevance for the same reasons it is not complete: some states are spurious, meaning some memo table entries will be spurious, and the expected path in the invariant will not exist.
 %
 The reason we use unrolled continuations instead of simply $\epsilon$ for this (balanced) path is precisely for stack inspection reasons.
+}
 
  \begin{figure}
    \begin{center}
@@ -138,9 +139,11 @@ where
        \tpl{\mexpr,\menv,\mstore} \in \Delta\mmemo(\mctx)\}$}
  \end{tabular}
 
+\iftr{
 \begin{theorem}[Correctness]
 Same property is the same as in \autoref{thm:global-pushdown}, where $\reify$ ignores the $\mmemo$ component.
 \end{theorem}
 The proof appeals to the invariant on $\mmemo$ whose proof involves an additional argument for the short-circuiting step that reconstructs the path from a memoized result using both context irrelevance and the table invariants.
+}
 %  LocalWords:  parallelizable pushdown automata summarization
 %  LocalWords:  memoization memoized dereferences

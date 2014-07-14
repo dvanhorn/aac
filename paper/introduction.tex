@@ -25,22 +25,28 @@ JavaScript~\citep{ianjohnson:DBLP:journals/corr/KashyapDKWGSWH14}.
 %
 A downside is that all effective instantiations of AAM are finite state approximations.
 %
-When precision is your only weapon against dynamism, this is unacceptable.
-%
 Finite state techniques cannot precisely predict where a method or function call will return.
 %
-This opens a flood gate to imprecision flowing everywhere through analyses' predictions.
+Dynamic languages have more sources for imprecision than non-dynamic languages (\eg{}, reflection, computed fields, runtime linking, {\tt eval}) that all need proper treatment in the abstract.
+%
+If we can't have precision in the presence of statically unknowable behavior, we should at least be able to \emph{contain} it in the states it actually affects.
+%
+Imprecise control flow due to finite state abstractions is an unacceptable containment mechanism.
+%
+It opens the flood gate to imprecision flowing everywhere through analyses' predictions.
+%
+It is also a solvable problem.
 %
 
 %
-We extend the AAM technique to computably handle infinite state state spaces by adapting pushdown abstraction methods to abstract machines.
+We extend the AAM technique to computably handle infinite state spaces by adapting pushdown abstraction methods to abstract machines.
 %
 The unbounded stack of pushdown systems is the mechanism to precisely match calls and returns.
 %
 We demonstrate the essence of our pushdown analysis construction by
 first applying the AAM technique to a call-by-value functional
 language (\S\ref{sec:aam}) and then revising the derivation to
-incorporate an exacting representation of the control stack
+incorporate an exact representation of the control stack
 (\S\ref{sec:pushdown}).  We then show how the approach scales to
 stack-reflecting language features such as garbage collection and
 stack inspection (\S\ref{sec:inspection}), and stack-reifying features
