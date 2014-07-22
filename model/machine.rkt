@@ -337,8 +337,9 @@
 ;; [Set ς] K -> [Set ς] K
 ;; The step function for the system
 (define (step ςs K)
+  (define-values (K* Δ?) (combine-K K (set-apply-reduction-relation update-K ςs)))
   (values (set-apply-reduction-relation (-->_mτ K) ςs)
-          (combine-K K (set-apply-reduction-relation update-K ςs))))
+          K* Δ?))
 
 ;; Reduction split between two relations:
 ;; -->_mτ computes next state given current table
@@ -440,15 +441,23 @@
 
 (define (hash-union h a s)
   (hash-set h a (set-union (hash-ref h a (set)) s)))
+(define (hash-union/Δ h a s)
+  (match (hash-ref h a #f)
+    [#f (values (hash-set h a s) #t)]
+    [s* (define s** (set-union s* s))
+        (if (= (set-count s** s*))
+            (values h #f)
+            (values (hash-set h a s**) #t))]))
 (define (hash-add h a v)
   (hash-set h a (set-add (hash-ref h a (set)) v)))
 
-;; K [Set K] -> K
+;; K [Set K] -> (values K Boolean)
 (define (combine-K K0 Ks)
-  (for*/fold ([K0 K0])
+  (for*/fold ([K0 K0] [Δ? #f])
     ([K (in-set Ks)]
      [(τ κs) (in-hash K)])
-    (hash-union K0 τ κs)))
+    (define-values (K0* Δ?*) (hash-union/Δ K0 τ κs))
+    (values K0* (or Δ? Δ?*))))
 
 ;; Monovariant abstraction
 (define-metafunction Lτ
@@ -464,19 +473,30 @@
     ([ς (in-set ςs)])
     (hash-union G ς (list->set (apply-reduction-relation r ς)))))
 
+;; [Set ς] [Map ς ℕ] ℕ -> [Set ς]
+;; Process frontier states that haven't been seen.
+(define (set-subtract-seen S h cur)
+  (for/set ([s (in-set S)]
+            #:unless (= (hash-ref h s -1) cur))
+    s))
+
 ;; Analyze expression producing graph and table
 (define (analyze e)
-  (let loop ([seen (set)]
+  (let loop ([seen #hash()]
              [ςs (set (term (injι ,e)))]
              [K (hash)]
+             [Knum 0]
              [G (hash)])
 
     (cond [(set-empty? ςs) (values K G)]
           [else
-           (define-values (ςs1 K1) (step ςs K))
-           (loop (set-union seen ςs)
-                 (set-subtract ςs1 seen)
+           (define-values (ςs1 K1 Δ?) (step ςs K))
+           (define Knum* (if Δ? (add1 Knum) Knum))
+           (loop (for/fold ([seen seen]) ([ς (in-set ςs)])
+                   (hash-set seen ς Knum))
+                 (set-subtract-seen ςs1 seen Knum*)
                  K1
+                 Knum*
                  (update-graph G (-->_mτ K) ςs))])))
 
 ;; Visualize a graph as a reduction relation starting from root.

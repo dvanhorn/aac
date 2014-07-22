@@ -6,7 +6,7 @@
   [e .... (shift x e) (reset e)
      ;; added for testing purposes
      (op2 e e) primv]
-  [op2 + *]
+  [op2 + * <=]
   [φ (AppL e ρ) (AppR v) (op2L op2 e ρ) (op2R op2 v)]
   [κ (φ ...)]
   [primv number #t #f]
@@ -110,7 +110,8 @@
 (define-metafunction SR
   δ : op2 primv primv -> primv
   [(δ + number_0 number_1) ,(+ (term number_0) (term number_1))]
-  [(δ * number_0 number_1) ,(* (term number_0) (term number_1))])
+  [(δ * number_0 number_1) ,(* (term number_0) (term number_1))]
+  [(δ <= number_0 number_1) ,(<= (term number_0) (term number_1))])
 
 (define -->_sr
   (reduction-relation
@@ -162,6 +163,10 @@
         (co (φ ...) C v σ)
         δ
         (where v (δ op2 v_0 v_1))]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Now the terminating analysis
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-syntax-rule (set-of L pat S)
   (and (set? (term S))
@@ -409,12 +414,7 @@
 (define-metafunction SRι
   pop : Ξ χ ι κ -> ((φ ι κ) ...)
   [(pop Ξ_κ χ ι κ) ,(let ([res (set->list (term (pop* Ξ_κ χ ι κ ∅)))])
-                      (printf "popping ~a ~a got ~a~%" (term ι) (term κ) res)
-                    (when (and (or (not (null? (term ι)))
-                                   (not (null? (term κ))))
-                               (null? res))
-                      (printf "That's weird~%") (pretty-print (term Ξ_κ)))
-                    res)])
+                      res)])
 
 (define-syntax-rule (for-τ̂ ds folder (pre ...) [Ξ χ v_f v_a a] [σ τ ικs χ*] body ...)
   (folder pre ...
@@ -496,34 +496,55 @@
                             φ)))]))
 
 (define (combine-Ξs Ξκ ΞC Ξs)
-  (for/fold ([Ξκ Ξκ] [ΞC ΞC])
+  (for/fold ([Ξκ Ξκ] [ΞκΔ? #f] [ΞC ΞC] [ΞCΔ? #f])
       ([2lst (in-set Ξs)])
-    (values (for/fold ([Ξκ Ξκ]) ([(τ ικs) (in-hash (first 2lst))])
-              (hash-union Ξκ τ ικs))
-            (for/fold ([ΞC ΞC]) ([(υ ικCs) (in-hash (second 2lst))])
-              (hash-union ΞC υ ικCs)))))
+    (define-values (Ξκ* ΞκΔ?*)
+      (for/fold ([Ξκ Ξκ] [Δ? ΞκΔ?]) ([(τ ικs) (in-hash (first 2lst))])
+        (define-values (Ξκ* Δ?*) (hash-union/Δ Ξκ τ ικs))
+        (values Ξκ* (or Δ? Δ?*))))
+    (define-values (ΞC* ΞCΔ?*)
+      (for/fold ([ΞC ΞC] [Δ? ΞCΔ?]) ([(υ ικCs) (in-hash (second 2lst))])
+        (define-values (ΞC* Δ?*) (hash-union/Δ ΞC υ ικCs))
+        (values ΞC* (or Δ? Δ?*))))
+    (values Ξκ* ΞκΔ?* ΞC* ΞCΔ?*)))
 
 (define (step-srι ςs Ξκ ΞC)
-  (define-values (Ξκ1 ΞC1)
+  (define-values (Ξκ1 ΞκΔ? ΞC1 ΞCΔ?)
     (combine-Ξs Ξκ ΞC (set-apply-reduction-relation (update-Ξ Ξκ ΞC) ςs)))
   ;; XXX: must be Ξκ1 ΞC1 and not the previous?
   (values (set-apply-reduction-relation (-->_srι Ξκ1 ΞC1) ςs)
-          Ξκ1 ΞC1))
+          Ξκ1 ΞκΔ? ΞC1 ΞCΔ?))
 (trace step-srι)
 
+;; [Set ς] [Map ς [Pair ℕ ℕ]] ℕ ℕ -> [Set ς]
+;; Process frontier states that haven't been seen.
+(define (set-subtract-seen-pair S h cur0 cur1)
+  (for/set ([s (in-set S)]
+            #:unless (match (hash-ref h s #f)
+                       [(cons (== cur0 =) (== cur1 =)) #t]
+                       [_ #f]))
+    s))
+
 (define (analyze-srι e)
-  (let loop ([seen (set)]
+  (let loop ([seen #hash()]
              [ςs (set (term (inj-srι ,e)))]
              [Ξκ (hash)]
+             [Ξκnum 0]
              [ΞC (hash)]
+             [ΞCnum 0]
              [G (hash)])
 
     (cond [(set-empty? ςs) (values Ξκ ΞC G)]
           [else
-           (define-values (ςs1 Ξκ1 ΞC1) (step-srι ςs Ξκ ΞC))
-           (loop (set-union seen ςs)
-                 (set-subtract ςs1 seen)
-                 Ξκ1 ΞC1
+           (define-values (ςs1 Ξκ1 ΞκΔ? ΞC1 ΞCΔ?) (step-srι ςs Ξκ ΞC))
+           (define nums (cons Ξκnum ΞCnum))
+           (define Ξκnum* (if ΞκΔ? (add1 Ξκnum) Ξκnum))
+           (define ΞCnum* (if ΞCΔ? (add1 ΞCnum) ΞCnum))
+           (loop (for/fold ([seen seen]) ([ς (in-set ςs)])
+                   (hash-set seen ς nums))
+                 (set-subtract-seen-pair ςs1 seen Ξκnum* ΞCnum*)
+                 Ξκ1 Ξκnum*
+                 ΞC1 ΞCnum*
                  (update-graph G (-->_srι Ξκ1 ΞC1) ςs))])))
 
 (define-metafunction SRι
@@ -541,6 +562,7 @@
 ;; 121
 (define-term SHIFT3 (App (Lam f (+ 1 (reset (+ 10 (App f 100)))))
                          (Lam x (shift k (App k (App k x))))))
+
 (define-syntax-rule (tests --> inj tests ...)
   (begin (traces --> (term (inj tests))) ...))
 
