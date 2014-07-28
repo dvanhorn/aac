@@ -104,6 +104,18 @@ The different context spaces are thus:
 \end{align*}
 %
 
+Revisiting the graphical intuitions of the state space, we have now $\mvkont$ in states' stores, which represent an \emph{overapproximation} of a set of continuations.
+%
+We augment the illustration from \autoref{fig:pushdown-vis} in \autoref{fig:shiftreset-vis} to include the new $\MKStore$ and the overapproximating behavior of $\mvkont$.
+%
+The informal notation $\mstore \leadsto \mvkont$ suggests that the state's store \emph{contains}, or \emph{refers to} some $\mvkont$.
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.6]{xigraph-approx}
+  \caption{Graphical visualization of states, $\mktab_{\makont}$ and $\mktab_{\mamkont}$.}
+  \label{fig:shiftreset-vis}
+\end{figure}
 
 \begin{figure}
   \centering

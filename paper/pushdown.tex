@@ -165,9 +165,15 @@ The unrolling proposition is the following
 %%
 We cover three optimizations that may be employed to accelerate the fixed-point computation.
 \begin{enumerate}
-\item{Observe that $\mktab$ can be made global with no loss in precision; it will not need to be stored in the frontier or set of seen states.}
 \item{\label{item:chunk}Continuations can be ``chunked'' more coarsely at function boundaries instead of at each frame in order to minimize table lookups.}
-\item{Since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.}
+\item{We can globalize $\mktab$ with no loss in precision, unlike a global store;%
+      it will not need to be stored in the frontier but will need to be tracked by seen states.
+%
+      The seen states only need comparison, and a global $\mktab$ increases monotonically, so we can use Shivers' timestamp technique~\citep{ianjohnson:Shivers:1991:CFA}.
+%
+      The timestamp technique does not store an entire $\mktab$ in the seen set at each state, but rather how many times the global $\mktab$ has increased.}
+\item{Since evaluation is the same regardless of the stack, we can memoize results to short-circuit to the answer.
+      The irrelevance of the stack then precludes the need for timestamping the global $\mktab$.}
 \end{enumerate}
 %
 This last optimization will be covered in more detail in \autoref{sec:memo}.
@@ -188,6 +194,18 @@ Instead of ``continuation'' and ``meta-continuation'' then, we will use terminol
 %
 %
 
+\autoref{fig:pushdown-vis} has a visualization of a hypothetical state space.
+%
+Reduction relations can be thought of as graphs: each state is a node, and if a state $\mstate$ reduces to $\mstate'$, then there is an edge $\mstate \stepto \mstate'$.
+%
+We can also view our various environments that contain pointers (addresses, contexts) as graphs: each pointer is a node, and if the pointer $\mctx$ references an object $\mlkont$ that contains another pointer $\mctx'$, then there is a labeled edge $\mctx \xrightarrow{\mlkont} \mctx'$.
+%
+States' contexts point into $\mktab$ to associate each state with a \emph{regular language} of continuations.
+%
+The reversed $\mktab$ graph can be read as a group of finite state machines that accepts all the continuations that are possible at each state that the reversed pointers lead to.
+%
+The $\kmt$ continuation is this graph's starting state.
+
 \begin{figure}
   \centering
   \begin{tabular}{rlrl}
@@ -196,6 +214,13 @@ Instead of ``continuation'' and ``meta-continuation'' then, we will use terminol
   \end{tabular}
   \caption{$\CESIKKstar$ semantic spaces}
   \label{fig:pushdown-spaces}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[scale=0.65]{xigraph-cloud}
+  \caption{Graph visualization of states and $\mktab$}
+  \label{fig:pushdown-vis}
 \end{figure}
 
 The resulting shuffling of the semantics to accommodate this new representation is in \autoref{fig:cesikkstar-semantics}.
@@ -330,6 +355,27 @@ The additional judgment about tails is a variant of $\mathit{unroll}$ in order t
   By induction on $n$.
 \end{proof}
 }
+
+\subsection{Remarks about cost}
+
+The common tradeoff for performance over precision is to use a global store.
+%
+A representation win originally exploited by Shivers~\citep{ianjohnson:Shivers:1991:CFA} is to represent the seen states' stores by the \emph{age} of the store.
+%
+A context in this case contains the store age for faster comparison.
+%
+Old stores are mostly useless since the current one subsumes them, so a useful representation for the seen set is as a map from the \emph{rest of the state} to the store age it was last visited with.
+%
+We will align with the analysis literature and call these ``rest of state'' objects \emph{points}.
+%
+Note that since the store age becomes part of the state representation due to ``context,'' there are considerably more points than in the comparable finite state approach.
+%
+When we revisit a state because the store age (or $\mktab$ age) is different from the last time we visited it (hence we're visiting a \emph{new state}), we can clobber the old ages.
+%
+A finite state approach will use less memory because the seen set will have a smaller domain (fewer distinctions made because of the lack of a ``context'' component).
+%
+%Finite state approaches can take less time, but not always: stack-allocation-inspired binding techniques can regain precision and performance.
+%
 %  LocalWords:  CESK lookup pushdown codomain optimizations chunked
 %  LocalWords:  lookups memoize timestamps rlrl reify unfoldings
 %  LocalWords:  Kleene's reified reification
