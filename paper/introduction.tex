@@ -15,7 +15,7 @@ Second, features like stack inspection and first-class continuations are not eas
 We need a new approach. % before heavily investing in engineering effort.
 
 %
-Luckily, there is an alternative to the CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters (they are interderivable in several instances~\citep{ianjohnson:DBLP:conf/icfp/Danvy08}).
+Luckily, there is an alternative to the CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters; they are interderivable in several instances~\citep{ianjohnson:DBLP:conf/icfp/Danvy08}.
 %
 This alternative, called abstracting abstract machines
 (AAM)~\citep{dvanhorn:VanHorn2012Systematic}, is a simple
@@ -64,6 +64,10 @@ analysis for a dynamic language is some experience implementing
 interpreters; expertise in automata theory or abstract domains is
 unneeded.
 %
-With simple but powerful tools in a large audience's toolbelt, we hope this work will help the community work towards technical feats like Astr\'ee~\citep{ianjohnson:CousotEtAl-TASE07}.
+By simplifying the technical approach and broadening both the audience
+and applicability of pushdown analyses, we hope to enable progress
+towards technical feats like
+Astr\'ee~\citep{ianjohnson:CousotEtAl-TASE07}
+for expressive, dynamic languages.
 %
-The large problem domain of analyzing dynamic languages needs an army to tackle it, and we believe that AAM can feed that army.
+% The large problem domain of analyzing dynamic languages needs an army to tackle it, and we believe that AAM can feed that army.
