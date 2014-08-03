@@ -68,13 +68,15 @@ Garbage collection is an example of a language feature that needs to crawl the s
 %
 We are interested in garbage collection because it can give massive precision boosts to analyses~\citep{dvanhorn:Might:2006:GammaCFA,dvanhorn:Earl2012Introspective}.
 %
+Unadulterated, abstract GC inflicts an exponential state space that can destroy performance.
+%
 The following function will produce the set of live addresses in the stack:
 
 \begin{align*}
   \kontlive &: \Frame^* \to \wp(\Addr) \\
-  \kontlive(\makont) &= \kontliveaux(\makont,\emptyset) \\[2pt]
+  \kontlive(\mkont) &= \kontliveaux(\mkont,\emptyset) \\[2pt]
   \kontliveaux(\epsilon,L) &= L \\
-  \kontliveaux(\kcons{\mkframe}{\makont}, L) &= \kontliveaux(\makont, L\cup\touches(\mkframe)) \\
+  \kontliveaux(\kcons{\mkframe}{\mkont}, L) &= \kontliveaux(\mkont, L\cup\touches(\mkframe)) \\
   \text{where } \touches(\appl{\mexpr,\menv}) &= \touches(\appr{\mexpr,\menv}) = \touches(\mexpr,\menv) \\
                 \touches(\mexpr,\menv) &= \setbuild{\menv(\mvar)}{\mvar \in \fv(\mexpr)}
 \end{align*}
@@ -130,17 +132,17 @@ And inexact GC produces a single state that collects based on all (known) stacks
 \end{align*}
 \begin{equation*}
   \infer{\mastate,\mktab \stepto \mastate',\mktab'}
-        {\mastate,\mktab \stepto_{\hat\Gamma} \hat\Gamma(\mstate',\mktab')\mktab'}
+        {\mastate,\mktab \stepto_{\hat\Gamma} \hat\Gamma(\mstate',\mktab'),\mktab'}
 \end{equation*}
 
 Without the continuation store, the baseline GC is
 \begin{align*}
-  \Gamma(\mastate) &= \mastate\set{\mstore:=\mastate.\mstore|_{\live(\mastate)}} \\
-  \live(\mexpr,\menv,\mstore,\mkont) &= \reaches(\touches(\mexpr,\menv)\cup \kontlive(\makont), \mstore)
+  \Gamma(\mstate) &= \mstate\set{\mstore:=\mstate.\mstore|_{\live(\mstate)}} \\
+  \live(\mexpr,\menv,\mstore,\mkont) &= \reaches(\touches(\mexpr,\menv)\cup \kontlive(\mkont), \mstore)
 \end{align*}
 \begin{equation*}
-  \infer{\mastate \stepto \mastate'}
-        {\mastate \stepto_{\Gamma} \Gamma(\mstate')}  
+  \infer{\mstate \stepto \mstate'}
+        {\mstate \stepto_{\Gamma} \Gamma(\mstate')}  
 \end{equation*}
 Suppose at arbitrary times we decide to perform garbage collection rather than continue with garbage.
 %
