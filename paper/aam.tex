@@ -2,7 +2,7 @@ Abstract machines are a versatile, clear and concise way to describe the semanti
 %
 They hit a sweet spot in terms of level of discourse, and viable implementation strategy.
 %
-First year graduate students learn programming language semantics with abstract machines.
+First year graduate students learn programming language semantics with abstract machines~\cite{dvanhorn:Felleisen2009Semantics}.
 %\footnote{Northeastern's CS7400, UMD's CMSC631, University of Utah's CS7520}
 %
 They also turn out to be fairly simple to repurpose into static analyses for the languages they implement, via the Abstracting Abstract Machines methodology~\citep{dvanhorn:VanHorn2010Abstracting}.
@@ -12,7 +12,7 @@ The basic idea is that abstract machines implement a language's \emph{concrete} 
 AAM is founded on three ideas:
 \begin{enumerate}
 \item{concrete and abstract semantics ideally should use the same code, for correctness and testing purposes,}
-\item{the level of abstraction should be a tunable parameter,}
+\item{the level of approximation should be a tunable parameter,}
 \item{both of the above are achievable with a slight change to the abstract machine's state representation.}
 \end{enumerate}
 
@@ -60,34 +60,161 @@ The final point is the machinery that we recount in this section.
 % For example, we may write $\tpl{\menv(\mexpr), \mkont}$ for an element of $\Expr \times \Env \times \Kont$ instead of ``$\tpl{\mval,\menv',\mkont}$ where $(\mval,\menv') = \menv(\mvar)$.''}
 % \end{itemize}
 
-\subsection{The $\CESKstart$ machine \emph{schema}}
+\subsection{The $\boldsymbol\CESKstart$ machine \emph{schema}}
 
-The case studies in this paper have full implementations in PLT redex~\citep{dvanhorn:Felleisen2009Semantics} available online.\footnote{\url{http://github.com/dvanhorn/aac}}
-They all build off the call-by-value untyped lambda calculus, whose semantics we recall in small-step reduction semantics style:
-\begin{center}
+The case studies in this paper have full implementations in PLT Redex~\citep{dvanhorn:Felleisen2009Semantics} available online.\footnote{\url{http://github.com/dvanhorn/aac}}
+They all build off the untyped call-by-value lambda calculus, whose semantics we recall in small-step reduction semantics style.
+
+
+\paragraph{From $\boldsymbol{\beta_v}$ to CEK - Being explicit:}
+
+Expressions consist of variables, applications, and
+$\lambda$-abstractions, which are considered values:
+\[
+\begin{array}{lclcl}
+\mexpr & \in & \mathit{Expr} & ::= & \svar\mvar \alt \sapp{\mexpr}{\mexpr} \alt \mval\\[1mm]
+\mval  & \in & \Value        & ::= & \slam{\mvar}{\mexpr}
+\end{array}
+\]
+Reduction is characterized by a binary relation, $\beta_v$, which
+reduces the application of a function to a value by substituting the
+argument for the formal parameter of the function:
+\[
+\begin{array}{rcl}
+(\slam{\mvar}{\mexpr})\;\mval & \beta_v & [\mval/\mvar]\mexpr
+\end{array}
+\]
+
+A search strategy is given for specifying the order in which
+function applications are selected for reduction.  This strategy is
+specified as a grammar of evaluation contexts:
+\[
+\begin{array}{lclcl}
+E & \in & \mathit{EvaluationContext} & ::= & [] \alt \sapp{E}{\mexpr} \alt \sapp{\mval}{E} 
+\end{array}
+\]
+This grammar specifies that applications are reduced left-to-right,
+and reduction does not occur under $\lambda$-abstractions.  The ``[]''
+context is the empty ``hole'' context.  The notation $E[\mexpr]$ means
+the expression obtained by replacing the hole of $E$ with
+$\mexpr$.
+
+\newcommand{\betastep}{\mathrel{\longmapsto_{\beta_v}}}
+Finally, reduction on closed expressions is then given by the $\betastep$ relation:
+\begin{align*}
+\mexpr \betastep \mexpr' \text{ if } \mexpr = E[\mexpr_0], \mexpr' = E[\mexpr_1]\text{, and }\mexpr_0\;\beta_v\;\mexpr_1\text,\\
+\text{
+for some $E$, $\mexpr_0$, and $\mexpr_1$.}
+\end{align*}
+
+
+Although concise and well-structured for mathematical proofs, this
+semantics sheds little light on the mechanics of an effective
+implementation. There are essentially two aspects that need to be
+modelled more concretely.
+
+The first aspect is that of substitution.  The $\beta_v$ axiom models
+function application via the meta-theoretic notion of substition, but
+substitution can be modeled more explicitly by incorporating
+an \emph{environment}, which maps a variable to the value that should
+be substituted for it.  This gives rise to the notion of
+a \emph{closure}, which represents values by $\lambda$-abstractions
+paired together with an environment.  The $\beta_v$-axiom is replaced
+by an alternative axiom that interprets function application by
+extending the environment of a closure with the formal parameter
+mapping to the argument in the scope of the body of the function;
+it interprets variables, by looking up their value in the environment.
+
+The second aspect is that of search.  The $\betastep$ relation is
+defined in terms of evaluation contexts, but gives no guidance on how
+to construct this context.  The search for reduction opportunities can
+be modeled more explicitly by a stack that represents the evaluation
+context in an ``inside-out'' fashion: the inner-most part of the
+context is the top frame of the stack.
+
+Modelling substution with closures and evaluation contexts with stacks
+yields an abstract machine for the language, the CEK
+machine~\cite{dvanhorn:Felleisen2009Semantics}, shown in \autoref{fig:cek}.
+
+\begin{figure}\centering
   \begin{tabular}{rlrl}
-    \multicolumn{4}{c}{$E[\sapp{\slam{\mvar}{\mexpr}}{\mval}] \stepto_\beta E[[\mval/\mvar]\mexpr]$} \\[2pt]
-    \multicolumn{1}{l}{where} & \multicolumn{2}{r}{$E \in \mathit{EvaluationContext}$} &\hspace{-3mm}$::= [] \alt \sapp{E}{\mexpr} \alt \sapp{\mval}{E}$ \\[2pt]
-    $\mexpr \in Expr$ &\hspace{-3mm}$::= \svar\mvar \alt \sapp{\mexpr}{\mexpr} \alt \mval$ & $\mval \in \Value$ &\hspace{-3mm}$::= \slam{\mvar}{\mexpr}$
+    $\mstate \in \CEK$ &\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mkont}$
+    & $\mlam \in \Lam$ &\hspace{-3mm}$::= \slam{\mvar}{\mexpr}$\\
+    $\mval \in \Value$ &\hspace{-3mm}$::= (\mlam,\menv)$ 
+    & $\menv \in \Env$ &\hspace{-3mm}$= \Var \finto \Value$ \\
+    $\mkont \in \Kont$ &\hspace{-3mm}$= \Frame^*$ &
+    $\mvar \in \Var$ &\\ %\hspace{-3mm} a set\\
+    $\mkframe \in \Frame$ &\multicolumn{2}{l}{\hspace{-3mm}$::= \appl{\mexpr,\menv} \alt \appr{\mval}$} \\[2mm]
   \end{tabular}
-\end{center}
-Although concise and well-structured for mathematical proofs, this semantics does not reflect what an effective implementation looks like.
+
+  $\mstate \stepto \mstate'$ \\[.5mm]
+  \begin{tabular}{r|l}
+    \hline\vspace{-3mm}\\
+    $\tpl{\svar\mvar, \menv, \mkont}$
+    &
+    $\tpl{\mval, \mkont}$ if $\mval = \menv(\mvar)$
+    \\
+% Application
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mkont}$
+    &
+    $\tpl{\mexpri0,\menv,\kcons{\appl{\mexpri1,\menv}}{\mkont}}$
+    \\
+% Arg eval
+    $\tpl{\mval, \kcons{\appl{\mexpr,\menv}}{\mkont}}$
+    &
+    $\tpl{\mexpr,\menv,\kcons{\appr{\mval}}{\mkont}}$
+    \\
+% Function call
+    $\tpl{\mval,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\mkont}}$
+    &
+    $\tpl{\mexpr,\extm{\menv}{\mvar}{\mval},\mkont}$
+  \end{tabular}
+  \caption{CEK machine}
+  \label{fig:cek}
+\end{figure}
+
+
+\paragraph{From CEK to CESK$_t^\star$ - Accounting for space \& time:}
+
+The CEK machine makes explicit the mechanics of substitution and
+reduction in context, but doesn't give an explicit account of memory
+allocation.  We now reformulate the CEK machine into a heap-based
+machine that explicitly allocates memory for variable bindings and
+stack frames.  Properly accounting for memory allocation will prove
+essential for making computable abstractions, as the key mechanism for
+soundly approximating the running of a program will be limiting the
+memory available to analyze a program.
+
+The memory heap is modelled as a \emph{store} mapping addresses to
+values or frames.  Environments are modified to map variables to
+addresses and when a function is applied, we allocate space in the
+heap to hold the value of the argument.
 %
-The context decomposition to find a redex (left hand side of $\stepto_\beta$), substitution and re-plugging are better understood as a process that a machine goes through to perform a step.
+To account for the space used by the stack, we change the
+representation of the continuation from a inductively defined list of
+frames to a linked list structure that is explicitly allocated in the
+heap.
+
+In anticipation of approximating machines, we make a slight
+departure from the standard model and have the store map addresses to
+\emph{sets of} values or frames, denoting the possible values an address may take on.
+
+
+The CESK$_t^\star$ machine is defined in \autoref{fig:ceskstart}.
 %
-We thus start with an abstract machine that manages these steps with a special state representation: the CESK machine.\footnote{CESK stands for control string (or code), environment, store, and continuation (but with a k to distinguish from the first c). The continuation is sometimes called the stack.}
+% The standard CESK machine has a store that maps freshly allocated addresses to single values.
 %
-The environment and store work together to represent ongoing substitutions, and the continuation represents where evaluation is with respect to decomposing and re-plugging a context.
+Typically, memory allocation is specified as $\maddr \notin \dom(\mstore)$, but this is just a specification, not an implementation.
 %
-The state space is in \autoref{fig:cesk-spaces}.
+Concretely, we rely on an allocation function $\alloc : \CESKstart \to \Addr$ that will produce an address for the machine to use.
 %
-The standard CESK machine has a store that maps freshly allocated addresses to single values.
+The $\alloc$ function should be considered a parameter of the machine; we 
+obtain different machines by instantiating different allocation strategies.
 %
-An address $\maddr$ is ``fresh'' if $\maddr \notin \dom(\mstore)$, but this is just a specification, not an implementation.
-%
-Concretely, there is an allocation function $\alloc : \CESK \to \Addr$ that will produce an address for the machine to use.
-%
-We use a slightly non-standard CESK machine that allows $\alloc$ to produce arbitrary addresses instead of just fresh ones.
+The allocation function need not always produce a fresh address, and finite
+allocation strategies generate finite approximations of the running of a program.
+
+% We use a slightly non-standard CESK machine that allows $\alloc$ to produce arbitrary addresses instead of just fresh ones.
 
 %
 Allocation is key for both precision and abstraction power.
@@ -109,57 +236,91 @@ The allocation function is a \emph{parameter}; the ``machine'' AAM produces is r
 %
 That said, we will still refer to the refactored semantics as machines going forward.
 %
-The semantics of this CESK machine is shown in \autoref{fig:cesk-semantics}.
+%The semantics of this CESK machine is shown in \autoref{fig:cesk-semantics}.
 %
 The only differences from the standard presentation are in the use of $\in$ instead of $=$ to make lookups non-deterministic, and weak updates with $\sqcup$ instead of strong updates to allow sound reuse of addresses:
 %
 \begin{align*}
-  \joinm{\mstore}{\maddr}{\mval} &= \extm{\mstore}{\maddr}{\mstore(\maddr)\sqcup\mval} \\
-  \mval\sqcup\mval' &= \set{\mval,\mval'} \\
-  \set{\mval,\ldots}\sqcup\mval' &= \set{\mval,\ldots,\mval'} \\
+  \joinm{\mstore}{\maddr}{\mval} &= \extm{\mstore}{\maddr}{\mstore(\maddr)\cup\set{\mval}}\text.
+%  \mval\sqcup\mval' &= \set{\mval,\mval'} \\
+%  \set{\mval,\ldots}\sqcup\mval' &= \set{\mval,\ldots,\mval'} \\
 \end{align*}
+
+
 
 \begin{figure}\centering
   \begin{tabular}{rlrl}
-    $\mstate \in \CESK$ &\multicolumn{2}{l}{\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mstore, \mkont}$} \\
-    $\mlam \in \Lam$ &\hspace{-3mm}$::= \slam{\mvar}{\mexpr}$ & $\mval \in \Value$ &\hspace{-3mm}$::= (\mlam,\menv)$ \\
-    $\menv \in \Env$ &\hspace{-3mm}$= \Var \finto \Addr$ & $\mstore \in \Store$ &\hspace{-3mm}$= \Addr \finto \wp(\Value)$ \\
-    $\mkframe \in \Frame$ &\multicolumn{2}{l}{\hspace{-3mm}$::= \appl{\mexpr,\menv} \alt \appr{\mval}$} \\
-    $\mkont \in \Kont$ &\hspace{-3mm}$= \Frame^*$ & & \\
-    $\mvar \in \Var$ &\hspace{-3mm} a set & $\maddr,\maddralt \in \Addr$ &\hspace{-3mm} a set \\
-    $\alloc$ &\hspace{-3mm}$: \CESK \to \Addr$ & &
+    $\mstate \in \CESKstart$ &\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mstore, \mkont}$  &
+%    $\mlam \in \Lam$ &\hspace{-3mm}$::= \slam{\mvar}{\mexpr}$ & $\mval \in \Value$ &\hspace{-3mm}$::= (\mlam,\menv)$ \\
+$\mkont \in \Kont$ &\hspace{-3mm}$::= \epsilon \alt \kcons{\mkframe}{\maddr}$\\
+ $\mstore \in \Store$ &\hspace{-3mm}$= \Addr \finto \wp(\Storeable)$ &
+%    $\mkframe \in \Frame$ &\multicolumn{2}{l}{\hspace{-3mm}$::= \appl{\mexpr,\menv} \alt \appr{\mval}$} \\
+%    $\mkont \in \Kont$ &\hspace{-3mm}$= \Frame^*$ & & \\
+%    $\mvar \in \Var$ &\hspace{-3mm} a set &
+ $\maddr,\maddralt$ &\hspace{-3mm}$\in \Addr$\\ % \hspace{-3mm} a set \\
+    $\menv \in \Env$ &\hspace{-3mm}$= \Var \finto \Addr$ 
+& $\mtime,\mtimealt$ &\hspace{-3mm}$\in \Time$\\
+    $\alloc$ &\hspace{-3mm}$: \CESKstart \to \Addr$ &
+$\Storeable$ &\hspace{-3mm}$::= \mkont \alt \mval$
   \end{tabular}
-  \caption{CESK semantic spaces}
-\label{fig:cesk-spaces}
-\end{figure}
+\\[2mm]
 
-\begin{figure}
-  \centering
-  $\mstate \stepto \mstate'$ \qquad $\maddr = \alloc(\mstate)$ \\
+  $\mstate \stepto \mstate'$ \quad $\maddr = \alloc(\mstate)$ \quad $\mtimealt = \tick(\mstate)$ \\
   \begin{tabular}{r|l}
     \hline\vspace{-3mm}\\
-    $\tpl{\svar\mvar, \menv, \mstore, \mkont}$
+    $\tpl{\svar\mvar, \menv, \mstore,\mkont}_\mtime$
     &
-    $\tpl{\mval, \mstore, \mkont}$ if $\mval \in \mstore(\menv(\mvar))$
+    $\tpl{\mval, \mstore,\mkont}_\mtimealt$ if $\mval \in \mstore(\menv(\mvar))$
     \\
 % Application
-    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\mkont}$
+    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\mkont}_\mtime$
     &
-    $\tpl{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mkont}}$
+    $\tpl{\mexpri0,\menv,\mstore',\kcons{\appl{\mexpri1,\menv}}{\maddr}}_\mtimealt$ \\
+    where & $\mstore' = \joinm{\mstore}{\maddr}{\mkont}$
     \\
 % Arg eval
-    $\tpl{\mval, \mstore,\kcons{\appl{\mexpr,\menv}}{\mkont}}$
+    $\tpl{\mval,\menv, \mstore,\kcons{\appl{\mexpr,\menv'}}{\maddralt}}_\mtime$
     &
-    $\tpl{\mexpr,\menv,\mstore,\kcons{\appr{\mval}}{\mkont}}$
+    $\tpl{\mexpr,\menv',\mstore,\kcons{\appr{\mval,\menv}}{\maddralt}}_\mtimealt$
     \\
 % Function call
-    $\tpl{\mval,\mstore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\mkont}}$
+    $\tpl{\mval,\mstore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\maddralt}}_\mtime$
     &
-    $\tpl{\mexpr,\extm{\menv}{\mvar}{\maddr},\joinm{\mstore}{\maddr}{\mval},\mkont}$
-  \end{tabular}
-  \caption{CESK machine}
-  \label{fig:cesk-semantics}
+    $\tpl{\mexpr,\menv',\mstore',\mkont}_\mtimealt$ if $\mkont \in \mstore(\maddralt)$ \\
+    where & $\menv' = \extm{\menv}{\mvar}{\maddr}$ \\
+          & $\mstore' = \joinm{\mstore}{\maddr}{\mval}$
+  \end{tabular} \\
+  \caption{$\CESKstart$ semantics}
+  \label{fig:ceskstart}
 \end{figure}
+
+%% \begin{figure}
+%%   \centering
+%%   $\mstate \stepto \mstate'$ \qquad $\maddr = \alloc(\mstate)$ \\
+%%   \begin{tabular}{r|l}
+%%     \hline\vspace{-3mm}\\
+%%     $\tpl{\svar\mvar, \menv, \mstore, \mkont}$
+%%     &
+%%     $\tpl{\mval, \mstore, \mkont}$ if $\mval \in \mstore(\menv(\mvar))$
+%%     \\
+%% % Application
+%%     $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\mkont}$
+%%     &
+%%     $\tpl{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mkont}}$
+%%     \\
+%% % Arg eval
+%%     $\tpl{\mval, \mstore,\kcons{\appl{\mexpr,\menv}}{\mkont}}$
+%%     &
+%%     $\tpl{\mexpr,\menv,\mstore,\kcons{\appr{\mval}}{\mkont}}$
+%%     \\
+%% % Function call
+%%     $\tpl{\mval,\mstore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\mkont}}$
+%%     &
+%%     $\tpl{\mexpr,\extm{\menv}{\mvar}{\maddr},\joinm{\mstore}{\maddr}{\mval},\mkont}$
+%%   \end{tabular}
+%%   \caption{CESK machine}
+%%   \label{fig:cesk-semantics}
+%% \end{figure}
 
 \paragraph{Removing recursion:}
 In order to make $\stepto$ finite and therefore have a computable graph, we must finitize the recursive spaces in which the machine \emph{creates new values}.
@@ -186,51 +347,21 @@ Later work on widening~\citep{ianjohnson:DBLP:conf/vmcai/HardekopfWCK14} suggest
 %
 The timestamp machinery is important to implementing specific allocation schemes, but is primarily noise for the exposition in this paper, so we omit it past the first couple demonstrations.
 
-The new semantic spaces in \autoref{fig:ceskstart-spaces} form the $\CESKstart$ machine.
-%
-The semantics of this machine follow the weak update and non-deterministic lookup principles of AAM in \autoref{fig:ceskstart-semantics}.
+%% The new semantic spaces in \autoref{fig:ceskstart-spaces} form the $\CESKstart$ machine.
+%% %
+%% The semantics of this machine follow the weak update and non-deterministic lookup principles of AAM in \autoref{fig:ceskstart-semantics}.
 
-\begin{figure}
-  \centering
-  \begin{tabular}{rlrl}
-    $\mastate \in \sa{CESK}_t$ &\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mastore, \makont}_\mtime$ & & \\
-    $\mastore \in \sa{Store}$ &\hspace{-3mm}$= \Addr \to \wp(\Storeable)$ & $\makont \in \sa{Kont}$ &\hspace{-3mm}$::= \epsilon \alt \kcons{\mkframe}{\maddr}$ \\
-    \hspace{-1mm}$\mtime,\mtimealt$ &\hspace{-3mm}$\in \Time$ & \hspace{-1mm}$\Storeable$ &\hspace{-3mm}$::= \makont \alt \mval$
-  \end{tabular}
-  \caption{$\CESKstart$ semantic spaces}
-  \label{fig:ceskstart-spaces}
-\end{figure}
+%% \begin{figure}
+%%   \centering
+%%   \begin{tabular}{rlrl}
+%%     $\mastate \in \sa{CESK}_t$ &\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mastore, \makont}_\mtime$ & & \\
+%%     $\mastore \in \sa{Store}$ &\hspace{-3mm}$= \Addr \to \wp(\Storeable)$ & $\makont \in \sa{Kont}$ &\hspace{-3mm}$::= \epsilon \alt \kcons{\mkframe}{\maddr}$ \\
+%%     \hspace{-1mm}$\mtime,\mtimealt$ &\hspace{-3mm}$\in \Time$ & \hspace{-1mm}$\Storeable$ &\hspace{-3mm}$::= \makont \alt \mval$
+%%   \end{tabular}
+%%   \caption{$\CESKstart$ semantic spaces}
+%%   \label{fig:ceskstart-spaces}
+%% \end{figure}
 
-\begin{figure}
-  \centering
-  $\mastate \stepto \mastate'$ \quad $\maddr = \alloc(\mastate)$ \quad $\mtimealt = \tick(\mastate)$ \\
-  \begin{tabular}{r|l}
-    \hline\vspace{-3mm}\\
-    $\tpl{\svar\mvar, \menv, \mastore,\makont}_\mtime$
-    &
-    $\tpl{\mval, \mastore,\makont}_\mtimealt$ if $\mval \in \mstore(\menv(\mvar))$
-    \\
-% Application
-    $\tpl{\sapp{\mexpri0}{\mexpri1},\menv,\mastore,\makont}_\mtime$
-    &
-    $\tpl{\mexpri0,\menv,\mastore',\kcons{\appl{\mexpri1,\menv}}{\maddr}}_\mtimealt$ \\
-    where & $\mastore' = \joinm{\mastore}{\maddr}{\makont}$
-    \\
-% Arg eval
-    $\tpl{\mval,\menv, \mastore,\kcons{\appl{\mexpr,\menv'}}{\maddralt}}_\mtime$
-    &
-    $\tpl{\mexpr,\menv',\mastore,\kcons{\appr{\mval,\menv}}{\maddralt}}_\mtimealt$
-    \\
-% Function call
-    $\tpl{\mval,\mastore,\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\maddralt}}_\mtime$
-    &
-    $\tpl{\mexpr,\menv',\mastore',\makont}_\mtimealt$ if $\makont \in \mastore(\maddralt)$ \\
-    where & $\menv' = \extm{\menv}{\mvar}{\maddr}$ \\
-          & $\mastore' = \joinm{\mastore}{\maddr}{\mval}$
-  \end{tabular} \\
-  \caption{$\CESKstart$ semantics}
-  \label{fig:ceskstart-semantics}
-\end{figure}
 
 If we run the $\CESKstart$ semantics to explore all possible states, we get a sound approximation of all paths that the $\CESK$ machine will explore.
 %
