@@ -3,9 +3,10 @@ TARGET=sigplan
 FILE=$(CURRENT)$(TARGET)
 export TEXINPUTS := ./pfsteps:./mnsymbol:${TEXINPUTS}
 
-WGETDVANHORNBIB=curl -o dvanhorn.bib "http://www.citeulike.org/bibtex/user/dvanhorn?fieldmap=posted-at:date-added&do_username_prefix=1&key_type=4&fieldmap=url:x-url&fieldmap=doi:x-doi&fieldmap=address:x-address&fieldmap=isbn:x-isbn&fieldmap=issn:x-issn&fieldmap=month:x-month&fieldmap=comment:comment&fieldmap=booktitle:booktitle&fieldmap=abstract:x-abstract&fieldmap=pages:pages&volume:volume"
-WGETIANJOHNSONBIB=wget -O ianjohnson.bib \
-	          "http://www.citeulike.org/bibtex/user/ianjohnson?fieldmap=posted-at:date-added&do_username_prefix=1&key_type=4&fieldmap=url:x-url&fieldmap=doi:x-doi&fieldmap=address:x-address&fieldmap=isbn:x-isbn&fieldmap=issn:x-issn&fieldmap=month:x-month&fieldmap=comment:comment&fieldmap=booktitle:booktitle&fieldmap=abstract:x-abstract&fieldmap=pages:pages&volume:volume"
+BIBOPTS=fieldmap=posted-at:date-added&do_username_prefix=1&key_type=4&fieldmap=url:x-url&fieldmap=doi:x-doi&fieldmap=address:x-address&fieldmap=isbn:x-isbn&fieldmap=issn:x-issn&fieldmap=month:x-month&fieldmap=comment:comment&fieldmap=booktitle:booktitle&fieldmap=abstract:x-abstract&fieldmap=pages:x-pages&volume:volume&fieldmap=publisher:x-publisher&fieldmap=series:x-series&fieldmap=editor:x-editor&fieldmap=isbn:x-isbn
+
+WGETDVANHORNBIB=curl -o dvanhorn.bib "http://www.citeulike.org/bibtex/user/dvanhorn?$(BIBOPTS)"
+WGETIANJOHNSONBIB=curl -o ianjohnson.bib "http://www.citeulike.org/bibtex/user/ianjohnson?$(BIBOPTS)"
 
 default: $(FILE).tex #example0.pdf impl.pdf
 	rubber -d $(FILE).tex

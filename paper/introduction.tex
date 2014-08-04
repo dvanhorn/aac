@@ -1,4 +1,4 @@
-Good static analyses use a combination of abstraction techniques, economical data structures, and a lot of engineering~\citep{ianjohnson:CousotEtAl-TASE07,ianjohnson:DBLP:journals/ipl/YiCKK07}.
+Good static analyses use a combination of abstraction techniques, economical data structures, and a lot of engineering~\citep{dvanhorn:CousotEtAl-TASE07,ianjohnson:DBLP:journals/ipl/YiCKK07}.
 %
 The cited exemplary works stand out from a vast amount of work attacking the problem of statically analyzing languages like C.
 %
@@ -15,7 +15,7 @@ Second, features like stack inspection and first-class continuations are not eas
 We need a new approach. % before heavily investing in engineering effort.
 
 %
-Luckily, there is an alternative to the CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters; they are interderivable in several instances~\citep{ianjohnson:DBLP:conf/icfp/Danvy08}.
+Luckily, there is an alternative to the CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters; they are interderivable in several instances~\citep{dvanhorn:Danvy:DSc}.
 %
 This alternative, called abstracting abstract machines
 (AAM)~\citep{dvanhorn:VanHorn2012Systematic}, is a simple
@@ -55,7 +55,7 @@ in the form of first-class delimited control operators (\S\ref{sec:delim}).
 These case studies show that the approach is robust in the presence of
 features that need to inspect or alter the run-time stack, which
 previously have required significant technical
-innovations~\cite{ianjohnson:Vardoulakis2011Pushdown,ianjohnson:DBLP:journals/jfp/JohnsonSEMH14}.
+innovations~\cite{dvanhorn:Vardoulakis2011Pushdown,ianjohnson:DBLP:journals/jfp/JohnsonSEMH14}.
 
 Our approach appeals to operational intuitions rather than automata theory to justify the approach.
 %
@@ -67,7 +67,7 @@ unneeded.
 By simplifying the technical approach and broadening both the audience
 and applicability of pushdown analyses, we hope to enable progress
 towards technical feats like
-Astr\'ee~\citep{ianjohnson:CousotEtAl-TASE07}
+Astr\'ee~\citep{dvanhorn:CousotEtAl-TASE07}
 for expressive, dynamic languages.
 %
 % The large problem domain of analyzing dynamic languages needs an army to tackle it, and we believe that AAM can feed that army.

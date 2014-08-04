@@ -1,5 +1,5 @@
 %%
-The immediately related work is that of PDCFA \citep{dvanhorn:Earl2010Pushdown, dvanhorn:Earl2012Introspective}, CFA2~\citep{ianjohnson:vardoulakis-lmcs11, ianjohnson:Vardoulakis2011Pushdown}, and AAM~\citep{dvanhorn:VanHorn2010Abstracting}.
+The immediately related work is that of PDCFA \citep{dvanhorn:Earl2010Pushdown, dvanhorn:Earl2012Introspective}, CFA2~\citep{dvanhorn:Vardoulakis2011CFA2, dvanhorn:Vardoulakis2011Pushdown}, and AAM~\citep{dvanhorn:VanHorn2010Abstracting}.
 %
 The stack frames in CFA2 that boost precision are an orthogonal feature that fit into our model as an \emph{irrelevant} component along with the stack, which we did not cover in detail due to space constraints.
 %
@@ -10,7 +10,7 @@ Our semantics adapts to \rackett{call/cc} by removing the meta-continuation oper
 The extended version of PDCFA that inspects the stack to do garbage collection~\citep{dvanhorn:Earl2012Introspective} also fits into our model (\autoref{sec:gc}'s $\hat\Gamma$).
 %
 
-We did additional work to improve the performance of the AAM approach in \citet{ianjohnson:oaam:icfp2013} that can almost entirely be imported for the work in this paper.
+We did additional work to improve the performance of the AAM approach in \citet{dvanhorn:Johnson2013Optimizing} that can almost entirely be imported for the work in this paper.
 %
 The technique that does not apply is ``store counting'' for lean representation of the store component of states when there is a global abstract store, an assumption that does not hold for garbage collection.
 %
@@ -47,20 +47,20 @@ It has close similarities to ``Big-CFA2'' in Vardoulakis' dissertation~\citep{va
 
 %%
 \paragraph{Analysis of pushdown automata}
-Pushdown models have existed in the first-order static analysis literature~\citep[Chapter 7]{local:muchnick:jones:flow-analysis:1981}\citep{ianjohnson:reps:pushdown:1995}, and the first-order model checking literature \citep{ianjohnson:bouajiani:esparza:pushdown:1997}, for some time.
+Pushdown models have existed in the first-order static analysis literature~\citep[Chapter 7]{local:muchnick:jones:flow-analysis:1981}\citep{dvanhorn:Reps1995Precise}, and the first-order model checking literature \citep{dvanhorn:Bouajjani1997Reachability}, for some time.
 %
 These methods already assume a pushdown model as input, and constructing a model from a first-order program is trivial.
 %
 In the setting of higher-order functions and first-class control, model construction is an additional problem -- the one we solve here.
 %
-Additionally, the algorithms employed in these works expect a complete description of the model up front, rather than work with a modified \texttt{step} function (also called \texttt{post}), such as in ``on-the-fly'' model-checking algorithms for finite state systems~\citep{DBLP:conf/tacas/SchwoonE05}.
+Additionally, the algorithms employed in these works expect a complete description of the model up front, rather than work with a modified \texttt{step} function (also called \texttt{post}), such as in ``on-the-fly'' model-checking algorithms for finite state systems~\citep{dvanhorn:Schwoon2005Note}.
 %%
 
 %%
 \paragraph{Derivation from abstract machines}
 The trend of deriving static analyses from abstract machines does not stop at flow analyses.
 %
-The model-checking community showed how to check temporal logic queries for collapsible pushdown automata (CPDA), or equivalently, higher-order recursion schemes, by deriving the checking algorithm from the Krivine machine~\citep{ianjohnson:Salvati:2011:KMH:2027223.2027239}.
+The model-checking community showed how to check temporal logic queries for collapsible pushdown automata (CPDA), or equivalently, higher-order recursion schemes, by deriving the checking algorithm from the Krivine machine~\citep{dvanhorn:Salvati2011Krivine}.
 %
 The expressiveness of CPDAs outweighs that of PDAs, but it is unclear how to adapt higher-order recursion schemes (HORS) to model arbitrary programming language features.
 %
