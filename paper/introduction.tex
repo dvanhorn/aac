@@ -12,7 +12,7 @@ The first problem we must solve is, ``what graph?'' as control-flow is now part 
 %
 Second, features like stack inspection and first-class continuations are not easily shoe-horned into a CFG representation of a program's behavior.
 %
-We need a new approach. % before heavily investing in engineering effort.
+% We need a new approach. % before heavily investing in engineering effort.
 
 %
 Luckily, there is an alternative to the CFG approach to analysis construction that is based instead on abstract machines, which are one step away from interpreters; they are interderivable in several instances~\citep{dvanhorn:Danvy:DSc}.
@@ -60,14 +60,13 @@ innovations~\cite{dvanhorn:Vardoulakis2011Pushdown,ianjohnson:DBLP:journals/jfp/
 Our approach appeals to operational intuitions rather than automata theory to justify the approach.
 %
 The intention is that the only prerequisite to designing a pushdown
-analysis for a dynamic language is some experience implementing
-interpreters; expertise in automata theory or abstract domains is
-unneeded.
+analysis for a dynamic language is some experience with implementing
+interpreters. %; not with automata theory or abstract domains.
 %
-By simplifying the technical approach and broadening both the audience
-and applicability of pushdown analyses, we hope to enable progress
-towards technical feats like
-Astr\'ee~\citep{dvanhorn:CousotEtAl-TASE07}
-for expressive, dynamic languages.
+%% By simplifying the technical approach and broadening both the audience
+%% and applicability of pushdown analyses, we hope to enable progress
+%% towards technical feats like
+%% Astr\'ee~\citep{dvanhorn:CousotEtAl-TASE07}
+%% for expressive, dynamic languages.
 %
 % The large problem domain of analyzing dynamic languages needs an army to tackle it, and we believe that AAM can feed that army.
