@@ -4,7 +4,7 @@ programs.
 It necessarily involves a tradeoff between the precision of those
 predictions and the computational complexity of producing them.
 %
-At one of the spectrum, an analysis may predict nothing, using no
+At one end of the spectrum, an analysis may predict nothing, using no
 resources.  At the other end, an analysis may predict everything, at
 the cost of computability.
 
@@ -99,30 +99,30 @@ One example of this is behavioral contracts~\citep{dvanhorn:Findler2002Contracts
 %
 Simplified, here is how one might write an ad-hoc contract monitor for
 a given function and predicates for its inputs and outputs:
-\begin{alltt}
-  monitor f in? out? =
-  \(\lambda\) y. if (in? y) then
-        (let r = f y in 
-         if (out? r) then r
-         else blame 'function)
-       else blame 'user
-\end{alltt}
-%% \begin{center}
-%%  \includegraphics[scale=0.45]{monitor}
-%% \end{center}
+% \begin{alltt}
+%   monitor f in? out? =
+%   \(\lambda\) y. if (in? y) then
+%         (let r = f y in 
+%          if (out? r) then r
+%          else blame 'function)
+%        else blame 'user
+% \end{alltt}
+ \begin{center}
+  \includegraphics[scale=0.45]{monitor}
+ \end{center}
 
 It is well known that wrapping functions like this thwarts the
 precision of regular \zcfa{} and higher \kcfa{} as more wrappings are
 introduced.
 %
 In the case of this innocent program
-\begin{alltt}
-  pair(map (monitor to-string int? str?) xs,
-       map (monitor factorial int? int?) xs)
-\end{alltt}
-%% \begin{center}
-%%  \includegraphics[scale=0.45]{pair}
-%% \end{center}
+% \begin{alltt}
+%   pair(map (monitor to-string int? str?) xs,
+%        map (monitor factorial int? int?) xs)
+% \end{alltt}
+ \begin{center}
+  \includegraphics[scale=0.45]{pair}
+ \end{center}
 
 according to \zcfa{} the call to the wrapped \texttt{factorial}
 function within the second \texttt{map} may return to within the
