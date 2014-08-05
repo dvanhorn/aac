@@ -87,7 +87,7 @@ approximating closures and continuations in such a way that the
 interpreter always terminates while still producing sound and precise
 approximations.  Traditionally, both have been approximated by finite
 sets, but in the case of continuations, this means the control stack
-of the abstract interpreter is modelled as a finite graph and
+of the abstract interpreter is modeled as a finite graph and
 therefore cannot be precise with regards to function calls and
 returns.
 
@@ -130,7 +130,7 @@ first \texttt{map}.  Hence \zcfa{} is not sufficiently precise to
 prove \texttt{factorial} cannot be blamed.
 %
 Using more a context-sensitive analysis such as 1CFA, 2CFA, etc.,
-would solve the problem for this example, but would fail for nest
+would solve the problem for this example, but would fail for nested
 proxies.
 %
 In general, for any $k$, \kcfa{} will confuse the return flow of some
