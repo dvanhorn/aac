@@ -38,23 +38,15 @@ Higher-order programs often create proxies, or monitors, to ensure an object or 
 One example of this is with behavioral contracts on higher-order functions~\citep{dvanhorn:Findler2002Contracts}.
 %
 Simplified, here is how one might write an ad-hoc \texttt{int -> X} contract monitor, for some checkable property \texttt{X}:
-\begin{lstlisting}[mathescape = true]
-  monitor x out? =
-  $\lambda$ y. if (int? y) then
-        (let r = x y in 
-         if (out? r) then
-          r
-         else blame 'function)
-       else blame 'user
-\end{lstlisting}
-
+\begin{center}
+ \includegraphics[scale=0.45]{monitor}
+\end{center}
 It is well known that $\eta$-expansion (wrapping functions) like this thwarts the precision of regular \zcfa{} and higher \kcfa{} as more wrappings are introduced.
 %
 In the case of this innocent program
-\begin{lstlisting}
-  pair(map (monitor int->string string?) l,
-       map (monitor fact int?) l)
-\end{lstlisting}
+\begin{center}
+ \includegraphics[scale=0.45]{pair}
+\end{center}
 the call to the wrapped factorial function within the second \texttt{map} reportedly returns to within the first \texttt{map}, according to \zcfa{}.
 %
 Add more contract wrappers and each $k$ for \kcfa{} is equally defeatable.

@@ -43,7 +43,7 @@ The computed $\stepto$ relation thus represents the full description of a pushdo
 %
 Of course this semantics does not always define a pushdown system since $\alloc$ can have an unbounded codomain.
 %
-The correctness claim is therefore a correspondence between the same machine but with an unbounded stack, no $\mktab$, and $\alloc, \tick$ functions that behave the same disregarding the different representations (a reasonable assumption).
+The correctness claim\ifntr{\footnote{All theorems and proofs are deferred to the extended version available on \url{arXiv.org}.}} is therefore a correspondence between the same machine but with an unbounded stack, no $\mktab$, and $\alloc, \tick$ functions that behave the same disregarding the different representations (a reasonable assumption).
 %
 \ifntr{See the extended paper for details.}
 
@@ -161,6 +161,30 @@ The unrolling proposition is the following
   \end{itemize}
 \end{theorem}
 }
+
+\paragraph{Revisiting the example}
+
+First we consider what \zcfa{} gives us, to see where pushdown analysis improves.
+%
+The important difference is that in \kcfa{}, return points are stored in an address that is linked to the textual location of the function call, plus a $k$-bounded amount of calling history.
+%
+So, considering the common $k = 0$, the unknown function call within map (either \texttt{render{-}int} or \texttt{fact}) returns from the context of the second call to \texttt{map} to the context of the first call to \texttt{map}.
+%
+Non-tail calls aren't safe from imprecise return flow: the recursive call to \texttt{map} returns directly to both calls in the outer \texttt{cons}.
+%
+All nonsense.
+%
+Control-flow graphs from \zcfa{} read like a 3-year-old's scribblings.
+%
+
+In our presentation, return points are stored in an address that represents the \emph{exact} calling context with respect to the abstract machine's components.
+%
+This means when there is a ``merging'' of return points, it really means that two places in the program have requested the exact same thing of a function, even with the same global values.
+%
+The function \emph{will} return to both places.
+%
+The predicted control flow in the example is as one would expect, or \emph{hope}, an analysis would predict: the correct flow.
+
 \subsection{Engineered semantics for efficiency}\label{sec:eng-frontier}
 %%
 We cover three optimizations that may be employed to accelerate the fixed-point computation.
