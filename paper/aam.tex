@@ -111,7 +111,7 @@ for some $E$, $\mexpr_0$, and $\mexpr_1$.}
 Although concise and well-structured for mathematical proofs, this
 semantics sheds little light on the mechanics of an effective
 implementation. There are essentially two aspects that need to be
-modelled more concretely.
+modeled more concretely.
 
 The first aspect is that of substitution.  The $\beta_v$ axiom models
 function application via the meta-theoretic notion of substition, but
@@ -132,7 +132,7 @@ be modeled more explicitly by a stack that represents the evaluation
 context in an ``inside-out'' fashion: the inner-most part of the
 context is the top frame of the stack.
 
-Modelling substution with closures and evaluation contexts with stacks
+Modeling substution with closures and evaluation contexts with stacks
 yields an abstract machine for the language, the CEK
 machine~\cite{dvanhorn:Felleisen2009Semantics}, shown in \autoref{fig:cek}.
 
@@ -185,7 +185,7 @@ essential for making computable abstractions, as the key mechanism for
 soundly approximating the running of a program will be limiting the
 memory available to analyze a program.
 
-The memory heap is modelled as a \emph{store} mapping addresses to
+The memory heap is modeled as a \emph{store} mapping addresses to
 values or frames.  Environments are modified to map variables to
 addresses and when a function is applied, we allocate space in the
 heap to hold the value of the argument.
