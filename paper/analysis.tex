@@ -107,6 +107,9 @@ a given function and predicates for its inputs and outputs:
          else blame 'function)
        else blame 'user
 \end{alltt}
+%% \begin{center}
+%%  \includegraphics[scale=0.45]{monitor}
+%% \end{center}
 
 It is well known that wrapping functions like this thwarts the
 precision of regular \zcfa{} and higher \kcfa{} as more wrappings are
@@ -117,6 +120,10 @@ In the case of this innocent program
   pair(map (monitor to-string int? str?) xs,
        map (monitor factorial int? int?) xs)
 \end{alltt}
+%% \begin{center}
+%%  \includegraphics[scale=0.45]{pair}
+%% \end{center}
+
 according to \zcfa{} the call to the wrapped \texttt{factorial}
 function within the second \texttt{map} may return to within the
 first \texttt{map}.  Hence \zcfa{} is not sufficiently precise to 
