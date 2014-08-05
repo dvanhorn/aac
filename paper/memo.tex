@@ -17,7 +17,7 @@ Memoization is a specialized instance of sparseness; the base stack may change, 
 We use the vocabulary of ``relevance'' and ``irrelevance'' so that future work can adopt the ideas of sparseness to reuse contexts in more ways.
 %
 
-Recall the \hyperref[lem:irrelevance]{context irrelevance lemma}: if we have seen the results of a computation before from a different context, we can reuse them.
+Recall the core notion of irrelevance: if we have seen the results of a computation before from a different context, we can reuse them.
 %
 The semantic counterpart to this idea is a memo table that we extend when popping and appeal to when about to push.
 %
@@ -138,6 +138,14 @@ where
    \\ &\multicolumn{5}{l}{\hspace{-3mm}$\phantom{= \pi_1 R' \cup \{} \makont \in \Delta\mktab(\mctx),
        \tpl{\mexpr,\menv,\mstore} \in \Delta\mmemo(\mctx)\}$}
  \end{tabular}
+
+The $\pi_i$ notation is for projecting out pairs, lifted over sets.
+%
+This worklist algorithm describes unambiguously what is meant by ``rendezvous.''
+%
+After stepping each state in the frontier, the differences to the $\mktab$ and $\mmemo$ tables are collected and then combined in $F'$ as calling contexts' continuations matched with their memoized results.
+%
+
 
 \iftr{
 \begin{theorem}[Correctness]

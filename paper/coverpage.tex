@@ -1,0 +1,34 @@
+\begin{titlepage}
+  \begin{center}
+    \Huge{Issues raised by reviewers:}
+  \end{center}
+  \begin{itemize}
+  \item{\textbf{Contribution magnitude poorly motivated}
+      We toned down the grandiose language and discussed problem domains that benefit.}
+  \item{\textbf{Poorly explained how technique works and what end results are}
+      We've taken more space and care in our wording to explain the concepts.
+      We added an additional example program that illustrates the weakness of \zcfa{} and strength of pushdown abstraction.
+%
+      We gave graphical visualizations of the otherwise mystical Greek.
+%
+    Results beyond the exemplified programs' improved control flow predictions are not included for a few reasons:
+    \begin{itemize}
+    \item{the paper derives existing analyses that have already been evaluated by the associated literature}
+    \item{lack of corpus for CM use within a language less complex than Java or Racket meant a lot more work outside our existing analysis implementation for a small Scheme.
+%
+Interesting direction, but too much for one paper.}
+    \item{the implementation at \url{https://github.com/dvanhorn/oaam/tree/aac} is mostly within an order of magnitude (slower) than the baseline regular analysis (a few seconds instead of a fraction of a second, in most cases), based on informal benchmarking.
+        %
+We experimented with non-traditional binding strategies and got more variance.
+%
+Ultimately, we ran out of time to work the lead out to get a fully comparative evaluation like in our Optimizing Abstract Abstract Machines paper.
+%
+It's a lesser paper for it, admittedly, but still holds its water.}
+    \end{itemize}
+  }
+  \item{\textbf{Too formal for DLS}
+      Theorems and proofs have been moved to an extended version to appear on \url{arXiv.org}, self-titled.
+      We added a new section post-introduction to ease into the details.
+      Word choices are livelier.}
+  \end{itemize}
+\end{titlepage}
