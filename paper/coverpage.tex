@@ -1,34 +1,149 @@
 \begin{titlepage}
   \begin{center}
-    \Huge{Issues raised by reviewers:}
+    \Large{Issues raised by reviewers:}
   \end{center}
-  \begin{itemize}
-  \item{\textbf{Contribution magnitude poorly motivated}
-      We toned down the grandiose language and discussed problem domains that benefit.}
-  \item{\textbf{Poorly explained how technique works and what end results are}
-      We've taken more space and care in our wording to explain the concepts.
-      We added an additional example program that illustrates the weakness of \zcfa{} and strength of pushdown abstraction.
+
+
+We thank the reviewers for their thorough and thougtful reviews.  We
+have tried to incorporate all of their suggestions into the revised
+paper and feel that its improved the presentation significantly.  Thank you.
+
+\section*{Summary comments}
+
+\begin{quote}
+\emph{
+While the PC liked the paper's content, we did not think the
+presentation here was suitable for the DLS audience, which is less on
+the theoretical side. For such readers (including some PC members),
+the paper was poorly motivated and explained: the former in terms of
+the magnitude of the contribution, the latter in terms of how the
+technique works and what the end results are.}
+\end{quote}
+
+We have revised the presentation, including the motivation and
+technical development, and re-calibrated the summary of contributions.
+We have also attempted to make the technical development more
+approachable, giving more intuitions, examples, and discussion of
+implications.
+
+\begin{quote}
+\emph{
+The PC felt that some of the technical development could easily be
+moved to a tech report in return for devoting useful quantities of
+room to explanation of the result through less formal means (e.g.,
+running examples). The PC felt quite strongly about this, which is why
+this paper is being marked for second-round re-evaluation (on this
+criterion). For instance, the paper ought to be accessible to a
+compiler writer who is rigorous but lacks formal semantics training.}
+\end{quote}
+
+We have introduced an early example and discussed the results at a
+higher-level that should be accessible to a reader with a background
+in compilers before moving into the more technical sections.  Our
+example draws on function contracts and proxies, a relevant topic to
+the DLS community, and tried to motivate the need for pushdown
+analysis to reason effectively about proxies by appealing to the
+common tools of the optimizing compiler writer: inlining, dead-code
+elimination, temporal verification, etc.
+
+We have moved the most theoretical aspects of the paper to an extended
+technical report to make room for the added content and lengthier
+discussion.  We've taken more space and care in our wording to explain
+the concepts more thoroughly.  We have added graphical visualizations
+to aid the terse formalism.  Our original submission (and the revisied
+submission) links to executable models for interacting with the case
+study models developed in the paper.
+
+While we have strived to make the paper more accessible, the paper is
+ultimately a contribution on a general technique for making precise
+abstract interpreters in the face of stack manipulating language
+features.  It is a \emph{semantic technique} paper, and therefore
+requires a certain level of semantic formalization.  To our mind, one
+of the achievements is that we require only an understanding of basic
+operational semantics (reduction relations, evaluation contexts, etc.)
+and do not rely on heavier abstract formalisms stemming from lattice
+theory or complex abstract domains.
+
+
+\section*{Detailed comments}
+
+We respond to some of the detailed comments below.  The remaining
+comments have been addressed without further response.
+
+\begin{quote}
+\emph{
+  The 2nd paragraph in ``removing recursion'' is in my opinion too short and cryptic. I would say that would be very difficult to understand for someone who is not familiar with the original AAM paper.}
+\end{quote}
+
+This whole section has been significantly revised to alleviate the
+need for familiarity with the AAM paper.
+
+\begin{quote}
+\emph{``Given finite allocation, context are drawn from a finite space
+  but are still precise enough to describe unbounded stacks'' how?
+  can you explain more?}
+\end{quote}
+
+Contexts, a finite object, describe everything necessary to identify
+the stack because they codify all of the machine state that could
+possibly influence evaluation until the eventual pop.  The explanation
+of issue has been revised to try to clarify.
+
+\begin{quote}
+\emph{The paper only loosely hints at precision gains. A little experimental
+evidence would have been nice.}
+\end{quote}
+
+Precision gains from pushdown vs finite-state abstractions are not a
+central component of this work, which is about the technique of
+developing pushdown abstract interpreters (on the assumption you want
+the added precision).  Such precision comparisions can be found in the
+prior work on CFA2, PDCFA, CFA2 for call/cc, and PDCFA with GC.
+
+\begin{quote}
+\emph{
+The paper takes on a few interesting forms of explicit control
+  operation. It would have been more interesting (to me) to see
+  whether this same technique would also apply to ``implicit'' forms of
+  continuation creation, such as the chained-callback style used in
+  event-driven programs (and exemplified by JavaScript). But I suppose
+  that's the next paper. (-:}
+\end{quote}
+
+This is indeed an interesting question.  There are known results on
+the relation between 0CFA of direct-style and
+continuation-passing-style programs, but not in the presence of
+control operators or pushdown analysis.  Answering that question is
+beyond the scope of this paper.
+
+\begin{quote}
+\emph{
+Please proof-read your bibliography. It really does need it.}
+\end{quote}
+
+We have gone over the bibliography with a fine-toothed comb and
+apologize for its poor shape in the initial submission.
+
+
 %
-      We gave graphical visualizations of the otherwise mystical Greek.
-%
-    Results beyond the exemplified programs' improved control flow predictions are not included for a few reasons:
-    \begin{itemize}
-    \item{the paper derives existing analyses that have already been evaluated by the associated literature}
-    \item{lack of corpus for CM use within a language less complex than Java or Racket meant a lot more work outside our existing analysis implementation for a small Scheme.
-%
-Interesting direction, but too much for one paper.}
-    \item{the implementation at \url{https://github.com/dvanhorn/oaam/tree/aac} is mostly within an order of magnitude (slower) than the baseline regular analysis (a few seconds instead of a fraction of a second, in most cases), based on informal benchmarking.
-        %
-We experimented with non-traditional binding strategies and got more variance.
-%
-Ultimately, we ran out of time to work the lead out to get a fully comparative evaluation like in our Optimizing Abstract Abstract Machines paper.
-%
-It's a lesser paper for it, admittedly, but still holds its water.}
-    \end{itemize}
-  }
-  \item{\textbf{Too formal for DLS}
-      Theorems and proofs have been moved to an extended version to appear on \url{arXiv.org}, self-titled.
-      We added a new section post-introduction to ease into the details.
-      Word choices are livelier.}
-  \end{itemize}
+%%     Results beyond the exemplified programs' improved control flow predictions are not included for a few reasons:
+%%     \begin{itemize}
+%%     \item{the paper derives existing analyses that have already been evaluated by the associated literature}
+%%     \item{lack of corpus for CM use within a language less complex than Java or Racket meant a lot more work outside our existing analysis implementation for a small Scheme.
+%% %
+%% Interesting direction, but too much for one paper.}
+%%     \item{the implementation at \url{https://github.com/dvanhorn/oaam/tree/aac} is mostly within an order of magnitude (slower) than the baseline regular analysis (a few seconds instead of a fraction of a second, in most cases), based on informal benchmarking.
+%%         %
+%% We experimented with non-traditional binding strategies and got more variance.
+%% %
+%% Ultimately, we ran out of time to work the lead out to get a fully comparative evaluation like in our Optimizing Abstract Abstract Machines paper.
+%% %
+%% It's a lesser paper for it, admittedly, but still holds its water.}
+%%     \end{itemize}
+%%   }
+%%   \item{\textbf{Too formal for DLS:} Theorems and proofs have been
+%%     moved to an extended version to appear on \url{arXiv.org}.  In
+%%     their place we have incorporated examples, intuitions, and
+%%     gentlier introductions to the technical development.  }
+%%   \end{itemize}
 \end{titlepage}
