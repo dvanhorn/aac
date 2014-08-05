@@ -211,46 +211,51 @@ Concretely, we rely on an allocation function $\alloc : \CESKstart \to \Addr$ th
 The $\alloc$ function should be considered a parameter of the machine; we 
 obtain different machines by instantiating different allocation strategies.
 %
-The allocation function need not always produce a fresh address, and finite
-allocation strategies generate finite approximations of the running of a program.
+The allocation function need not always produce a fresh address (and finite
+allocation strategies generate finite approximations of the running of a program).
+%
+It is important to observe that if $\alloc$ produces a previously
+allocated address, the previous tenant of the address is not
+forgotten, just merged as a \emph{possible} result.  This is reflected
+in the use of $\sqcup$ when the store is updated, defined as:
+\begin{align*}
+  \joinm{\mstore}{\maddr}{s} &= \extm{\mstore}{\maddr}{\mstore(\maddr)\cup\set{s}}\text.
+\end{align*}
+Conversely, when an address is dereferenced, as in the case of
+evaluating a variable or popping the top frame of the stack, a single
+element is non-deterministically selected among those in the set for
+that address.  If $\alloc$ always produces fresh addresses, this set
+machinery degenerates so that singleton sets reside at every allocated
+address and the non-determinism of address dereference vanishes.
+
+In addition to the explicit machine management of memory, machine
+states carry timestamps, written with subscripts.  Timestamps are
+drawn from an unspecified set and rely on another parameter of the
+machine: the $\tick$ function, which will play a role in the
+approximating semantics, but for now can be thought of as a simple
+counter.
 
 % We use a slightly non-standard CESK machine that allows $\alloc$ to produce arbitrary addresses instead of just fresh ones.
 
 %
-Allocation is key for both precision and abstraction power.
+%% The allocation function is a \emph{parameter}; the ``machine'' AAM produces is really a machine \emph{schema}, since we can vary the allocator to produce both and anything in between a concrete and abstract semantics.
+%% %
+%% That said, we will still refer to the refactored semantics as machines going forward.
+%% %
+%% %The semantics of this CESK machine is shown in \autoref{fig:cesk-semantics}.
+%% %
+%% The only differences from the standard presentation are in the use of $\in$ instead of $=$ to make lookups non-deterministic, and weak updates with $\sqcup$ instead of strong updates to allow sound reuse of addresses:
+%% %
+
 %
-Fresh allocation gives us the full lambda calculus -- everything is undecidable.
-%
-If the allocator has a finite codomain, and there are no recursive datatypes in a state's representation, then the state space is finite -- the machine is a finite state machine.
-%
-If the allocator freshly allocates addresses for the stack representation, but is finite for everything else, the semantics is indistinguishable from just using the recursive representation of the stack.
-%
-If we have just the stack as an unbounded data structure, then the machine has finitely many stack frames and finitely many other components of the state -- the machine is a pushdown system.
 %
 
-AAM slightly modifies the store to map arbitrarily allocated addresses (reuse allowed) to a set of values.
-%
-That way, if an address is reused then the previous tenant of the address is not forgotten, just merged as a \emph{possible} result when the address is dereferenced.
-%
-The allocation function is a \emph{parameter}; the ``machine'' AAM produces is really a machine \emph{schema}, since we can vary the allocator to produce both and anything in between a concrete and abstract semantics.
-%
-That said, we will still refer to the refactored semantics as machines going forward.
-%
-%The semantics of this CESK machine is shown in \autoref{fig:cesk-semantics}.
-%
-The only differences from the standard presentation are in the use of $\in$ instead of $=$ to make lookups non-deterministic, and weak updates with $\sqcup$ instead of strong updates to allow sound reuse of addresses:
-%
-\begin{align*}
-  \joinm{\mstore}{\maddr}{\mval} &= \extm{\mstore}{\maddr}{\mstore(\maddr)\cup\set{\mval}}\text.
-%  \mval\sqcup\mval' &= \set{\mval,\mval'} \\
-%  \set{\mval,\ldots}\sqcup\mval' &= \set{\mval,\ldots,\mval'} \\
-\end{align*}
 
 
 
 \begin{figure}\centering
   \begin{tabular}{rlrl}
-    $\mstate \in \CESKstart$ &\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mstore, \mkont}$  &
+    $\mstate \in \CESKstart$ &\hspace{-3mm}$::= \tpl{\mexpr, \menv, \mstore, \mkont}_t$  &
 %    $\mlam \in \Lam$ &\hspace{-3mm}$::= \slam{\mvar}{\mexpr}$ & $\mval \in \Value$ &\hspace{-3mm}$::= (\mlam,\menv)$ \\
 $\mkont \in \Kont$ &\hspace{-3mm}$::= \epsilon \alt \kcons{\mkframe}{\maddr}$\\
  $\mstore \in \Store$ &\hspace{-3mm}$= \Addr \finto \wp(\Storeable)$ &
@@ -322,30 +327,69 @@ $\Storeable$ &\hspace{-3mm}$::= \mkont \alt \mval$
 %%   \label{fig:cesk-semantics}
 %% \end{figure}
 
-\paragraph{Removing recursion:}
-In order to make $\stepto$ finite and therefore have a computable graph, we must finitize the recursive spaces in which the machine \emph{creates new values}.
+\paragraph{Taming computability via \(\boldsymbol\alloc\):}
+Allocation is key for both precision and abstraction power.
 %
-AAM dictates that finitization can be centralized to one place, address allocation, by redirecting values in recursive positions through the store.
+Fresh allocation concretely runs a program, precisely predicting everything; of course, analysis is undecidable.
 %
-Expressions, though recursive, do not need this step because they are only destructed.
+If the allocator has a finite codomain, and there are no recursive datatypes in a state's representation, then the state space is finite -- the machine is a finite state machine.
 %
-The $\Expr$ space is finite for each program, the size of which is the number of subexpressions in the program.
+If the allocator freshly allocates addresses for the stack representation, but is finite for everything else, the semantics is indistinguishable from just using the recursive representation of the stack.
+%
+If we have just the stack as an unbounded data structure, then the machine has finitely many stack frames and finitely many other components of the state -- the machine is a pushdown system.
+
+
+In order to make the iteration of $\betastep$ on a program finite and
+therefore have a computable graph, we must finitize the recursive
+spaces in which the machine \emph{creates new values}.
+%
+AAM dictates that finitization can be centralized to one place,
+address allocation, by redirecting values in recursive positions
+through the store as we've already done.
+%
+% Expressions, though recursive, do not need this step because they are only destructed.
+%
+To see why the reachable states of a program are finite, let's
+consider each component of a machine state.  First, there is the
+expression component.  For a given program, there a finite set of
+subexpressions and no machine transition produces new expressions, so
+there can only be a finite set of reachable expression components.
+The environment component maps variable names to addresses.  Variables
+are a subset of expressions, so there are a finite set of variables
+(for a given program).  Since we've assumed $\alloc$ produces
+addresses from a finite set, there can only be a finite set of
+environments (the domain and range are finite sets).  The store
+compoent maps addresses (finite) to values or continuations.  Values
+are pairs of lambda-terms (a subset of expressions, hence finite) and
+environments (as we've just determined: finite as well), so there are
+a finite number of values.  Continuations are pairs of frames and
+addresses.  Frames consist of expression-environment pairs or values,
+both of which are finite sets, so continuations are finite too.
+Therefore heaps are finite.  The last component is a continuation,
+which we've just argued is finite.  Therefore, starting from an
+initial configuration there can only be a finite number of states that
+can be reached by the $\betastep$ relation assuming a finite $\alloc$
+function.
+
+
+%The $\Expr$ space is finite for each program, the size of which is the number of subexpressions in the program.
 %
 
+
 %
-The runaway recursion is in $\Kont$: the tail of the continuation cons is recursive.
+%The runaway recursion is in $\Kont$: the tail of the continuation cons is recursive.
 %
-So then conses of frames in $\Kont$ instead allocate an address, update the heap with the recursive value, and use the address in place of the recursive value.
+%So then conses of frames in $\Kont$ instead allocate an address, update the heap with the recursive value, and use the address in place of the recursive value.
 %
-To help an $\alloc : \State \to \Addr$ function choose its addresses, the state space can be extended with an arbitrary pointed space that can be updated each step.
+%To help an $\alloc : \State \to \Addr$ function choose its addresses, the state space can be extended with an arbitrary pointed space that can be updated each step.
 %
-The original AAM paper calls this pointed space and update function $(\Time,\mtime_0)$ and $\tick$ respectively.
+%The original AAM paper calls this pointed space and update function $(\Time,\mtime_0)$ and $\tick$ respectively.
 %
-The point, $\mtime_0$, is for the initial state's timestamp.
+%The point, $\mtime_0$, is for the initial state's timestamp.
 %
-Later work on widening~\citep{dvanhorn:Hardekopf2014Widening} suggests less arbitrary constructions, and to think of $\Time$ as a space of abstract traces, though the ``abstraction'' need not be sound~\citep{dvanhorn:Might2009Posteriori}.
+%Later work on widening~\citep{dvanhorn:Hardekopf2014Widening} suggests less arbitrary constructions, and to think of $\Time$ as a space of abstract traces, though the ``abstraction'' need not be sound~\citep{dvanhorn:Might2009Posteriori}.
 %
-The timestamp machinery is important to implementing specific allocation schemes, but is primarily noise for the exposition in this paper, so we omit it past the first couple demonstrations.
+%The timestamp machinery is important to implementing specific allocation schemes, but is primarily noise for the exposition in this paper, so we omit it past the first couple demonstrations.
 
 %% The new semantic spaces in \autoref{fig:ceskstart-spaces} form the $\CESKstart$ machine.
 %% %
@@ -363,7 +407,7 @@ The timestamp machinery is important to implementing specific allocation schemes
 %% \end{figure}
 
 
-If we run the $\CESKstart$ semantics to explore all possible states, we get a sound approximation of all paths that the $\CESK$ machine will explore.
+If we run the $\CESKstart$ semantics to explore all possible states, we get a sound approximation of all paths that the $\CESK$ machine will explore, \emph{regardless of the particular $\alloc$ function used}; any $\alloc$ function is sound.
 %
 This paper will give a more focused view of the $\Kont$ component.
 %
