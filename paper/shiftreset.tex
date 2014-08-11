@@ -66,10 +66,32 @@ Composable continuations are indistinguishable from functions, so even though th
 %    & \textsc{[capture continuation]}
     \\
 % continuation call
-    $\co{\kcons{\kfn{\vcomp{\mkont'}}}{\mkont}, \mmkont, \mval,\mstore}$
+    $\co{\kcons{\appr{\vcomp{\mkont'}}}{\mkont}, \mmkont, \mval,\mstore}$
     &
     $\co{\mkont', \mkapp{\mkont}{\mmkont}, \mval,\mstore}$
 %    & \textsc{[compose continuation]}
+    \\
+    \text{standard rules} \\
+    $\ev{\svar\mvar, \menv, \mstore, \mkont,\mmkont}$
+    &
+    $\co{\mkont,\mmkont,\mval, \mstore}$ if $\mval \in \mstore(\menv(\mvar))$
+    \\
+% Application
+    $\ev{\sapp{\mexpri0}{\mexpri1},\menv,\mstore,\mkont,\mmkont}$
+    &
+    $\ev{\mexpri0,\menv,\mstore,\kcons{\appl{\mexpri1,\menv}}{\mkont},\mmkont}$
+    \\
+% Arg eval
+    $\co{\kcons{\appl{\mexpr,\menv}}{\mkont},\mmkont,\mval,\mstore}$
+    &
+    $\ev{\mexpr,\menv,\mstore,\kcons{\appr{\mval}}{\mkont},\mmkont}$
+    \\
+% Function call
+    $\co{\kcons{\appr{\slam{\mvar}{\mexpr},\menv}}{\mkont},\mmkont,\mval,\mstore}$
+    &
+    $\ev{\mexpr,\menv',\mstore',\mkont,\mmkont}$ \\
+    where & $\menv' = \extm{\menv}{\mvar}{\maddr}$ \\
+          & $\mstore' = \joinm{\mstore}{\maddr}{\mval}$
   \end{tabular}  
   \caption{Machine semantics for shift/reset}
   \label{fig:shift-reset}
@@ -78,7 +100,7 @@ Composable continuations are indistinguishable from functions, so even though th
 
 \subsection{Reformulated with continuation stores}
 %
-The machine in \autoref{fig:shift-reset} is transformed now to have three new tables: one for continuations, one as discussed in the section beginning to close stored continuations, and one for meta-continuations.
+The machine in \autoref{fig:shift-reset} is transformed now to have three new tables: one for continuations ($\mktab_{\makont}$), one as discussed in the section beginning to close stored continuations ($\mmktab$), and one for meta-continuations ($\mktab_{\mamkont}$).
 %
 The first is like previous sections, albeit continuations may now have the approximate form that is storeable.
 %
@@ -88,7 +110,7 @@ Meta-continuations do not have simple syntactic strategies for bounding their si
 %
 They could be paired with lists of $\sa{Kont}$ bounded at an arbitrary $n \in \nat$, but we simplify for presentation.
 
-Contexts for continuations are still at function application, but now contain the $\mmktab$.
+Contexts for continuations are still at function application, but now contain $\mmktab$.
 %
 Contexts for meta-continuations are in two places: manual prompt introduction via {\tt reset}, or via continuation invocation.
 %

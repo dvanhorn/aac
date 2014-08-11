@@ -220,6 +220,17 @@ The concern of unforgeable permissions is orthogonal, so we simplify with a set 
   \mperm \in \Permissions & \text{ a set} \\
   \Expr &::= \ldots \alt \sgrant{\mperm}{\mexpr} \alt \sframe{\mperm}{\mexpr} \alt \stest{\mperm}{\mexpr}{\mexpr}
 \end{align*}
+Permissions have the \emph{granted} or \emph{denied} status saved in a permission map within the continuation.
+%
+Each stack frame added to the continuation carries the permission map.
+%
+The empty continuation also carries a permission map.
+%
+\begin{align*}
+  \mpermmap \in \PermissionMap &= \Permissions \finto \GD \\
+  \mgd \in \GD &::= \Grant \alt \Deny \\
+  \mkont \in \Kont &::= \epsilon^\mpermmap \alt \kconsm{\mkframe}{\mpermmap}{\mkont}
+\end{align*}
 %
 The {\tt frame} construct ensures that only a given set of permissions are allowed, but not necessarily granted.
 %
@@ -236,16 +247,8 @@ The set subtraction is to say that granted permissions do not need to be checked
 %
 Continuation marks respect tail calls and have an interface that abstracts over the stack implementation.
 %
-Each stack frame added to the continuation carries the permission map.
-%
-The empty continuation also carries a permission map.
-%
 Crucially, the added constructs do not add frames to the stack; instead, they update the permission map in the top frame, or if empty, the empty continuation's permission map.
-\begin{align*}
-  \mpermmap \in \PermissionMap &= \Permissions \finto \GD \\
-  \mgd \in \GD &::= \Grant \alt \Deny \\
-  \mkont \in \Kont &::= \epsilon^\mpermmap \alt \kconsm{\mkframe}{\mpermmap}{\mkont}
-\end{align*}
+%
 Update for continuation marks:
 \begin{align*}
   \extm{\mpermmap}{\mperm}{\mgd} &= \lambda x. x \decin \mperm \to \mgd, \mpermmap(x) \\

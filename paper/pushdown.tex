@@ -170,13 +170,11 @@ The important difference is that in \kcfa{}, return points are stored in an addr
 %
 So, considering the common $k = 0$, the unknown function call within map (either \texttt{render{-}int} or \texttt{fact}) returns from the context of the second call to \texttt{map} to the context of the first call to \texttt{map}.
 %
-Non-tail calls aren't safe from imprecise return flow: the recursive call to \texttt{map} returns directly to both calls in the outer \texttt{cons}.
+The non-tail calls aren't safe from imprecise return flow either.
 %
-All nonsense.
+In \texttt{map}, the self call returns directly to both external calls of \texttt{map}, bypassing the \texttt{cons} calling context.
 %
-Control-flow graphs from \zcfa{} read like a 3-year-old's scribblings:
-%
-we refrain from the unenlightening visualization of an arrow-annotated program detailing control flow predictions.
+An exact representation of the stack guards against such nonsensical predictions.
 %
 
 In our presentation, return points are stored in an address that represents the \emph{exact} calling context with respect to the abstract machine's components.

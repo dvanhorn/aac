@@ -22,13 +22,13 @@
 \aliascntresetthe{lemma}  
 \providecommand*{\lemmaautorefname}{Lemma}
 
-\title{Abstracting Abstract Control}
+\title{Abstracting Abstract Control\iftr{\\ \large{(Extended)}}}
 \authorinfo{J. Ian Johnson}{Northeastern University}{ianj@ccs.neu.edu}
 \authorinfo{David Van Horn}{University of Maryland}{dvanhorn@cs.umd.edu}
 
 \usepackage{hyperref}
 \begin{document}
-\input{coverpage}
+%\input{coverpage}
 \maketitle
 
 % Outline:
@@ -60,8 +60,7 @@
 \input{aam}
 \section{A refinement for exact stacks}\label{sec:pushdown}
 \input{pushdown}
-\section{Stack inspection and recursive metafunctions}
-\label{sec:inspection}
+\section{Stack inspection and recursive metafunctions}\label{sec:inspection}
 \input{inspection}
 \section{Relaxing contexts for delimited continuations}\label{sec:delim}
 \input{shiftreset}
