@@ -1,4 +1,4 @@
-\documentclass[preprint,nocopyrightspace]{sigplanconf}
+\documentclass{sigplanconf}
 
 \pagestyle{plain}
 \usepackage{balance}
@@ -21,6 +21,13 @@
 \newtheorem{lemma}[lemma]{Lemma}  
 \aliascntresetthe{lemma}  
 \providecommand*{\lemmaautorefname}{Lemma}
+
+\conferenceinfo{DLS~'14}{FIXME}
+\copyrightyear{2014}
+\copyrightdata{FIXME}
+\doi{FIXME}
+\exclusivelicense
+
 
 \title{Abstracting Abstract Control\iftr{\\ \large{(Extended)}}}
 \authorinfo{J. Ian Johnson}{Northeastern University}{ianj@ccs.neu.edu}
@@ -78,6 +85,17 @@ We showed how to systematically construct executable concrete semantics that poi
 We bypass the automata theoretic approach so that we are not chained to a pushdown automaton to model features such as first-class composable control operators.
 %
 The techniques employed for pushdown analysis generalize gracefully to apply to non-pushdown models and give better precision than regular methods.
+
+
+\acks We thank the anonymous reviewers of DLS 2014 for their detailed
+reviews, which helped to improve the presentation and technical
+content of the paper.
+%
+This material is based on research sponsored by DARPA under the
+Automated Program Analysis for Cybersecurity (FA8750-12-2-0106)
+project. The U.S. Government is authorized to reproduce and distribute
+reprints for Governmental purposes notwithstanding any copyright
+notation thereon.
 
 \balance
 \bibliographystyle{plainnat}
