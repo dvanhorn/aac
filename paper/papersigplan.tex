@@ -4,7 +4,7 @@
 \usepackage{balance}
 \usepackage{alltt}
 \usepackage{aliascnt}
-\usepackage{amsmath,stmaryrd,natbib,listings,graphicx,amsthm,amssymb,mathpartir,mnsymbol}
+\usepackage{amsmath,stmaryrd,natbib,listings,amsthm,amssymb,mathpartir,mnsymbol}
 \usepackage[usenames,dvipsnames]{color}
 
 \newcommand{\Scribtexttt}[1]{{\texttt{#1}}}
@@ -14,6 +14,17 @@
 \newcommand{\rackett}[1]{\inColor{black}{#1}}
 \input{local-macros}
 \input{preamble}
+
+
+\usepackage{ifpdf}
+\ifpdf
+ \usepackage[pdftex]{graphicx}  % note the x at the end
+ \usepackage[pdftex]{hyperref}
+ \else
+ % one of these two:
+ \usepackage[dvips]{graphicx}  % note the x at the end
+ \usepackage[dvips]{hyperref}
+ \fi
 
 \newtheorem{theorem}{Theorem}  
  
@@ -33,7 +44,6 @@
 \authorinfo{J. Ian Johnson}{Northeastern University}{ianj@ccs.neu.edu}
 \authorinfo{David Van Horn}{University of Maryland}{dvanhorn@cs.umd.edu}
 
-\usepackage{hyperref}
 \begin{document}
 %\input{coverpage}
 \maketitle

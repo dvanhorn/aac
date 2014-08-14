@@ -108,7 +108,11 @@ a given function and predicates for its inputs and outputs:
 %        else blame 'user
 % \end{alltt}
  \begin{center}
+\ifpdf
   \includegraphics[scale=0.45]{monitor}
+\else
+  \includegraphics[scale=0.45]{monitor.eps}
+\fi
  \end{center}
 
 It is well known that wrapping functions like this thwarts the
@@ -121,7 +125,11 @@ In the case of this innocent program
 %        map (monitor factorial int? int?) xs)
 % \end{alltt}
  \begin{center}
+\ifpdf
   \includegraphics[scale=0.45]{pair}
+\else
+  \includegraphics[scale=0.45]{pair.eps}
+\fi
  \end{center}
 
 according to \zcfa{} the call to the wrapped \texttt{factorial}
